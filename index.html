@@ -10,12 +10,60 @@
 <body>
 <div id="auth" class="auth"><div class="auth-card"><div class="logo">📘</div><h1>English Notebook</h1><p>Biến những gì học thêm thành một cuốn sổ tiếng Anh riêng của bạn.</p><button id="login" class="btn btn-dark w-100 py-3"><i class="bi bi-google me-2"></i>Đăng nhập Google</button><div id="authErr" class="alert alert-danger d-none mt-3"></div></div></div>
 <div id="app" class="d-none">
-<nav class="navbar navbar-expand-lg sticky-top nav"><div class="container-fluid px-3 px-lg-4"><a class="navbar-brand fw-bold">📘 English Notebook</a><button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><i class="bi bi-list"></i></button><div id="nav" class="collapse navbar-collapse"><div class="navbar-nav me-auto"><button class="nav-link active" data-page="home">Tổng quan</button><button class="nav-link" data-page="capture">＋ Ghi bài</button><button class="nav-link" data-page="mistakes">❌ Câu sai</button><button class="nav-link" data-page="vocab">Từ vựng</button><button class="nav-link" data-page="textbook">📚 Ôn theo Unit</button><button class="nav-link" data-page="grammar">Cấu trúc</button><button class="nav-link" data-page="exercises">📝 Bài tập</button><button class="nav-link" data-page="listening">🎧 Listening</button><button class="nav-link" data-page="review">Ôn nhanh</button></div><span id="user" class="small text-secondary me-3"></span><button id="logout" class="btn btn-outline-secondary btn-sm">Đăng xuất</button></div></div></nav>
+<nav class="navbar nav" aria-label="Điều hướng chính"><div class="container-fluid">
+  <a class="navbar-brand" href="#" data-page="home"><span class="brand-mark">📘</span>English Notebook</a>
+  <div class="navbar-collapse">
+    <div class="navbar-nav">
+      <div class="nav-section">Tổng quan</div>
+      <button class="nav-link active" data-page="home"><span class="nav-icon">⌂</span>Tổng quan</button>
+      <div class="nav-section">Ghi & lưu</div>
+      <button class="nav-link" data-page="capture"><span class="nav-icon">＋</span>Ghi bài</button>
+      <button class="nav-link" data-page="mistakes"><span class="nav-icon">×</span>Câu sai</button>
+      <button class="nav-link" data-page="vocab"><span class="nav-icon">Aa</span>Từ vựng</button>
+      <button class="nav-link" data-page="grammar"><span class="nav-icon">ƒ</span>Cấu trúc</button>
+      <div class="nav-section">Luyện tập</div>
+      <button class="nav-link" data-page="textbook"><span class="nav-icon">▦</span>Ôn theo Unit</button>
+      <button class="nav-link" data-page="exercises"><span class="nav-icon">✓</span>Bài tập</button>
+      <button class="nav-link" data-page="listening"><span class="nav-icon">◖</span>Listening</button>
+      <button class="nav-link" data-page="review"><span class="nav-icon">↯</span>Ôn nhanh</button>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="user-block"><div class="avatar" id="avatar">U</div><div class="user-meta"><strong id="userName">Tài khoản</strong><span id="user">Đang đăng nhập</span></div><button id="logout" class="btn btn-outline-secondary btn-sm" aria-label="Đăng xuất">↪</button></div>
+  </div>
+</div></nav>
+<header class="mobile-topbar"><div class="brand"><span class="brand-mark">📘</span>English Notebook</div><button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Mở menu" aria-expanded="false">☰</button><div class="mobile-menu" id="mobileMenu" role="menu">
+  <button data-page="home">⌂ Tổng quan</button><button data-page="capture">＋ Ghi bài</button><button data-page="mistakes">× Câu sai</button><button data-page="vocab">Aa Từ vựng</button><button data-page="grammar">ƒ Cấu trúc</button><button data-page="textbook">▦ Ôn theo Unit</button><button data-page="exercises">✓ Bài tập</button><button data-page="listening">◖ Listening</button><button data-page="review">↯ Ôn nhanh</button>
+</div></header>
+<nav class="mobile-bottom" aria-label="Điều hướng nhanh"><button data-page="home"><span class="mb-icon">⌂</span>Trang chủ</button><button data-page="capture"><span class="mb-icon">＋</span>Ghi bài</button><button data-page="exercises"><span class="mb-icon">✓</span>Luyện</button><button data-page="mistakes"><span class="mb-icon">×</span>Câu sai</button></nav>
 <main class="container-fluid px-3 px-lg-5 py-4">
 <section id="home" class="page">
-<div class="hero"><div><div class="eyebrow">PERSONAL ENGLISH NOTEBOOK</div><h2>Học thêm xong → ghi lại đúng chỗ → lần sau không sai nữa.</h2><p>Không ép bạn phải ôn theo kiểu flashcard. Trang này ưu tiên <b>ghi nhanh</b>, <b>lưu câu sai</b>, <b>nắm cấu trúc</b> và chỉ ôn lại đúng phần bạn đang yếu.</p><button class="btn btn-light" data-page="capture">⚡ Ghi thứ vừa học</button></div><div class="hero-icon">✍️</div></div>
-<div class="row g-3 my-4"><div class="col-6 col-xl-3"><div class="stat"><span>📚</span><b id="total">0</b><small>Tổng ghi chú</small></div></div><div class="col-6 col-xl-3"><div class="stat"><span>🧠</span><b id="vocabTotal">0</b><small>Từ vựng</small></div></div><div class="col-6 col-xl-3"><div class="stat"><span>❌</span><b id="mistakeTotal">0</b><small>Câu sai chưa xử lý</small></div></div><div class="col-6 col-xl-3"><div class="stat"><span>🧩</span><b id="grammarTotal">0</b><small>Cấu trúc đã lưu</small></div></div></div>
-<div class="row g-4"><div class="col-lg-7"><div class="panel"><div class="panel-title"><div><span class="eyebrow">RECENT</span><h5>Mới ghi gần đây</h5></div><button class="btn btn-sm btn-outline-primary" data-page="capture">＋ Thêm</button></div><div id="recent"></div></div></div><div class="col-lg-5"><div class="panel"><div class="panel-title"><div><span class="eyebrow">NEEDS ATTENTION</span><h5>Hôm nay nên xem gì?</h5></div></div><div id="attention"></div></div></div></div>
+  <div class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">PERSONAL ENGLISH NOTEBOOK · LỚP 11</div>
+      <h2>Học xong ghi lại.<br>Quên đâu, vá đó.</h2>
+      <p>Không ép bạn học theo flashcard. Ghi nhanh từ mới, cấu trúc và câu sai sau giờ học; khi cần, web chỉ đưa lại đúng phần bạn đang yếu.</p>
+      <div class="d-flex gap-2 flex-wrap"><button class="btn btn-light btn-lg" data-page="capture">＋ Ghi thứ vừa học</button><button class="btn btn-outline-light btn-lg" data-page="review">↯ Ôn phần yếu</button></div>
+    </div><div class="hero-icon" aria-hidden="true">✍️</div>
+  </div>
+  <div class="quick-grid">
+    <div class="stat"><span>📚</span><div><b id="total">0</b><small>Tổng ghi chú</small></div></div>
+    <div class="stat"><span>Aa</span><div><b id="vocabTotal">0</b><small>Từ vựng cá nhân</small></div></div>
+    <div class="stat"><span>×</span><div><b id="mistakeTotal">0</b><small>Câu sai chưa xử lý</small></div></div>
+    <div class="stat"><span>ƒ</span><div><b id="grammarTotal">0</b><small>Cấu trúc đã lưu</small></div></div>
+  </div>
+  <div class="home-grid">
+    <div class="panel">
+      <div class="panel-title"><div><div class="eyebrow">TIẾP TỤC</div><h5>Mở đúng chỗ bạn cần</h5></div></div>
+      <div class="home-action-grid">
+        <button class="home-action" data-page="capture"><div><strong>＋ Ghi bài vừa học</strong><span>Từ mới · cấu trúc · câu sai</span></div><b>→</b></button>
+        <button class="home-action" data-page="mistakes"><div><strong>× Xử lý câu sai</strong><span>Chỉ xem lỗi chưa hiểu</span></div><b>→</b></button>
+        <button class="home-action" data-page="textbook"><div><strong>▦ Ôn theo Unit</strong><span>Từ vựng Global Success 11</span></div><b>→</b></button>
+        <button class="home-action" data-page="listening"><div><strong>◖ Listening</strong><span>Nghe & điền 6 chỗ trống</span></div><b>→</b></button>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-title"><div><div class="eyebrow">NEEDS ATTENTION</div><h5>Hôm nay nên xem gì?</h5></div></div><div id="attention"></div></div>
+  </div>
+  <div class="panel mt-3"><div class="panel-title"><div><div class="eyebrow">RECENT</div><h5>Mới ghi gần đây</h5></div><button class="btn btn-sm btn-outline-primary" data-page="capture">＋ Thêm</button></div><div id="recent"></div></div>
 </section>
 
 <section id="capture" class="page d-none"><div class="head"><div><div class="eyebrow">CAPTURE AFTER CLASS</div><h2>Ghi bài vừa học</h2><p>Chọn đúng loại ghi chú trước, rồi chỉ nhập những gì bạn thực sự cần nhớ.</p></div></div>
