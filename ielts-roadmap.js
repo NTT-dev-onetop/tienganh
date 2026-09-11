@@ -1,0 +1,66 @@
+/* IELTS Roadmap — adapted from the user's supplied Foundation + Basic IELTS plans.
+   Source-derived plan labels are kept close to the documents; the study workflow
+   (Learn → Retrieve → Practice → Review) is an implementation layer for the web. */
+window.ieltsRoadmap = {
+  sourceNotes: [
+    'Lộ trình nền tảng: kế hoạch 100 ngày lấy lại gốc, tập trung từ vựng – ngữ pháp – phát âm và các đợt ôn/tổng ôn.',
+    'Lộ trình IELTS cơ bản: 48 ngày, luyện Reading/Listening/Writing/Speaking theo dạng bài, xen kẽ Review/Progress Test/Final Test.',
+    'Phương pháp trong tài liệu: Distributed Practice và Retrieval Practice; có thể dùng Pomodoro để chia thời gian học.'
+  ],
+  foundationStages: [
+    {range:'Day 1–24', title:'Xây nền', desc:'Từ loại, IPA, số đếm, thời tiết, địa điểm, thói quen, quan hệ, nhà cửa, cơ thể/sức khoẻ; các thì cơ bản; nguyên âm, phụ âm, âm cuối và trọng âm.'},
+    {range:'Day 25–52', title:'Củng cố ngữ pháp & phát âm', desc:'So sánh, chunking, hiện tại hoàn thành, quá khứ tiếp diễn/hoàn thành, mạo từ, modal verbs, câu bị động, câu tường thuật, mệnh đề quan hệ, từ nối, điều kiện loại 1 và ngữ điệu.'},
+    {range:'Day 53–80', title:'Mở rộng trung cấp', desc:'Từ nối; hiện tại hoàn thành tiếp diễn; phân biệt các thì hoàn thành; tương lai hoàn thành; tính cách/cảm xúc/quan điểm; câu tường thuật nâng cao; điều kiện 2–3; mệnh đề phân từ; giới từ trong mệnh đề quan hệ.'},
+    {range:'Day 81–99', title:'Tiến lên trung cấp', desc:'Chính trị, chiến tranh-xung đột, tội ác-hình phạt, giáo dục, môi trường, công nghệ, khoa học, công việc; cấu trúc song song, hoà hợp chủ-vị, mệnh đề danh từ/trạng ngữ, lỗi viết câu và tổng ôn.'}
+  ],
+  days: [
+    {d:1,tag:'Speaking + Pronunciation',title:'Xác định từ khoá',tasks:['Các tiêu chí chấm và đánh giá IELTS Speaking','Phát âm cơ bản: tổng quan âm nguyên âm']},
+    {d:2,tag:'Reading',title:'Skimming, Scanning',tasks:['Skimming, Scanning','Từ vựng trung cấp: Phương tiện giao thông, Công việc']},
+    {d:3,tag:'Listening',title:'Dự đoán trước đáp án',tasks:['Dự đoán trước đáp án','Phát âm cơ bản: tổng quan âm phụ âm','Ngữ pháp trung cấp: Từ nối','Từ vựng trung cấp: Nghệ thuật và thể thao']},
+    {d:4,tag:'Writing',title:'Mệnh đề, câu đơn, câu ghép, câu phức',tasks:['Mệnh đề, câu đơn, câu ghép, câu phức, câu phức ghép','Phương pháp mở rộng câu trả lời','Ngữ pháp trung cấp: Mệnh đề quan hệ','Từ vựng trung cấp: Giáo dục, Môi trường và thế giới tự nhiên, Địa điểm và nơi chốn']},
+    {d:5,tag:'Speaking + Writing',title:'Dự đoán đáp án trên phương diện ngữ pháp',tasks:['Dự đoán đáp án trên phương diện ngữ pháp','Đưa ra thông tin và miêu tả về bản thân','Ngữ pháp cơ bản: Danh từ, Tính từ, Động từ và thời động từ','Ngữ pháp trung cấp: Thì hiện tại','Từ vựng trung cấp: Địa điểm và nơi chốn, Công việc']},
+    {d:6,tag:'Reading',title:'Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase (1)',tasks:['Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase (1)','Từ vựng trung cấp: Địa điểm, nơi chốn, Môi trường và thế giới tự nhiên']},
+    {d:7,tag:'Speaking + Pronunciation',title:'Dự đoán đáp án bằng ngôn ngữ chỉ dẫn',tasks:['Dự đoán đáp án bằng ngôn ngữ chỉ dẫn','Thể hiện sở thích của bản thân (1)','Phát âm cơ bản: Âm tiết và trọng âm từ 2 âm tiết','Ngữ pháp trung cấp: Từ nối','Từ vựng trung cấp: Nghệ thuật và thể thao']},
+    {d:8,tag:'Writing',title:'Cách cải thiện kỹ năng viết câu',tasks:['Cách cải thiện kỹ năng viết câu','Ngữ pháp trung cấp: Giới từ','Từ vựng trung cấp: Sức khoẻ']},
+    {d:9,tag:'Listening + Reading',title:'Xác định từ khoá và dự đoán',tasks:['Xác định từ khoá','Dự đoán trước đáp án','Dự đoán đáp án trên phương diện ngữ pháp','Dự đoán đáp án bằng ngôn ngữ chỉ dẫn']},
+    {d:10,tag:'REVIEW',title:'Review Day 2, 4, 6, 8',tasks:['Skimming, Scanning','Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase','Mệnh đề, câu đơn, câu ghép, câu phức, câu phức ghép','Cách cải thiện kỹ năng viết câu']},
+    {d:11,tag:'Speaking + Listening',title:'Kỹ năng ghi chú',tasks:['Kỹ năng ghi chú','Thể hiện sở thích của bản thân (2)','Phát âm cơ bản: Âm cuối','Từ vựng trung cấp: Mua sắm']},
+    {d:12,tag:'Reading',title:'Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase (2)',tasks:['Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase (2)','Từ vựng trung cấp: Môi trường và thế giới tự nhiên']},
+    {d:13,tag:'Listening + Speaking',title:'Nghe hiểu nội dung qua tiền tố, hậu tố',tasks:['Nghe hiểu nội dung qua tiền tố, hậu tố','Thể hiện cảm xúc và quan điểm (1)','Phát âm cơ bản: Trọng âm từ 3 âm tiết trở lên và từ ghép','Ngữ pháp cơ bản: Trạng từ','Từ vựng trung cấp: Cảm xúc và quan điểm, Địa điểm và nơi chốn, Công việc']},
+    {d:14,tag:'Writing',title:'Các lỗi viết câu thường gặp',tasks:['Các lỗi viết câu thường gặp','Ngữ pháp trung cấp: Từ nối','Từ vựng trung cấp: Công việc']},
+    {d:15,tag:'Listening + Speaking',title:'Nghe hiểu nội dung bằng kỹ năng xác định trọng âm',tasks:['Nghe hiểu nội dung bằng kỹ năng xác định trọng âm','Thể hiện cảm xúc và quan điểm (2)','Phát âm cơ bản: Bắt lỗi 15 từ vựng dễ phát âm sai','Từ vựng trung cấp: Cảm xúc và quan điểm, Sức khoẻ, Môi trường và thế giới tự nhiên','Phát âm trung cấp: Trọng âm câu']},
+    {d:16,tag:'Reading',title:'Dạng câu hỏi trắc nghiệm',tasks:['Dạng câu hỏi trắc nghiệm','Từ vựng cơ bản: Công nghệ','Từ vựng trung cấp: Ăn uống']},
+    {d:17,tag:'Writing',title:'Cấu trúc song song',tasks:['Cấu trúc song song','Ngữ pháp trung cấp: So sánh','Ngữ pháp nâng cao: Cấu trúc song song','Từ vựng trung cấp: Sức khoẻ']},
+    {d:18,tag:'REVIEW',title:'Review Day 11, 13, 15',tasks:['Kỹ năng ghi chú','Nghe hiểu nội dung qua tiền tố, hậu tố','Nghe hiểu nội dung bằng kỹ năng xác định trọng âm','Thể hiện sở thích của bản thân','Thể hiện cảm xúc và quan điểm']},
+    {d:19,tag:'Reading + Speaking',title:'Xác định từ khoá và dự đoán',tasks:['Xác định từ khóa','Dự đoán trước đáp án','Dự đoán đáp án trên phương diện ngữ pháp','Dự đoán đáp án bằng ngôn ngữ chỉ dẫn','Các tiêu chí chấm và đánh giá IELTS Speaking','Phương pháp mở rộng câu trả lời','Đưa ra thông tin và miêu tả về bản thân','Thể hiện sở thích của bản thân']},
+    {d:20,tag:'REVIEW',title:'Review Day 2, 4, 6, 8',tasks:['Skimming, Scanning','Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase','Mệnh đề, câu đơn, câu ghép, câu phức, câu phức ghép','Cách cải thiện kỹ năng viết câu']},
+    {d:21,tag:'PROGRESS TEST',title:'Listening Test 1',tasks:['Progress Test','Từ vựng trung cấp: Môi trường và thế giới tự nhiên, Nhà cửa','Luyện làm đề IELTS Listening – Test 1']},
+    {d:22,tag:'PROGRESS TEST',title:'Speaking + Chunking',tasks:['Progress Test','Phát âm trung cấp: Chunking, Nối âm','Luyện tập trả lời các câu hỏi Speaking']},
+    {d:23,tag:'REVIEW',title:'Review Day 12, 13, 16, 17',tasks:['Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase','Dạng câu hỏi trắc nghiệm','Các lỗi viết câu thường gặp','Cấu trúc song song']},
+    {d:24,tag:'PROGRESS TEST',title:'Reading Test 1',tasks:['Progress Test','Luyện làm đề IELTS Reading – Test 1']},
+    {d:25,tag:'Reading + Speaking',title:'Dạng câu hỏi nhiều lựa chọn',tasks:['Dạng câu hỏi nhiều lựa chọn','Kể về quá khứ','Phát âm cơ bản: Âm cuối','Ngữ pháp trung cấp: Thì quá khứ','Từ vựng trung cấp: Địa điểm và nơi chốn, Giáo dục']},
+    {d:26,tag:'Writing',title:'Phân tích đề bài Writing',tasks:['Phân tích đề bài Writing','Từ vựng trung cấp: Phim và truyền thông, Công việc']},
+    {d:27,tag:'Reading + Speaking',title:'Dạng câu hỏi điền từ vào chỗ trống',tasks:['Dạng câu hỏi điền từ vào chỗ trống','Kể về những kế hoạch và dự đoán cho tương lai','Ngữ pháp cơ bản: Động từ và thời động từ','Từ vựng trung cấp: Phim và truyền thông, Giáo dục, Phương tiện giao thông, Môi trường và thế giới tự nhiên']},
+    {d:28,tag:'Reading',title:'Dạng câu hỏi điền từ',tasks:['Dạng câu hỏi điền từ','Từ vựng trung cấp: Vui chơi giải trí']},
+    {d:29,tag:'REVIEW',title:'Review Day 11, 13, 15',tasks:['Kỹ năng ghi chú','Nghe hiểu nội dung qua tiền tố, hậu tố','Nghe hiểu nội dung bằng kỹ năng xác định trọng âm','Thể hiện sở thích của bản thân','Thể hiện cảm xúc và quan điểm']},
+    {d:30,tag:'Listening + Speaking',title:'Dạng câu hỏi nối',tasks:['Dạng câu hỏi nối','Thể hiện sở thích của bản thân','Thể hiện cảm xúc và quan điểm','Từ vựng trung cấp: Phim và truyền thông']},
+    {d:31,tag:'Reading',title:'Dạng câu hỏi xác định đúng sai',tasks:['Dạng câu hỏi xác định đúng sai','Từ vựng trung cấp: Vui chơi giải trí']},
+    {d:32,tag:'REVIEW',title:'Review Day 25, 27, 30',tasks:['Dạng câu hỏi nhiều lựa chọn','Dạng câu hỏi điền từ vào chỗ trống','Dạng câu hỏi nối','Kể về quá khứ','Kể về những kế hoạch và dự đoán cho tương lai']},
+    {d:33,tag:'FINAL TEST',title:'Final Test',tasks:['Phát âm trung cấp: Trọng âm câu, Ngữ điệu','Luyện tập trả lời các câu hỏi Speaking']},
+    {d:34,tag:'REVIEW',title:'Review Day 28, 31',tasks:['Dạng câu hỏi điền từ','Dạng câu hỏi xác định đúng sai','Phân tích đề bài Writing']},
+    {d:35,tag:'PROGRESS TEST',title:'Luyện tập các đề bài Writing',tasks:['Progress Test','Từ vựng trung cấp: Giáo dục, Môi trường và thế giới tự nhiên, Phương tiện giao thông','Luyện tập các đề bài Writing']},
+    {d:36,tag:'REVIEW',title:'Review Day 12, 13, 16, 17',tasks:['Nhận diện từ đồng nghĩa, trái nghĩa và paraphrase','Dạng câu hỏi trắc nghiệm','Các lỗi viết câu thường gặp','Cấu trúc song song']},
+    {d:37,tag:'FINAL TEST',title:'Listening Test 2',tasks:['Final Test','Từ vựng trung cấp: Phương tiện giao thông, Môi trường và thế giới tự nhiên','Luyện làm đề IELTS Listening – Test 2']},
+    {d:38,tag:'WRITING',title:'Phương pháp viết đoạn văn hiệu quả',tasks:['Phương pháp viết đoạn văn hiệu quả','Từ vựng trung cấp: Nghệ thuật và thể thao, Công việc','Ngữ pháp nâng cao: Những lỗi phổ biến khi viết câu']},
+    {d:39,tag:'READING',title:'Dạng câu hỏi ghép nối',tasks:['Dạng câu hỏi ghép nối','Từ vựng trung cấp: Giáo dục, Mua sắm']},
+    {d:40,tag:'WRITING',title:'Phương pháp đảm bảo sự mạch lạc trong Writing',tasks:['Phương pháp đảm bảo sự mạch lạc trong Writing','Ngữ pháp cơ bản: Sự sở hữu và đại từ','Ngữ pháp trung cấp: Từ nối','Từ vựng trung cấp: Địa điểm và nơi chốn, Môi trường và thế giới tự nhiên']},
+    {d:41,tag:'READING',title:'Ôn tập 4 dạng câu hỏi Reading',tasks:['Ôn tập 4 dạng câu hỏi Reading (Day 22, 26, 29)','Từ vựng trung cấp: Công việc, Môi trường và thế giới tự nhiên']},
+    {d:42,tag:'WRITING',title:'Luyện tập viết đoạn văn',tasks:['Luyện tập viết đoạn văn','Từ vựng trung cấp: Công việc, Môi trường và thế giới tự nhiên, Phương tiện giao thông']},
+    {d:43,tag:'REVIEW',title:'Review Day 25, 27, 30',tasks:['Dạng câu hỏi nhiều lựa chọn','Dạng câu hỏi điền từ vào chỗ trống','Dạng câu hỏi nối','Kể về quá khứ','Kể về những kế hoạch và dự đoán cho tương lai']},
+    {d:44,tag:'REVIEW',title:'Review Day 28, 31',tasks:['Dạng câu hỏi điền từ','Dạng câu hỏi xác định đúng sai','Phân tích đề bài Writing']},
+    {d:45,tag:'FINAL TEST',title:'Reading Test 2',tasks:['Final Test','Luyện làm đề IELTS Reading – Test 2']},
+    {d:46,tag:'REVIEW',title:'Review Day 38, 40, 42',tasks:['Phương pháp viết đoạn văn hiệu quả','Phương pháp đảm bảo sự mạch lạc trong Writing','Luyện tập viết đoạn văn']},
+    {d:47,tag:'FINAL TEST',title:'Final Test + Writing',tasks:['Final Test','Từ vựng trung cấp: Môi trường và thế giới tự nhiên, Phương tiện giao thông','Luyện tập các đề bài Writing']},
+    {d:48,tag:'IELTS MOCK TEST',title:'IELTS Mock Test – Full 4 kỹ năng',tasks:['Full 4 kỹ năng: Reading · Listening · Speaking · Writing']}
+  ]
+};
