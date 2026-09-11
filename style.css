@@ -40,3 +40,32 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
 }
 @media(min-width:992px){.mobile-menu{display:none!important}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* ===== Vocabulary / Word Family expansion ===== */
+[data-vocab-view]{min-height:42px}
+[data-vocab-view].active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.family-card,.family-quiz-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;height:100%;box-shadow:0 4px 16px rgba(16,24,40,.04)}
+.family-root{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-top:12px}
+.family-meaning{color:#667085;margin-top:3px}
+.family-chain{margin-top:14px;padding:12px;border-radius:10px;background:var(--primary-soft);font-weight:700;line-height:1.6;overflow-wrap:anywhere}
+.family-note{line-height:1.65}
+.family-quiz-card h3{font-size:24px;margin:18px 0}
+.family-quiz-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.family-option{min-height:52px;text-align:left;border:1px solid var(--border);background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;transition:.18s}
+.family-option:hover{border-color:var(--primary);background:var(--primary-soft)}
+.family-option.is-correct{border-color:#16a34a;background:#ecfdf3}
+.family-option.is-wrong{border-color:#dc2626;background:#fef2f2}
+.family-feedback{margin-top:14px;padding:14px;border-radius:12px;line-height:1.6}
+.family-feedback.correct{background:#ecfdf3;border:1px solid #bbf7d0}
+.family-feedback.wrong{background:#fef2f2;border:1px solid #fecaca}
+.quiz-result{text-align:center;background:#fff;border:1px solid var(--border);border-radius:18px;padding:36px}
+.quiz-result-score{font-size:52px;font-weight:900;letter-spacing:-.04em}
+@media(max-width:575.98px){
+ .family-quiz-options{grid-template-columns:1fr}
+ .family-quiz-card h3{font-size:20px}
+}
+
+/* IELTS roadmap */
+.ielts-method-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.ielts-method{display:flex;gap:12px;align-items:flex-start;padding:16px}.ielts-method p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.5}.method-no{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-weight:800;flex:none}.ielts-progress-panel{margin-bottom:14px}.ielts-progress-stat{display:flex;gap:10px;align-items:center}.ielts-progress-stat b{font-size:24px}.ielts-progress-stat span{color:var(--muted);font-weight:700}.ielts-progress{height:9px;background:#e9edf3;border-radius:99px;overflow:hidden;margin-top:14px}.ielts-progress span{display:block;height:100%;width:0;background:var(--primary);border-radius:99px;transition:width .3s ease}.ielts-layout{display:grid;grid-template-columns:minmax(280px,.72fr) minmax(0,1.5fr);gap:14px}.ielts-day-list{display:grid;gap:6px;max-height:650px;overflow:auto;padding-right:3px}.ielts-day{display:grid;grid-template-columns:38px 1fr 18px;gap:10px;align-items:center;width:100%;text-align:left;border:1px solid transparent;background:#fff;border-radius:12px;padding:9px 10px}.ielts-day:hover{background:#f8faff;border-color:#dfe5f5}.ielts-day.selected{background:var(--primary-soft);border-color:#cbd6ff;color:#2346c8}.ielts-day>span{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:#f2f4f7;font-weight:800}.ielts-day.selected>span{background:#fff;color:var(--primary)}.ielts-day b,.ielts-day small{display:block}.ielts-day b{font-size:13px}.ielts-day small{font-size:11px;color:var(--muted);margin-top:2px}.ielts-day.done>span{background:var(--success-soft);color:#08734f}.ielts-day i{font-style:normal;color:#08734f;font-weight:900}.ielts-detail-panel{min-height:650px}.ielts-detail-head h3{font-size:29px;letter-spacing:-.035em;margin:12px 0 5px}.ielts-task-list{display:grid;gap:8px;margin:18px 0}.ielts-task{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:11px;background:#fff;cursor:pointer}.ielts-task input{margin-top:3px;accent-color:var(--primary)}.ielts-task span{line-height:1.45}.ielts-session-box{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0}.session-step{padding:12px;border-radius:11px;background:#f8fafc;border:1px solid var(--border)}.session-step b,.session-step span{display:block}.session-step span{font-size:12px;color:var(--muted);margin-top:4px}.ielts-links{display:flex;gap:8px;flex-wrap:wrap}.ielts-source-note{margin-top:15px;padding:13px 14px;background:var(--primary-soft);border:1px solid #d9e2ff;border-radius:11px}.ielts-foundation-stage{display:flex;gap:11px;padding:12px;border:1px solid var(--border);border-radius:11px;background:#fff}.ielts-foundation-stage>span{width:30px;height:30px;border-radius:9px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-weight:800;flex:none}.ielts-foundation-stage p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.review-queue-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.review-queue-item{border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}.review-queue-item b,.review-queue-item small{display:block}.review-queue-item b{font-size:13px;margin-top:4px}.review-queue-item small{font-size:11px;color:var(--muted);margin-top:3px}
+@media(max-width:991.98px){.ielts-method-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ielts-layout{grid-template-columns:1fr}.ielts-day-list{max-height:360px}.ielts-detail-panel{min-height:0}.review-queue-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:575.98px){.ielts-method-grid{grid-template-columns:1fr}.ielts-session-box{grid-template-columns:1fr 1fr}.review-queue-grid{grid-template-columns:1fr}.ielts-detail-head h3{font-size:24px}}

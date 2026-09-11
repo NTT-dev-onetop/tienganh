@@ -6,7 +6,7 @@ const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),p
 const $=id=>document.getElementById(id);let user=null,unsub=null,data={vocab:[],grammar:[],mistakes:[]},reviewQueue=[],reviewIndex=0;
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-function page(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));$(id)?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests()}
+function page(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));$(id)?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();if(id==='ielts')renderIELTS()}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false')});
 const mobileMenuToggle=document.getElementById('mobileMenuToggle');
 mobileMenuToggle?.addEventListener('click',()=>{const menu=document.getElementById('mobileMenu');const open=menu?.classList.toggle('open');mobileMenuToggle.setAttribute('aria-expanded',open?'true':'false')});
@@ -1938,6 +1938,26 @@ const textbookVocab = [
     "pattern": ""
   }
 ];
+
+if(window.vocabExpansion){
+  const __fam = window.vocabExpansion.familyBank || [];
+  const __extra = window.vocabExpansion.extraVocab || [];
+  const __familyMap = new Map();
+  __fam.forEach(f=>{
+    const vals=[f.root,f.noun,f.verb,f.adjective,f.adverb].join(' ').split(/\s*\/\s*|\s*→\s*|\s*,\s*/).map(s=>s.trim().toLowerCase()).filter(Boolean);
+    const chain=[f.noun,f.verb,f.adjective,f.adverb].filter(Boolean).join(' → ');
+    vals.forEach(v=>__familyMap.set(v,chain));
+  });
+  textbookVocab.forEach(x=>{
+    x.source=x.source||'SGK Glossary';
+    if(!x.family && __familyMap.has(String(x.word||'').toLowerCase())) x.family=__familyMap.get(String(x.word||'').toLowerCase());
+  });
+  const __seen=new Set(textbookVocab.map(x=>`${x.unit}::${String(x.word).toLowerCase()}`));
+  __extra.forEach(x=>{
+    const key=`${x.unit}::${String(x.word).toLowerCase()}`;
+    if(!__seen.has(key)){textbookVocab.push(x);__seen.add(key);}
+  });
+}
 const textbookGrammar = [
   {unit:'Unit 1', title:'Past simple vs Present perfect', topic:'Tenses', formula:'Past simple: S + V2/ed ...\nPresent perfect: S + have/has + V3/ed ...', meaning:'Phân biệt hành động đã kết thúc ở quá khứ với trải nghiệm/kết quả/hành động kéo dài đến hiện tại.', example:'I saw the doctor yesterday. / I have seen this doctor before.', trap:'Có mốc thời gian quá khứ đã kết thúc (yesterday, last week, in 2020...) → thường dùng past simple; không dùng present perfect với mốc quá khứ xác định đã kết thúc.'},
   {unit:'Unit 2', title:'Modal verbs: must / have to / should', topic:'Modal verbs', formula:'must + V1\nhave to + V1\nshould + V1', meaning:'Nghĩa vụ/bắt buộc và lời khuyên.', example:'You must follow the rules. / I have to get up early. / You should talk to your parents.', trap:'Sau modal verb dùng V nguyên mẫu không “to”: should go, must study.'},
@@ -1986,16 +2006,102 @@ const textbookGrammar = [
 function renderTextbookGrammar(){const u=$('grammarUnitFilter')?.value||'all';const list=textbookGrammar.filter(x=>u==='all'||x.unit===u);$('textbookGrammarList').innerHTML=list.map(x=>`<div class="grammar-card textbook-grammar"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(x.unit)}</span><span class="tag">${esc(x.topic)}</span></div><div class="pattern-title mt-2">${esc(x.title)}</div><p class="muted mb-0">${esc(x.meaning)}</p></div><div><div class="formula">${esc(x.formula)}</div><div class="mini-box"><b>Ví dụ</b>${esc(x.example)}</div><div class="trap"><b>⚠ Dễ sai:</b> ${esc(x.trap)}</div></div></div>`).join('');}
 $('grammarUnitFilter').onchange=renderTextbookGrammar;
 
-function renderTextbook(){const u=$('textbookUnit')?.value||'all';const list=textbookVocab.filter(x=>u==='all'||x.unit===u);$('textbookList').innerHTML=list.map(x=>`<div class="col-md-6 col-xl-4"><div class="vocab-card"><div class="d-flex gap-2"><span class="tag">#${x.no}</span><span class="tag">${esc(x.unit)}</span></div><div class="vocab-word">${esc(x.word)}</div><div class="meaning">${esc(x.meaning)}</div><div class="mini-box"><b>Cách dùng</b>${esc(x.pattern)}</div>${x.family?`<div class="mini-box"><b>Biến thể</b>${esc(x.family)}</div>`:''}</div></div>`).join('');}
-$('textbookUnit').onchange=renderTextbook;$('startTextbookReview').onclick=()=>{const u=$('textbookUnit').value;const list=textbookVocab.filter(x=>u==='all'||x.unit===u);reviewQueue=list.map(x=>({type:'textbook',x})).sort(()=>Math.random()-.5);reviewIndex=0;page('review')};
+function renderTextbook(){
+  const u=$('textbookUnit')?.value||'all';
+  const s=$('textbookSource')?.value||'all';
+  const list=textbookVocab.filter(x=>(u==='all'||x.unit===u)&&(s==='all'||(s==='sgk'&&String(x.source||'')==='SGK Glossary')||(s==='book'&&String(x.source||'')==='SGK cross-check')||(s==='extend'&&(String(x.source||'').includes('THPT')||String(x.source||'')==='Tệp 1'))));
+  $('textbookCount')?.replaceChildren(document.createTextNode(`${list.length} mục`));
+  $('textbookList').innerHTML=list.map(x=>`<div class="col-md-6 col-xl-4"><div class="vocab-card"><div class="d-flex gap-2 flex-wrap"><span class="tag">#${x.no}</span><span class="tag">${esc(x.unit)}</span><span class="tag">${esc(x.source||'')}</span></div><div class="vocab-word">${esc(x.word)}</div><div class="meaning">${esc(x.meaning)}</div>${x.pos?`<div class="pron"><b>${esc(x.pos)}</b></div>`:''}${x.pattern?`<div class="mini-box"><b>Cách dùng</b>${esc(x.pattern)}</div>`:''}${x.family?`<div class="mini-box"><b>Gia đình từ</b>${esc(x.family)}</div>`:''}</div></div>`).join('')||'<div class="col-12"><div class="empty"><div>📚</div><h4>Không có từ phù hợp</h4><p>Thử đổi Unit hoặc nguồn.</p></div></div>';
+}
+$('textbookUnit').onchange=renderTextbook;$('textbookSource').onchange=renderTextbook;$('startTextbookReview').onclick=()=>{const u=$('textbookUnit').value;const list=textbookVocab.filter(x=>u==='all'||x.unit===u);reviewQueue=list.map(x=>({type:'textbook',x})).sort(()=>Math.random()-.5);reviewIndex=0;page('review')};
 function renderVocab(){const q=($('vocabSearch')?.value||'').toLowerCase(),u=$('vocabUnit')?.value||'all';const list=data.vocab.filter(x=>(u==='all'||x.unit===u)&&`${x.word} ${x.meaning} ${x.family} ${x.pattern} ${x.forms}`.toLowerCase().includes(q));$('vocabList').innerHTML=list.length?list.map(x=>`<div class="col-md-6 col-xl-4"><div class="vocab-card"><span class="tag">${esc(x.unit||'')}</span><span class="tag">${esc(x.pos||'')}</span><div class="vocab-word">${esc(x.word)}</div><div class="pron">${esc(x.pron||'')}</div><div class="meaning">${esc(x.meaning||'Chưa ghi nghĩa')}</div><div class="info-row"><span class="tag">${esc(x.createdDate||'')}</span></div>${x.family?`<div class="mini-box"><b>Word family</b>${esc(x.family)}</div>`:''}${x.forms?`<div class="mini-box"><b>V1 / V2 / V3</b>${esc(x.forms)}</div>`:''}${x.passive?`<div class="mini-box"><b>Bị động / V3</b>${esc(x.passive)}</div>`:''}${x.pattern?`<div class="mini-box"><b>Cấu trúc</b>${esc(x.pattern)}</div>`:''}${x.example?`<div class="mini-box"><b>Ví dụ</b>${esc(x.example)}</div>`:''}${x.note?`<div class="mini-box"><b>Ghi nhớ</b>${esc(x.note)}</div>`:''}<div class="card-actions"><button class="btn btn-sm btn-outline-primary" data-review="vocab" data-id="${x.id}">Ôn từ này</button><button class="btn btn-sm btn-outline-danger" data-del="${x.id}">Xóa</button></div></div></div>`).join(''):'<div class="col-12"><div class="empty"><div>📖</div><h4>Chưa có từ vựng</h4><p>Ghi từ mới ngay sau buổi học để không quên.</p></div></div>';bindDelete();bindReview()}
 $('vocabSearch').oninput=renderVocab;$('vocabUnit').onchange=renderVocab;
+document.querySelectorAll('[data-vocab-view]').forEach(b=>b.addEventListener('click',()=>setFamilyView(b.dataset.vocabView)));
+$('familySearch')?.addEventListener('input',renderFamilyBank);
+$('familySource')?.addEventListener('change',renderFamilyBank);
+$('newFamilyQuiz')?.addEventListener('click',makeFamilyQuiz);
+
 function renderGrammar(){renderTextbookGrammar();const u=$('grammarUnitFilter')?.value||'all';const list=data.grammar.filter(x=>u==='all'||x.unit===u);$('grammarList').innerHTML=list.length?list.map(x=>`<div class="grammar-card"><div><span class="tag">${esc(x.topic||'')}</span><div class="pattern-title mt-2">${esc(x.title)}</div><p class="muted mb-0">${esc(x.meaning||'')}</p></div><div><div class="formula">${esc(x.formula||'')}</div>${x.example?`<div class="mini-box"><b>Ví dụ</b>${esc(x.example)}</div>`:''}${x.trap?`<div class="trap"><b>⚠ Dễ sai:</b> ${esc(x.trap)}</div>`:''}${x.tip?`<div class="mini-box"><b>Mẹo nhớ</b>${esc(x.tip)}</div>`:''}</div><div><button class="btn btn-sm btn-outline-primary" data-review="grammar" data-id="${x.id}">Ôn</button><button class="btn btn-sm btn-outline-danger mt-2" data-del="${x.id}">Xóa</button></div></div>`).join(''):'<div class="empty"><div>🧩</div><h4>Chưa có cấu trúc</h4><p>Ví dụ: start + to V / V-ing, need + to V / V-ing, be + V3.</p></div>';bindDelete();bindReview()}
 function renderMistakes(){const q=($('mistakeSearch')?.value||'').toLowerCase(),f=$('mistakeFilter')?.value||'all';let list=data.mistakes.filter(x=>(f==='all'||(f==='open'&&!x.resolved)||(f==='done'&&x.resolved)||(f==='3'&&Number(x.priority)===3))&&`${x.question} ${x.answer} ${x.rule} ${x.why} ${x.mistakeType}`.toLowerCase().includes(q));$('mistakeList').innerHTML=list.length?list.map(x=>`<div class="mistake-card priority-${x.priority||1} ${x.resolved?'is-done':''}"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(x.mistakeType||'Grammar')}</span><span class="tag">${x.resolved?'✓ Đã xử lý':'⚠ Chưa xử lý'}</span></div><div class="mistake-q mt-2">${esc(x.question)}</div>${x.answer?`<div class="answer-box"><b>Đáp án đúng</b><br>${esc(x.answer)}</div>`:''}${x.why?`<div class="mini-box"><b>Vì sao sai</b>${esc(x.why)}</div>`:''}${x.rule?`<div class="rule-box"><b>Quy tắc cần nhớ</b><br>${esc(x.rule)}</div>`:''}</div><div class="mistake-actions"><button class="btn btn-sm ${x.resolved?'btn-outline-secondary':'btn-success'}" data-resolve="${x.id}" data-state="${x.resolved}">${x.resolved?'↩ Mở lại':'✓ Đã hiểu'}</button><button class="btn btn-sm btn-outline-danger" data-del="${x.id}">Xóa</button></div></div>`).join(''):'<div class="empty"><div>🧹</div><h4>Không có câu phù hợp</h4><p>Đây là chỗ để bạn giữ lại đúng những lỗi mình từng mắc.</p></div>';bindDelete();document.querySelectorAll('[data-resolve]').forEach(b=>b.onclick=async()=>{await updateDoc(doc(db,'users',user.uid,'english_notes',b.dataset.resolve),{resolved:b.dataset.state!=='true',resolvedDate:today()});renderMistakes()})}
 $('mistakeSearch').oninput=renderMistakes;$('mistakeFilter').onchange=renderMistakes;
 function bindDelete(){document.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{const id=b.dataset.del;if(b.dataset.busy==='1'||pendingDeletes.has(id))return;if(!confirm('Xóa ghi chú này?'))return;pendingDeletes.add(id);b.dataset.busy='1';b.disabled=true;b.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Đang xóa…';const card=b.closest('.vocab-card,.grammar-card,.mistake-card,.col-md-6');card?.classList.add('is-removing');setTimeout(()=>card?.remove(),120);for(const type of ['vocab','grammar','mistakes'])data[type]=data[type].filter(x=>x.id!==id);try{await deleteDoc(doc(db,'users',user.uid,'english_notes',id));toast('Đã xóa.')}catch(e){toast('Xóa thất bại, dữ liệu sẽ được khôi phục.','error')}finally{pendingDeletes.delete(id);b.dataset.busy='0'}})}
 function bindReview(){document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{buildReview([b.dataset.review+':'+b.dataset.id]);page('review')})}
 function buildReview(items){reviewQueue=[];items.forEach(k=>{const [type,id]=k.split(':');const arr=type==='vocab'?data.vocab:data.grammar;const x=arr.find(y=>y.id===id);if(x)reviewQueue.push({type,x})});reviewIndex=0;renderReviewCard()}
+
+let familyQuiz={items:[],index:0,score:0,answered:false};
+let familyView='mine';
+function familyChain(f){
+  return [f.noun,f.verb,f.adjective,f.adverb].filter(Boolean).join(' → ');
+}
+function familyLabel(f){
+  return `<span class="tag">${esc(f.source||'')}</span><span class="tag">${esc(f.level||'')}</span>`;
+}
+function renderFamilyBank(){
+  const q=($('familySearch')?.value||'').trim().toLowerCase();
+  const src=$('familySource')?.value||'all';
+  const list=(window.vocabExpansion?.familyBank||[]).filter(f=>
+    (src==='all'||(src==='file'&&f.source==='Tệp 1')||(src==='common'&&f.source!=='Tệp 1')) &&
+    `${f.root} ${f.meaning} ${familyChain(f)}`.toLowerCase().includes(q)
+  );
+  $('familyCount')?.replaceChildren(document.createTextNode(`${list.length} gia đình từ`));
+  $('familyBankList').innerHTML=list.map(f=>`<div class="col-md-6 col-xl-4"><div class="family-card"><div class="d-flex gap-2 flex-wrap">${familyLabel(f)}</div><div class="family-root">${esc(f.root)}</div><div class="family-meaning">${esc(f.meaning)}</div><div class="family-chain">${esc(familyChain(f)||'Chưa đủ dạng')}</div></div></div>`).join('')||'<div class="col-12"><div class="empty"><div>🔤</div><h4>Không tìm thấy</h4><p>Thử từ khác hoặc đổi nguồn.</p></div></div>';
+}
+function quizChoices(correct,pool){
+  const set=new Set([correct]);
+  shuffle(pool.filter(x=>x!==correct)).slice(0,3).forEach(x=>set.add(x));
+  return shuffle([...set]);
+}
+function makeFamilyQuiz(){
+  const bank=window.vocabExpansion?.familyBank||[];
+  const usable=bank.filter(f=>f.noun||f.verb||f.adjective||f.adverb);
+  const selected=shuffle(usable).slice(0,20);
+  const items=[];
+  selected.forEach(f=>{
+    const types=['noun','verb','adjective','adverb'].filter(k=>f[k]);
+    const type=types[Math.floor(Math.random()*types.length)];
+    const answer=f[type];
+    const label={noun:'danh từ',verb:'động từ',adjective:'tính từ',adverb:'trạng từ'}[type];
+    const pool=usable.map(x=>x[type]).filter(Boolean).filter(x=>x!==answer);
+    const choices=quizChoices(answer,pool);
+    items.push({type:'mcq',f,question:`Dạng ${label} của "${f.root}" là gì?`,answer,choices,explain:`${f.root} → ${familyChain(f)}`});
+  });
+  familyQuiz={items,index:0,score:0,answered:false};
+  renderFamilyQuiz();
+}
+function renderFamilyQuiz(){
+  const area=$('familyQuizArea'),score=$('familyQuizScore');
+  if(!area)return;
+  if(!familyQuiz.items.length){area.innerHTML='<div class="empty"><div>🧩</div><h4>Chưa có câu hỏi</h4><button class="btn btn-primary" id="newFamilyQuiz">Tạo bộ câu hỏi</button></div>';score.textContent='';$('newFamilyQuiz')?.addEventListener('click',makeFamilyQuiz);return}
+  if(familyQuiz.index>=familyQuiz.items.length){
+    area.innerHTML=`<div class="quiz-result"><div class="quiz-result-score">${familyQuiz.score}/${familyQuiz.items.length}</div><h3>Hoàn thành!</h3><p>${Math.round(familyQuiz.score/familyQuiz.items.length*100)}% · Làm lại để gặp gia đình từ khác.</p><button class="btn btn-primary" id="newFamilyQuiz">↻ Bộ mới</button></div>`;
+    score.textContent='Xong';
+    $('newFamilyQuiz').onclick=makeFamilyQuiz;
+    return;
+  }
+  const q=familyQuiz.items[familyQuiz.index];
+  score.textContent=`${familyQuiz.index+1}/${familyQuiz.items.length} · ${familyQuiz.score} điểm`;
+  area.innerHTML=`<div class="family-quiz-card"><div class="d-flex justify-content-between gap-2 flex-wrap"><span class="tag">WORD FAMILY</span><span class="tag">${esc(q.f.root)}</span></div><h3>${esc(q.question)}</h3><div class="family-quiz-options">${q.choices.map((c,i)=>`<button class="family-option" data-family-answer="${esc(c)}">${String.fromCharCode(65+i)}. ${esc(c)}</button>`).join('')}</div><div id="familyQuizFeedback" class="family-feedback d-none"></div><button id="familyNext" class="btn btn-primary mt-3 d-none">Câu tiếp →</button></div>`;
+  familyQuiz.answered=false;
+  document.querySelectorAll('[data-family-answer]').forEach(b=>b.onclick=()=>{
+    if(familyQuiz.answered)return;
+    familyQuiz.answered=true;
+    const ok=b.dataset.familyAnswer===q.answer;
+    if(ok)familyQuiz.score++;
+    document.querySelectorAll('[data-family-answer]').forEach(x=>{x.disabled=true;if(x.dataset.familyAnswer===q.answer)x.classList.add('is-correct')});
+    if(!ok)b.classList.add('is-wrong');
+    const fb=$('familyQuizFeedback');fb.classList.remove('d-none');fb.className=`family-feedback ${ok?'correct':'wrong'}`;
+    fb.innerHTML=`<b>${ok?'✓ Chính xác':'✗ Chưa đúng'}</b><br>Đáp án: <b>${esc(q.answer)}</b><br><span>${esc(q.explain)}</span>`;
+    $('familyNext').classList.remove('d-none');
+    $('familyNext').onclick=()=>{familyQuiz.index++;renderFamilyQuiz()};
+  });
+}
+function setFamilyView(v){
+  familyView=v;
+  ['mine','family','quiz'].forEach(x=>$(x==='mine'?'vocabMinePanel':x==='family'?'familyPanel':'familyQuizPanel')?.classList.toggle('d-none',x!==v));
+  document.querySelectorAll('[data-vocab-view]').forEach(b=>b.classList.toggle('active',b.dataset.vocabView===v));
+  if(v==='family')renderFamilyBank();
+  if(v==='quiz'&&!familyQuiz.items.length)makeFamilyQuiz();
+}
 function startReview(){if(!reviewQueue.length){const mistakes=data.mistakes.filter(x=>!x.resolved).slice(0,5);reviewQueue=[...mistakes.map(x=>({type:'mistake',x})),...data.grammar.slice(0,5).map(x=>({type:'grammar',x})),...data.vocab.slice(0,8).map(x=>({type:'vocab',x}))].sort(()=>Math.random()-.5)}renderReviewCard()}
 function renderReviewCard(){if(!reviewQueue.length){$('reviewEmpty').classList.remove('d-none');$('reviewArea').classList.add('d-none');$('reviewProgress').textContent='0 mục';return}$('reviewEmpty').classList.add('d-none');$('reviewArea').classList.remove('d-none');const item=reviewQueue[reviewIndex];$('reviewProgress').textContent=`${reviewIndex+1}/${reviewQueue.length}`;$('reviewAnswer').classList.add('d-none');$('reveal').classList.remove('d-none');$('reviewAgain').classList.add('d-none');$('reviewKnown').classList.add('d-none');if(item.type==='vocab'){const x=item.x;$('reviewType').textContent='TỪ VỰNG';$('reviewPrompt').textContent=x.word;$('reviewExtra').textContent='Tự nói nghĩa + từ loại + cấu trúc / V2 / V3 nếu có.';$('reviewAnswer').innerHTML=`<b>${esc(x.meaning||'Chưa ghi nghĩa')}</b>${x.pos?` · ${esc(x.pos)}`:''}${x.forms?`<br>V1/V2/V3: ${esc(x.forms)}`:''}${x.passive?`<br>Bị động/V3: ${esc(x.passive)}`:''}${x.pattern?`<br>Cấu trúc: ${esc(x.pattern)}`:''}`}else if(item.type==='textbook'){const x=item.x;$('reviewType').textContent=`TỪ VỰNG SGK · ${x.unit}`;$('reviewPrompt').textContent=x.word;$('reviewExtra').textContent='Tự nói nghĩa + cách dùng trước khi mở đáp án.';$('reviewAnswer').innerHTML=`<b>${esc(x.meaning)}</b><br>${esc(x.pattern)}${x.family?`<br><br><b>Biến thể:</b> ${esc(x.family)}`:''}`}else if(item.type==='grammar'){const x=item.x;$('reviewType').textContent='CẤU TRÚC';$('reviewPrompt').textContent=x.title;$('reviewExtra').textContent='Tự điền công thức và một ví dụ trước khi xem.';$('reviewAnswer').innerHTML=`<div class="formula">${esc(x.formula||'')}</div>${x.example?`<div class="mt-2">${esc(x.example)}</div>`:''}`}else{const x=item.x;$('reviewType').textContent='CÂU SAI';$('reviewPrompt').textContent=x.question;$('reviewExtra').textContent='Tự sửa câu trước khi xem đáp án.';$('reviewAnswer').innerHTML=`<b>Đáp án:</b> ${esc(x.answer||'Chưa ghi')}<br><b>Quy tắc:</b> ${esc(x.rule||'Chưa ghi')}`}}
 $('reveal').onclick=()=>{$('reviewAnswer').classList.remove('d-none');$('reveal').classList.add('d-none');$('reviewAgain').classList.remove('d-none');$('reviewKnown').classList.remove('d-none')};
@@ -2056,3 +2162,72 @@ function renderListeningCounterOnly(){const el=document.querySelector('.listen-c
 async function checkListening(){const s=listeningSession;if(!s||s.submitted)return;const btn=$('submitListening');if(btn.dataset.busy==='1')return;btn.dataset.busy='1';btn.disabled=true;const answers=s.item.blanks.map((_,i)=>$(`listenBlank${i}`)?.value.trim()||'');const results=answers.map((x,i)=>listeningAnswerOK(x,s.item.blanks[i]));const score=results.filter(Boolean).length;s.submitted=true;s.score=score;const fb=$('listeningFeedback');fb.innerHTML=`<div class="listening-feedback ${score===6?'correct':'wrong'}"><b>${score===6?'✓ Hoàn hảo':'🎯 Kết quả: '+score+'/6'}</b><div class="mt-1">${results.map((ok,i)=>`<div>${i+1}. ${ok?'✓ Đúng':'✗ Sai'} ${ok?'':`· Đáp án: <span class="listening-answer">${esc(s.item.blanks[i])}</span>`}</div>`).join('')}</div></div><div class="listening-transcript"><b>📜 Bài gốc & transcript</b><div class="mt-2"><a href="${esc(s.item.sourcePage)}" target="_blank" rel="noopener">Mở nguồn Listening của ${esc(s.unit)}</a></div></div>`;document.querySelector('.listening-progress span').style.width='100%';document.querySelectorAll('.blank-row input').forEach((el,i)=>{el.disabled=true;el.classList.toggle('is-correct',results[i])});btn.innerHTML='✓ Đã nộp';if(score<6&&user){for(let i=0;i<6;i++){if(!results[i]){try{await addNote('mistakes',{unit:s.unit,question:`Listening: ${s.item.title} — chỗ trống ${i+1}`,answer:s.item.blanks[i],mistakeType:'Listening',why:'Chưa nghe ra từ/cụm từ trong bài nghe.',rule:`Nghe lại từ khóa trong ngữ cảnh: ${s.item.blanks[i]}`,priority:2,resolved:false,resolvedDate:'',source:'listening'});}catch(e){}}}toast('Các chỗ sai đã được ghim vào Sổ câu sai.','error')}else toast('Đã chấm bài Listening.');}
 function startListening(){const u=$('listeningUnit')?.value;const i=Number($('listeningTest')?.value||0);const item=listeningTests(u)[i];if(!item)return;listeningSession={unit:u,item,plays:0,submitted:false,score:0};$('listeningSetup').classList.add('d-none');$('listeningArea').classList.remove('d-none');renderListeningCard()}
 $('listeningUnit')?.addEventListener('change',renderListeningTests);$('startListening')?.addEventListener('click',startListening);renderListeningTests();
+
+
+/* ================= IELTS SELF-STUDY ROADMAP ================= */
+const IELTS_STORE='englishNotebook.ieltsRoadmap.v1';
+let ieltsState=loadIELTSState();
+function loadIELTSState(){try{return JSON.parse(localStorage.getItem(IELTS_STORE)||'{}')}catch{return {}}}
+function saveIELTSState(){localStorage.setItem(IELTS_STORE,JSON.stringify(ieltsState))}
+function ieltsKey(phase,day){return `${phase}-${day}`}
+function ieltsPlan(){return window.ieltsRoadmap||{days:[],foundationStages:[]}}
+function ieltsTodayDay(phase){
+  const days=phase==='ielts'?ieltsPlan().days:[];
+  const first=days.find(x=>!ieltsState[ieltsKey(phase,x.d)]?.done);
+  return first?.d||days[days.length-1]?.d||1;
+}
+function ieltsTaskLinks(day){
+  const t=(day.tag||'').toLowerCase(), out=[];
+  if(t.includes('listening'))out.push(['listening','🎧 Mở Listening']);
+  if(t.includes('reading'))out.push(['exercises','📖 Mở bài tập Reading']);
+  if(t.includes('writing')||t.includes('speaking'))out.push(['capture','✍️ Ghi sản phẩm / lỗi']);
+  if(!out.length)out.push(['review','↯ Ôn phần yếu']);
+  return out;
+}
+function renderIELTS(){
+  if(!window.ieltsRoadmap)return;
+  const phase=$('ieltsPhase')?.value||'ielts';
+  const isIELTS=phase==='ielts', days=ieltsPlan().days;
+  $('ieltsProgressTitle').textContent=isIELTS?'IELTS cơ bản · 48 ngày':'Nền tảng · 100 ngày';
+  const total=isIELTS?48:100;
+  const done=isIELTS?days.filter(x=>ieltsState[ieltsKey(phase,x.d)]?.done).length:Object.keys(ieltsState).filter(k=>k.startsWith('foundation-')&&ieltsState[k]?.done).length;
+  const pct=Math.round(done/total*100);
+  $('ieltsProgressCount').textContent=`${done}/${total}`;$('ieltsProgressPercent').textContent=`${pct}%`;$('ieltsProgressBar').style.width=`${pct}%`;
+  if(isIELTS){
+    const current=Number(ieltsState.selectedDay)||ieltsTodayDay('ielts');
+    $('ieltsDayBadge').textContent=`Day ${current}`;
+    $('ieltsDayList').innerHTML=days.map(x=>{const st=ieltsState[ieltsKey('ielts',x.d)]||{};const cls=x.d===current?'selected ':'';return `<button class="ielts-day ${cls}${st.done?'done':''}" data-ielts-day="${x.d}"><span>${x.d}</span><div><b>${esc(x.title)}</b><small>${esc(x.tag)}</small></div>${st.done?'<i>✓</i>':''}</button>`}).join('');
+    renderIELTSDay(current);
+  }else{
+    $('ieltsDayBadge').textContent='4 chặng';
+    $('ieltsDayList').innerHTML=ieltsPlan().foundationStages.map((x,i)=>`<div class="ielts-foundation-stage"><span>${i+1}</span><div><b>${esc(x.range)} · ${esc(x.title)}</b><p>${esc(x.desc)}</p></div></div>`).join('');
+    $('ieltsDayDetail').innerHTML=`<div class="ielts-detail-head"><span class="tag">NỀN TẢNG</span><h3>100 ngày lấy lại gốc</h3><p class="muted">Tài liệu nền tảng nhấn mạnh từ vựng, ngữ pháp, phát âm và các đợt ôn/tổng ôn. Web giữ đúng tinh thần đó và không trộn nó vào 48 ngày IELTS.</p></div><div class="ielts-session"><div><b>Quy trình mỗi ngày</b><ol><li>Học chủ đề + kiến thức mới.</li><li>Đóng tài liệu và tự nhớ lại.</li><li>Luyện bài ngắn.</li><li>Ôn lại những phần đã học trước đó.</li></ol></div><div class="ielts-source-note">Khi nền tảng đủ chắc, chuyển sang <b>IELTS cơ bản · 48 ngày</b> để luyện theo dạng bài.</div></div>`;
+  }
+  renderIELTSReviewQueue();
+}
+function renderIELTSDay(dayNo){
+  const d=ieltsPlan().days.find(x=>x.d===Number(dayNo));if(!d)return;
+  ieltsState.selectedDay=Number(dayNo);saveIELTSState();
+  const st=ieltsState[ieltsKey('ielts',d.d)]||{};
+  const reviewDates=[1,3,8,16].map(n=>addDays(d.d,n));
+  const links=ieltsTaskLinks(d).map(([p,label])=>`<button class="btn btn-sm btn-outline-primary" data-page="${p}">${label}</button>`).join('');
+  $('ieltsDayDetail').innerHTML=`<div class="ielts-detail-head"><div class="d-flex gap-2 flex-wrap"><span class="tag">DAY ${d.d}</span><span class="tag">${esc(d.tag)}</span></div><h3>${esc(d.title)}</h3><p class="muted">Mục tiêu của Day này là tạo ra <b>sản phẩm học tập</b>, không chỉ đọc lý thuyết.</p></div><div class="ielts-task-list">${d.tasks.map((x,i)=>`<label class="ielts-task"><input type="checkbox" data-ielts-task="${i}" ${st.tasks?.[i]?'checked':''}><span>${esc(x)}</span></label>`).join('')}</div><div class="ielts-session-box"><div class="session-step"><b>1 · Học mới</b><span>~30–45 phút</span></div><div class="session-step"><b>2 · Retrieval</b><span>~10–15 phút, đóng tài liệu</span></div><div class="session-step"><b>3 · Luyện</b><span>~30–60 phút</span></div><div class="session-step"><b>4 · Review</b><span>${reviewDates.map(x=>`D+${x}`).join(' · ')}</span></div></div><div class="ielts-links">${links}</div><div class="form-actions"><button id="markIeltsDone" class="btn ${st.done?'btn-success':'btn-primary'}">${st.done?'✓ Đã hoàn thành':'✓ Đánh dấu hoàn thành Day '+d.d}</button><button id="resetIeltsDay" class="btn btn-outline-secondary">↻ Làm lại Day</button></div>`;
+  document.querySelectorAll('[data-ielts-task]').forEach(c=>c.onchange=()=>{const key=ieltsKey('ielts',d.d);ieltsState[key]=ieltsState[key]||{};ieltsState[key].tasks=ieltsState[key].tasks||[];ieltsState[key].tasks[Number(c.dataset.ieltsTask)]=c.checked;saveIELTSState();updateIELTSProgressOnly()});
+  document.querySelectorAll('[data-ielts-day]').forEach(b=>b.onclick=()=>{ieltsState.selectedDay=Number(b.dataset.ieltsDay);saveIELTSState();renderIELTS()});
+  if($('ieltsRecall'))$('ieltsRecall').value=st.recall||'';if($('ieltsSummary'))$('ieltsSummary').value=st.summary||'';if($('ieltsGap'))$('ieltsGap').value=st.gap||'';
+  $('markIeltsDone').onclick=()=>{const key=ieltsKey('ielts',d.d);ieltsState[key]=ieltsState[key]||{};ieltsState[key].done=true;ieltsState[key].completedAt=today();saveIELTSState();renderIELTS();toast(`Day ${d.d} đã được đánh dấu hoàn thành.`)};
+  $('resetIeltsDay').onclick=()=>{delete ieltsState[ieltsKey('ielts',d.d)];saveIELTSState();renderIELTS();toast(`Đã reset Day ${d.d}.`,'error')};
+}
+function addDays(day,n){return `D+${n}`}
+function updateIELTSProgressOnly(){const phase=$('ieltsPhase')?.value||'ielts';const total=phase==='ielts'?48:100;const done=phase==='ielts'?ieltsPlan().days.filter(x=>ieltsState[ieltsKey(phase,x.d)]?.done).length:Object.keys(ieltsState).filter(k=>k.startsWith('foundation-')&&ieltsState[k]?.done).length;const pct=Math.round(done/total*100);if($('ieltsProgressCount'))$('ieltsProgressCount').textContent=`${done}/${total}`;if($('ieltsProgressPercent'))$('ieltsProgressPercent').textContent=`${pct}%`;if($('ieltsProgressBar'))$('ieltsProgressBar').style.width=`${pct}%`}
+function renderIELTSReviewQueue(){
+  const todayDate=new Date();todayDate.setHours(0,0,0,0);const due=[];
+  ieltsPlan().days.forEach(d=>{const st=ieltsState[ieltsKey('ielts',d.d)];if(!st?.done||!st.completedAt)return;const baseDate=new Date(st.completedAt+'T00:00:00');[1,3,8,16].forEach(n=>{const dueDate=new Date(baseDate);dueDate.setDate(dueDate.getDate()+n);if(dueDate<=todayDate)due.push({d,n,dueDate})})});
+  const uniq=[];const seen=new Set();due.sort((a,b)=>a.dueDate-b.dueDate).forEach(x=>{const k=`${x.d}-${x.n}`;if(!seen.has(k)){seen.add(k);uniq.push(x)}});
+  $('ieltsReviewQueue').innerHTML=uniq.length?uniq.slice(0,12).map(x=>{const d=ieltsPlan().days.find(y=>y.d===x.d);return `<div class="review-queue-item"><div><span class="tag">Day ${x.d} · +${x.n} ngày</span><b>${esc(d?.title||'Ôn lại')}</b><small>${esc(d?.tag||'')}</small></div><button class="btn btn-sm btn-outline-primary" data-queue-day="${x.d}">Ôn</button></div>`}).join(''):'<div class="muted">Chưa có mục ôn đến hạn. Hoàn thành Day đầu tiên, web sẽ đưa Day đó trở lại theo các khoảng cách giãn.</div>';
+  document.querySelectorAll('[data-queue-day]').forEach(b=>b.onclick=()=>{ieltsState.selectedDay=Number(b.dataset.queueDay);saveIELTSState();renderIELTS()});
+}
+$('ieltsPhase')?.addEventListener('change',()=>{ieltsState.selectedDay=null;saveIELTSState();renderIELTS()});
+$('ieltsToday')?.addEventListener('click',()=>{const p=$('ieltsPhase').value;if(p==='ielts'){ieltsState.selectedDay=ieltsTodayDay('ielts');saveIELTSState();renderIELTS();$('ieltsDayDetail')?.scrollIntoView({behavior:'smooth',block:'start'})}else{toast('Nền tảng đang hiển thị theo 4 chặng. Học tuần tự từng chặng rồi chuyển sang IELTS cơ bản.')}});
+$('saveIeltsLog')?.addEventListener('click',()=>{const d=Number(ieltsState.selectedDay)||ieltsTodayDay('ielts');const key=ieltsKey('ielts',d);ieltsState[key]=ieltsState[key]||{};ieltsState[key].recall=$('ieltsRecall').value.trim();ieltsState[key].summary=$('ieltsSummary').value.trim();ieltsState[key].gap=$('ieltsGap').value.trim();ieltsState[key].loggedAt=today();saveIELTSState();$('ieltsSaveState').textContent='Đã lưu nhật ký trên thiết bị.';toast(`Đã lưu Retrieval cho Day ${d}.`)});
+$('refreshIeltsReview')?.addEventListener('click',renderIELTSReviewQueue);
