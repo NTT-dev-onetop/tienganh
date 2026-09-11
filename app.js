@@ -6,11 +6,9 @@ const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),p
 const $=id=>document.getElementById(id);let user=null,unsub=null,data={vocab:[],grammar:[],mistakes:[]},reviewQueue=[],reviewIndex=0;
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-function page(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));$(id)?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();if(id==='ielts')renderIELTS()}
-document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false')});
-const mobileMenuToggle=document.getElementById('mobileMenuToggle');
-mobileMenuToggle?.addEventListener('click',()=>{const menu=document.getElementById('mobileMenu');const open=menu?.classList.toggle('open');mobileMenuToggle.setAttribute('aria-expanded',open?'true':'false')});
-document.addEventListener('click',e=>{const menu=document.getElementById('mobileMenu');if(menu?.classList.contains('open')&&!e.target.closest('#mobileMenu')&&!e.target.closest('#mobileMenuToggle')){menu.classList.remove('open');mobileMenuToggle?.setAttribute('aria-expanded','false')}});
+function page(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));$(id)?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();if(id==='ielts'){if(window.DailySession)window.DailySession.render();return}}
+// v23 cleanup: một hệ nav duy nhất; mobile dùng topbar + bottom nav, không còn menu chồng lớp.
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));
 $('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){$('authErr').textContent=e.message;$('authErr').classList.remove('d-none')}};$('logout').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,u=>{user=u;if(u){$('auth').classList.add('d-none');$('app').classList.remove('d-none');$('user').textContent=u.email||'';$('userName').textContent=u.displayName||'Tài khoản';$('avatar').textContent=(u.displayName||u.email||'U').trim().charAt(0).toUpperCase();listen()}else{$('auth').classList.remove('d-none');$('app').classList.add('d-none');if(unsub)unsub()}});
 const base=()=>collection(db,'users',user.uid,'english_notes');
@@ -2164,70 +2162,5 @@ function startListening(){const u=$('listeningUnit')?.value;const i=Number($('li
 $('listeningUnit')?.addEventListener('change',renderListeningTests);$('startListening')?.addEventListener('click',startListening);renderListeningTests();
 
 
-/* ================= IELTS SELF-STUDY ROADMAP ================= */
-const IELTS_STORE='englishNotebook.ieltsRoadmap.v1';
-let ieltsState=loadIELTSState();
-function loadIELTSState(){try{return JSON.parse(localStorage.getItem(IELTS_STORE)||'{}')}catch{return {}}}
-function saveIELTSState(){localStorage.setItem(IELTS_STORE,JSON.stringify(ieltsState))}
-function ieltsKey(phase,day){return `${phase}-${day}`}
-function ieltsPlan(){return window.ieltsRoadmap||{days:[],foundationStages:[]}}
-function ieltsTodayDay(phase){
-  const days=phase==='ielts'?ieltsPlan().days:[];
-  const first=days.find(x=>!ieltsState[ieltsKey(phase,x.d)]?.done);
-  return first?.d||days[days.length-1]?.d||1;
-}
-function ieltsTaskLinks(day){
-  const t=(day.tag||'').toLowerCase(), out=[];
-  if(t.includes('listening'))out.push(['listening','🎧 Mở Listening']);
-  if(t.includes('reading'))out.push(['exercises','📖 Mở bài tập Reading']);
-  if(t.includes('writing')||t.includes('speaking'))out.push(['capture','✍️ Ghi sản phẩm / lỗi']);
-  if(!out.length)out.push(['review','↯ Ôn phần yếu']);
-  return out;
-}
-function renderIELTS(){
-  if(!window.ieltsRoadmap)return;
-  const phase=$('ieltsPhase')?.value||'ielts';
-  const isIELTS=phase==='ielts', days=ieltsPlan().days;
-  $('ieltsProgressTitle').textContent=isIELTS?'IELTS cơ bản · 48 ngày':'Nền tảng · 100 ngày';
-  const total=isIELTS?48:100;
-  const done=isIELTS?days.filter(x=>ieltsState[ieltsKey(phase,x.d)]?.done).length:Object.keys(ieltsState).filter(k=>k.startsWith('foundation-')&&ieltsState[k]?.done).length;
-  const pct=Math.round(done/total*100);
-  $('ieltsProgressCount').textContent=`${done}/${total}`;$('ieltsProgressPercent').textContent=`${pct}%`;$('ieltsProgressBar').style.width=`${pct}%`;
-  if(isIELTS){
-    const current=Number(ieltsState.selectedDay)||ieltsTodayDay('ielts');
-    $('ieltsDayBadge').textContent=`Day ${current}`;
-    $('ieltsDayList').innerHTML=days.map(x=>{const st=ieltsState[ieltsKey('ielts',x.d)]||{};const cls=x.d===current?'selected ':'';return `<button class="ielts-day ${cls}${st.done?'done':''}" data-ielts-day="${x.d}"><span>${x.d}</span><div><b>${esc(x.title)}</b><small>${esc(x.tag)}</small></div>${st.done?'<i>✓</i>':''}</button>`}).join('');
-    renderIELTSDay(current);
-  }else{
-    $('ieltsDayBadge').textContent='4 chặng';
-    $('ieltsDayList').innerHTML=ieltsPlan().foundationStages.map((x,i)=>`<div class="ielts-foundation-stage"><span>${i+1}</span><div><b>${esc(x.range)} · ${esc(x.title)}</b><p>${esc(x.desc)}</p></div></div>`).join('');
-    $('ieltsDayDetail').innerHTML=`<div class="ielts-detail-head"><span class="tag">NỀN TẢNG</span><h3>100 ngày lấy lại gốc</h3><p class="muted">Tài liệu nền tảng nhấn mạnh từ vựng, ngữ pháp, phát âm và các đợt ôn/tổng ôn. Web giữ đúng tinh thần đó và không trộn nó vào 48 ngày IELTS.</p></div><div class="ielts-session"><div><b>Quy trình mỗi ngày</b><ol><li>Học chủ đề + kiến thức mới.</li><li>Đóng tài liệu và tự nhớ lại.</li><li>Luyện bài ngắn.</li><li>Ôn lại những phần đã học trước đó.</li></ol></div><div class="ielts-source-note">Khi nền tảng đủ chắc, chuyển sang <b>IELTS cơ bản · 48 ngày</b> để luyện theo dạng bài.</div></div>`;
-  }
-  renderIELTSReviewQueue();
-}
-function renderIELTSDay(dayNo){
-  const d=ieltsPlan().days.find(x=>x.d===Number(dayNo));if(!d)return;
-  ieltsState.selectedDay=Number(dayNo);saveIELTSState();
-  const st=ieltsState[ieltsKey('ielts',d.d)]||{};
-  const reviewDates=[1,3,8,16].map(n=>addDays(d.d,n));
-  const links=ieltsTaskLinks(d).map(([p,label])=>`<button class="btn btn-sm btn-outline-primary" data-page="${p}">${label}</button>`).join('');
-  $('ieltsDayDetail').innerHTML=`<div class="ielts-detail-head"><div class="d-flex gap-2 flex-wrap"><span class="tag">DAY ${d.d}</span><span class="tag">${esc(d.tag)}</span></div><h3>${esc(d.title)}</h3><p class="muted">Mục tiêu của Day này là tạo ra <b>sản phẩm học tập</b>, không chỉ đọc lý thuyết.</p></div><div class="ielts-task-list">${d.tasks.map((x,i)=>`<label class="ielts-task"><input type="checkbox" data-ielts-task="${i}" ${st.tasks?.[i]?'checked':''}><span>${esc(x)}</span></label>`).join('')}</div><div class="ielts-session-box"><div class="session-step"><b>1 · Học mới</b><span>~30–45 phút</span></div><div class="session-step"><b>2 · Retrieval</b><span>~10–15 phút, đóng tài liệu</span></div><div class="session-step"><b>3 · Luyện</b><span>~30–60 phút</span></div><div class="session-step"><b>4 · Review</b><span>${reviewDates.map(x=>`D+${x}`).join(' · ')}</span></div></div><div class="ielts-links">${links}</div><div class="form-actions"><button id="markIeltsDone" class="btn ${st.done?'btn-success':'btn-primary'}">${st.done?'✓ Đã hoàn thành':'✓ Đánh dấu hoàn thành Day '+d.d}</button><button id="resetIeltsDay" class="btn btn-outline-secondary">↻ Làm lại Day</button></div>`;
-  document.querySelectorAll('[data-ielts-task]').forEach(c=>c.onchange=()=>{const key=ieltsKey('ielts',d.d);ieltsState[key]=ieltsState[key]||{};ieltsState[key].tasks=ieltsState[key].tasks||[];ieltsState[key].tasks[Number(c.dataset.ieltsTask)]=c.checked;saveIELTSState();updateIELTSProgressOnly()});
-  document.querySelectorAll('[data-ielts-day]').forEach(b=>b.onclick=()=>{ieltsState.selectedDay=Number(b.dataset.ieltsDay);saveIELTSState();renderIELTS()});
-  if($('ieltsRecall'))$('ieltsRecall').value=st.recall||'';if($('ieltsSummary'))$('ieltsSummary').value=st.summary||'';if($('ieltsGap'))$('ieltsGap').value=st.gap||'';
-  $('markIeltsDone').onclick=()=>{const key=ieltsKey('ielts',d.d);ieltsState[key]=ieltsState[key]||{};ieltsState[key].done=true;ieltsState[key].completedAt=today();saveIELTSState();renderIELTS();toast(`Day ${d.d} đã được đánh dấu hoàn thành.`)};
-  $('resetIeltsDay').onclick=()=>{delete ieltsState[ieltsKey('ielts',d.d)];saveIELTSState();renderIELTS();toast(`Đã reset Day ${d.d}.`,'error')};
-}
-function addDays(day,n){return `D+${n}`}
-function updateIELTSProgressOnly(){const phase=$('ieltsPhase')?.value||'ielts';const total=phase==='ielts'?48:100;const done=phase==='ielts'?ieltsPlan().days.filter(x=>ieltsState[ieltsKey(phase,x.d)]?.done).length:Object.keys(ieltsState).filter(k=>k.startsWith('foundation-')&&ieltsState[k]?.done).length;const pct=Math.round(done/total*100);if($('ieltsProgressCount'))$('ieltsProgressCount').textContent=`${done}/${total}`;if($('ieltsProgressPercent'))$('ieltsProgressPercent').textContent=`${pct}%`;if($('ieltsProgressBar'))$('ieltsProgressBar').style.width=`${pct}%`}
-function renderIELTSReviewQueue(){
-  const todayDate=new Date();todayDate.setHours(0,0,0,0);const due=[];
-  ieltsPlan().days.forEach(d=>{const st=ieltsState[ieltsKey('ielts',d.d)];if(!st?.done||!st.completedAt)return;const baseDate=new Date(st.completedAt+'T00:00:00');[1,3,8,16].forEach(n=>{const dueDate=new Date(baseDate);dueDate.setDate(dueDate.getDate()+n);if(dueDate<=todayDate)due.push({d,n,dueDate})})});
-  const uniq=[];const seen=new Set();due.sort((a,b)=>a.dueDate-b.dueDate).forEach(x=>{const k=`${x.d}-${x.n}`;if(!seen.has(k)){seen.add(k);uniq.push(x)}});
-  $('ieltsReviewQueue').innerHTML=uniq.length?uniq.slice(0,12).map(x=>{const d=ieltsPlan().days.find(y=>y.d===x.d);return `<div class="review-queue-item"><div><span class="tag">Day ${x.d} · +${x.n} ngày</span><b>${esc(d?.title||'Ôn lại')}</b><small>${esc(d?.tag||'')}</small></div><button class="btn btn-sm btn-outline-primary" data-queue-day="${x.d}">Ôn</button></div>`}).join(''):'<div class="muted">Chưa có mục ôn đến hạn. Hoàn thành Day đầu tiên, web sẽ đưa Day đó trở lại theo các khoảng cách giãn.</div>';
-  document.querySelectorAll('[data-queue-day]').forEach(b=>b.onclick=()=>{ieltsState.selectedDay=Number(b.dataset.queueDay);saveIELTSState();renderIELTS()});
-}
-$('ieltsPhase')?.addEventListener('change',()=>{ieltsState.selectedDay=null;saveIELTSState();renderIELTS()});
-$('ieltsToday')?.addEventListener('click',()=>{const p=$('ieltsPhase').value;if(p==='ielts'){ieltsState.selectedDay=ieltsTodayDay('ielts');saveIELTSState();renderIELTS();$('ieltsDayDetail')?.scrollIntoView({behavior:'smooth',block:'start'})}else{toast('Nền tảng đang hiển thị theo 4 chặng. Học tuần tự từng chặng rồi chuyển sang IELTS cơ bản.')}});
-$('saveIeltsLog')?.addEventListener('click',()=>{const d=Number(ieltsState.selectedDay)||ieltsTodayDay('ielts');const key=ieltsKey('ielts',d);ieltsState[key]=ieltsState[key]||{};ieltsState[key].recall=$('ieltsRecall').value.trim();ieltsState[key].summary=$('ieltsSummary').value.trim();ieltsState[key].gap=$('ieltsGap').value.trim();ieltsState[key].loggedAt=today();saveIELTSState();$('ieltsSaveState').textContent='Đã lưu nhật ký trên thiết bị.';toast(`Đã lưu Retrieval cho Day ${d}.`)});
-$('refreshIeltsReview')?.addEventListener('click',renderIELTSReviewQueue);
+
+// v23 cleanup: toàn bộ IELTS renderer cũ đã loại bỏ; DailySession là renderer duy nhất.

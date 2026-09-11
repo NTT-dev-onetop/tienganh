@@ -33,9 +33,7 @@
     <div class="user-block"><div class="avatar" id="avatar">U</div><div class="user-meta"><strong id="userName">Tài khoản</strong><span id="user">Đang đăng nhập</span></div><button id="logout" class="btn btn-outline-secondary btn-sm" aria-label="Đăng xuất">↪</button></div>
   </div>
 </div></nav>
-<header class="mobile-topbar"><div class="brand"><span class="brand-mark">📘</span>English Notebook</div><button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Mở menu" aria-expanded="false">☰</button><div class="mobile-menu" id="mobileMenu" role="menu">
-  <button data-page="home">⌂ Tổng quan</button><button data-page="capture">＋ Ghi bài</button><button data-page="mistakes">× Câu sai</button><button data-page="vocab">Aa Từ vựng</button><button data-page="grammar">ƒ Cấu trúc</button><button data-page="ielts">★ Lộ trình IELTS</button><button data-page="textbook">▦ Ôn theo Unit</button><button data-page="exercises">✓ Bài tập</button><button data-page="listening">◖ Listening</button><button data-page="review">↯ Ôn nhanh</button>
-</div></header>
+<header class="mobile-topbar"><div class="brand"><span class="brand-mark">📘</span>English Notebook</div></header>
 <nav class="mobile-bottom" aria-label="Điều hướng nhanh"><button data-page="home"><span class="mb-icon">⌂</span>Trang chủ</button><button data-page="capture"><span class="mb-icon">＋</span>Ghi bài</button><button data-page="exercises"><span class="mb-icon">✓</span>Luyện</button><button data-page="mistakes"><span class="mb-icon">×</span>Câu sai</button></nav>
 <main class="container-fluid px-3 px-lg-5 py-4">
 <section id="home" class="page">
@@ -56,14 +54,11 @@
   <div class="home-grid">
     <div class="panel">
       <div class="panel-title"><div><div class="eyebrow">TIẾP TỤC</div><h5>Mở đúng chỗ bạn cần</h5></div></div>
-      <div class="home-action-grid">
-        <button class="home-action" data-page="capture"><div><strong>＋ Ghi bài vừa học</strong><span>Từ mới · cấu trúc · câu sai</span></div><b>→</b></button>
-        <button class="home-action" data-page="mistakes"><div><strong>× Xử lý câu sai</strong><span>Chỉ xem lỗi chưa hiểu</span></div><b>→</b></button>
-        <button class="home-action" data-page="textbook"><div><strong>▦ Ôn theo Unit</strong><span>Từ vựng Global Success 11</span></div><b>→</b></button>
-        <button class="home-action" data-page="listening"><div><strong>◖ Listening</strong><span>Nghe & điền 6 chỗ trống</span></div><b>→</b></button>
-        <button class="home-action" data-page="ielts"><div><strong>★ Lộ trình IELTS</strong><span>Học theo Day + Retrieval + Review</span></div><b>→</b></button>
+      <div class="home-action-grid home-single-action">
+        <button class="home-action home-primary-session" id="homeStartSession"><div><strong>▶ Bắt đầu buổi học hôm nay</strong><span>Web tự chọn bài: học mới → luyện → nhớ lại → tạo sản phẩm → chốt.</span></div><b>→</b></button>
+        <button class="home-action" data-page="ielts"><div><strong>▦ Xem lộ trình</strong><span>Đang học · Sắp tới · Đã xong</span></div><b>→</b></button>
       </div>
-    </div>
+    </div>    </div>
     <div class="panel"><div class="panel-title"><div><div class="eyebrow">NEEDS ATTENTION</div><h5>Hôm nay nên xem gì?</h5></div></div><div id="attention"></div></div>
   </div>
   <div class="panel mt-3"><div class="panel-title"><div><div class="eyebrow">RECENT</div><h5>Mới ghi gần đây</h5></div><button class="btn btn-sm btn-outline-primary" data-page="capture">＋ Thêm</button></div><div id="recent"></div></div>
@@ -103,24 +98,9 @@
 </section>
 
 
+<!-- v23 cleanup: IELTS chỉ có một container; DailySession là renderer duy nhất. -->
 <section id="ielts" class="page d-none">
-  <div class="head">
-    <div><div class="eyebrow">IELTS SELF-STUDY ROADMAP</div><h2>★ Lộ trình IELTS của bạn</h2><p>Web biến hai tài liệu bạn gửi thành một quy trình học: <b>Học mới → Retrieval → Luyện tập → Review giãn cách</b>. Không chỉ tick Day; mỗi ngày phải tạo ra bằng chứng rằng bạn nhớ và làm được.</p></div>
-    <div class="filter-row"><select id="ieltsPhase" class="form-select"><option value="ielts">IELTS cơ bản · 48 ngày</option><option value="foundation">Nền tảng · 100 ngày</option></select><button id="ieltsToday" class="btn btn-primary">▶ Học ngày tiếp theo</button></div>
-  </div>
-  <div class="ielts-method-grid">
-    <div class="panel ielts-method"><span class="method-no">1</span><div><b>Học mới</b><p>Chỉ học đúng trọng tâm của Day, không mở quá nhiều tài liệu.</p></div></div>
-    <div class="panel ielts-method"><span class="method-no">2</span><div><b>Retrieval Practice</b><p>Đóng tài liệu, tự nhớ lại; viết ít nhất 2 điều vừa học và tóm tắt.</p></div></div>
-    <div class="panel ielts-method"><span class="method-no">3</span><div><b>Luyện đúng dạng</b><p>Reading/Listening làm dạng bài; Speaking/Writing phải tạo sản phẩm.</p></div></div>
-    <div class="panel ielts-method"><span class="method-no">4</span><div><b>Distributed Practice</b><p>Ôn lại sau một khoảng cách thay vì dồn một lần. Web tạo lịch ôn tự động theo các khoảng cách ngắn → xa; bạn có thể điều chỉnh khi cần.</p></div></div>
-  </div>
-  <div class="panel ielts-progress-panel"><div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><div><div class="eyebrow">TIẾN ĐỘ</div><h5 id="ieltsProgressTitle">IELTS cơ bản</h5></div><div class="ielts-progress-stat"><b id="ieltsProgressCount">0/48</b><span id="ieltsProgressPercent">0%</span></div></div><div class="ielts-progress"><span id="ieltsProgressBar"></span></div></div>
-  <div class="ielts-layout">
-    <div class="panel"><div class="panel-title"><div><div class="eyebrow">DAY PLAN</div><h5>Chọn ngày</h5></div><span id="ieltsDayBadge" class="badge text-bg-primary"></span></div><div id="ieltsDayList" class="ielts-day-list"></div></div>
-    <div class="panel ielts-detail-panel"><div id="ieltsDayDetail"></div></div>
-  </div>
-  <div class="panel mt-3"><div class="panel-title"><div><div class="eyebrow">RETRIEVAL EXIT TICKET</div><h5>Cuối buổi phải trả lời được</h5></div></div><div class="row g-3"><div class="col-lg-4"><label>1. Ít nhất 2 điều tôi vừa học</label><textarea id="ieltsRecall" class="form-control" rows="5" placeholder="Không mở tài liệu. Tự viết từ trí nhớ..."></textarea></div><div class="col-lg-4"><label>2. Tóm tắt / giải thích lại</label><textarea id="ieltsSummary" class="form-control" rows="5" placeholder="Hãy tưởng tượng bạn đang giảng lại cho người khác trong 5 phút."></textarea></div><div class="col-lg-4"><label>3. Tôi còn yếu ở đâu?</label><textarea id="ieltsGap" class="form-control" rows="5" placeholder="Ví dụ: paraphrase, âm cuối, linking words..."></textarea></div></div><div class="form-actions"><button id="saveIeltsLog" class="btn btn-primary">💾 Lưu nhật ký Day</button><span id="ieltsSaveState" class="muted align-self-center"></span></div></div>
-  <div class="panel mt-3"><div class="panel-title"><div><div class="eyebrow">REVIEW QUEUE</div><h5>Ôn giãn cách hôm nay</h5></div><button id="refreshIeltsReview" class="btn btn-sm btn-outline-primary">↻ Làm mới</button></div><div id="ieltsReviewQueue" class="review-queue-grid"></div></div>
+  <div id="dailySessionApp"></div>
 </section>
 
 <section id="grammar" class="page d-none"><div class="head"><div><div class="eyebrow">GRAMMAR PATTERNS · GLOBAL SUCCESS 11</div><h2>Kho cấu trúc</h2><p>10 Unit của sách được tách riêng. Bên cạnh đó có <b>Chuyên đề</b> từ tài liệu English Course 11 bạn gửi: Verb patterns, Gerund/Infinitive và Sentence Transformation. Mỗi mục có công thức + ví dụ + bẫy dễ sai.</p></div><div class="filter-row"><select id="grammarUnitFilter" class="form-select"><option value="all">Tất cả 10 Unit</option><option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option><option>Unit 5</option><option>Unit 6</option><option>Unit 7</option><option>Unit 8</option><option>Unit 9</option><option>Unit 10</option><option>Chuyên đề</option></select><button class="btn btn-primary" data-page="capture">＋ Ghi cấu trúc</button></div></div><div id="textbookGrammarList" class="grammar-board mb-4"></div><div class="section-label">CẤU TRÚC BẠN TỰ GHI</div><div class="pattern-board" id="grammarList"></div></section>
@@ -132,4 +112,4 @@
 <section id="review" class="page d-none"><div class="head"><div><div class="eyebrow">TARGETED REVIEW</div><h2>Ôn nhanh phần yếu</h2><p>Không phải học lại cả web. Chọn một nhóm và tự kiểm tra trí nhớ.</p></div><span id="reviewProgress" class="badge text-bg-primary"></span></div><div id="reviewEmpty" class="empty d-none"><div>🎉</div><h3>Hiện chưa có mục cần ôn.</h3><p>Hãy ghi từ mới hoặc đánh dấu câu sai sau giờ học.</p><button class="btn btn-primary" data-page="capture">＋ Ghi ngay</button></div><div id="reviewArea" class="review-area d-none"><div class="review-card"><div class="review-type" id="reviewType"></div><div class="review-prompt" id="reviewPrompt"></div><div id="reviewExtra" class="review-extra"></div><div id="reviewAnswer" class="review-answer d-none"></div></div><div class="review-actions"><button id="reveal" class="btn btn-outline-primary btn-lg">👀 Xem đáp án</button><button id="reviewAgain" class="btn btn-outline-danger btn-lg d-none">❌ Chưa nhớ</button><button id="reviewKnown" class="btn btn-success btn-lg d-none">✓ Nhớ rồi</button></div></div></section>
 </main></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="quiz-bank.js"></script><script src="exercise-bank.js"></script><script src="listening-bank.js"></script><script src="vocab-expansion.js"></script><script src="ielts-roadmap.js"></script><script type="module" src="app.js"></script></body></html>
+<script src="quiz-bank.js"></script><script src="exercise-bank.js"></script><script src="listening-bank.js"></script><script src="vocab-expansion.js"></script><script src="ielts-roadmap.js"></script><script src="ielts-lessons.js"></script><script src="daily-session.js"></script><script type="module" src="app.js"></script></body></html>
