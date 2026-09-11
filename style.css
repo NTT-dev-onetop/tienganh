@@ -70,3 +70,31 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
 @media(max-width:600px){.v22-hero{padding:18px}.v22-hero h1{font-size:27px}.v22-hero-actions,.v22-hero-actions .btn{width:100%}.v22-today{padding:17px}.v22-today-meta div{flex:1;min-width:0}.v22-near-days{grid-template-columns:1fr}.v22-stepbar{grid-template-columns:1fr}.v22-options{grid-template-columns:1fr}.v22-card{padding:17px}.v22-card p,.v22-card li{font-size:17px}.v22-mastery{grid-template-columns:1fr}.v22-radar{margin:auto}}
 
 /* v23 cleanup — chỉ còn base v15 + IELTS v22. Mọi class v18/v19/v21 đã xóa. */
+
+
+/* v24 fix: chống navbar fixed che nội dung IELTS và mọi page. */
+main.container-fluid {
+  position: relative !important;
+  z-index: 1 !important;
+  margin-left: var(--sidebar, 248px) !important;
+  width: calc(100% - var(--sidebar, 248px)) !important;
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+  padding-top: 28px !important;
+  padding-bottom: 48px !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+main.container-fluid > .page,
+main.container-fluid > .page > * {
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 991.98px) {
+  main.container-fluid {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 22px 16px 90px !important;
+  }
+}
