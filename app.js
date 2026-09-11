@@ -9,6 +9,46 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function page(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));$(id)?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();if(id==='ielts'){if(window.DailySession)window.DailySession.render();return}}
 // v23 cleanup: một hệ nav duy nhất; mobile dùng topbar + bottom nav, không còn menu chồng lớp.
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));
+
+/* ===== v27 navigation shell ===== */
+(function initSidebar(){
+  const sidebar=document.getElementById('appSidebar');
+  const toggle=document.getElementById('sidebarToggle');
+  const mobileToggle=document.getElementById('mobileNavToggle');
+  const reveal=document.getElementById('sidebarReveal');
+  const scrim=document.getElementById('sidebarScrim');
+  if(!sidebar||!toggle)return;
+  const isMobile=()=>window.matchMedia('(max-width: 991.98px)').matches;
+  const setCollapsed=(collapsed,persist=true)=>{
+    document.body.classList.toggle('sidebar-collapsed',collapsed);
+    sidebar.classList.toggle('is-collapsed',collapsed);
+    toggle.setAttribute('aria-expanded',String(!collapsed));
+    toggle.setAttribute('aria-label',collapsed?'Hiện thanh điều hướng':'Ẩn thanh điều hướng');
+    toggle.title=collapsed?'Hiện thanh điều hướng':'Ẩn thanh điều hướng';
+    toggle.innerHTML=collapsed?'<i class="bi bi-layout-sidebar-inset-reverse"></i>':'<i class="bi bi-layout-sidebar-inset"></i>';
+    if(persist&&!isMobile())localStorage.setItem('englishNotebook.sidebarCollapsed',collapsed?'1':'0');
+  };
+  const closeMobile=()=>{sidebar.classList.remove('is-open');scrim?.classList.remove('is-visible');mobileToggle?.setAttribute('aria-expanded','false');};
+  const openMobile=()=>{sidebar.classList.add('is-open');scrim?.classList.add('is-visible');mobileToggle?.setAttribute('aria-expanded','true');};
+  const sync=()=>{
+    if(isMobile()){
+      document.body.classList.remove('sidebar-collapsed');
+      sidebar.classList.remove('is-collapsed');
+      closeMobile();
+    }else{
+      closeMobile();
+      setCollapsed(localStorage.getItem('englishNotebook.sidebarCollapsed')==='1',false);
+    }
+  };
+  toggle.addEventListener('click',()=>{ if(isMobile()) closeMobile(); else setCollapsed(true); });
+  reveal?.addEventListener('click',()=>{ if(!isMobile()) setCollapsed(false); });
+  mobileToggle?.addEventListener('click',()=>sidebar.classList.contains('is-open')?closeMobile():openMobile());
+  scrim?.addEventListener('click',closeMobile);
+  sidebar.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click',()=>{if(isMobile())closeMobile();}));
+  window.addEventListener('resize',sync);
+  sync();
+})();
+
 $('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){$('authErr').textContent=e.message;$('authErr').classList.remove('d-none')}};$('logout').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,u=>{user=u;if(u){$('auth').classList.add('d-none');$('app').classList.remove('d-none');$('user').textContent=u.email||'';$('userName').textContent=u.displayName||'Tài khoản';$('avatar').textContent=(u.displayName||u.email||'U').trim().charAt(0).toUpperCase();listen()}else{$('auth').classList.remove('d-none');$('app').classList.add('d-none');if(unsub)unsub()}});
 const base=()=>collection(db,'users',user.uid,'english_notes');
