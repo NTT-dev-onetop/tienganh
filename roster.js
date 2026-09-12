@@ -26,7 +26,7 @@ async function readRoster(){
   const snap=await getDoc(doc(db,'config','roster'));
   if(!snap.exists())return DEFAULT_ROSTER;
   const students=snap.data()?.students;
-  return Array.isArray(students)&&students.length?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER;
+  return Array.isArray(students)&&students.length?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
 }
 export async function initRosterGate(user,role){
   if(!user||!user.uid||role==='admin')return true;
