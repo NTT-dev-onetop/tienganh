@@ -164,3 +164,86 @@ main.container-fluid{padding:14px 14px calc(28px + env(safe-area-inset-bottom))!
 /* V18 · keyboard đang mở: nhường toàn bộ màn hình cho input */
 .mobile-bottom.keyboard-open{transform:translateY(110%);pointer-events:none}.mobile-bottom{transition:transform var(--v18-micro) var(--v18-ease)}
 @media (min-width:767.98px){body{padding-bottom:0}main.container-fluid{padding-bottom:48px!important}.form-actions{display:flex;grid-template-columns:none}.form-actions .btn{width:auto}.mistake-actions .btn,.card-actions .btn{min-width:0}.mobile-bottom{display:none!important}}
+
+/* ===== V18.1 · NAV TOUCH UX ===== */
+.mobile-menu{
+  max-height:calc(100dvh - 88px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:10px;
+  gap:6px;
+  touch-action:pan-y;
+}
+.mobile-menu button,
+.mobile-menu [data-page],
+.more-grid button,
+.more-grid [data-page]{
+  min-height:52px;
+  width:100%;
+  padding:13px 14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid transparent;
+  border-radius:13px;
+  font-size:14px;
+  line-height:1.35;
+  font-weight:700;
+  text-align:left;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.mobile-menu button:active,
+.more-grid button:active{
+  transform:scale(.985);
+  background:var(--primary-soft);
+}
+.mobile-menu button:focus-visible,
+.more-grid button:focus-visible,
+.more-sheet button:focus-visible{
+  outline:3px solid rgba(49,94,251,.4);
+  outline-offset:2px;
+}
+.mobile-menu .active,
+.more-grid button.active{
+  background:var(--primary-soft);
+  color:var(--primary);
+  border-left:4px solid var(--primary);
+  padding-left:11px;
+}
+.mobile-menu-btn,
+.more-sheet-close{touch-action:manipulation}
+
+/* Sidebar desktop/tablet: toàn bộ hàng là vùng chạm */
+.nav-link{
+  min-height:48px;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-link:active{transform:scale(.99)}
+
+/* Tablet: giữ icon nhưng tăng vùng chạm */
+@media (min-width:767.98px) and (max-width:1399.98px){
+  .nav-link{
+    width:56px;
+    min-height:52px;
+    margin-inline:auto;
+    border-radius:14px;
+  }
+  .nav-icon{font-size:20px}
+}
+
+/* More sheet: item lớn, không cần chạm đúng chữ */
+.more-grid{gap:10px}
+.more-grid button{min-height:60px}
+
+@media (max-width:575.98px){
+  .mobile-menu{left:8px;right:8px;top:62px;border-radius:16px}
+  .more-grid{grid-template-columns:1fr}
+  .more-grid button{min-height:56px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .mobile-menu button:active,.more-grid button:active,.nav-link:active{transform:none}
+}
