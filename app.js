@@ -27,19 +27,18 @@ async function renderProfile(){
     const p=snap.exists()?snap.data():{};
     const name=String(p.name||user.displayName||'Tài khoản');
     const role=String(p.role||getCurrentRole()||'student');
-    const displayRole=String(p.displayRole||'');
     const el=id=>$(id);
     if(el('profileDisplayName'))el('profileDisplayName').textContent=name;
     if(el('profileEmail'))el('profileEmail').textContent=user.email||'';
     if(el('profileAvatar'))el('profileAvatar').textContent=name.trim().charAt(0).toUpperCase()||'U';
-    if(el('profileRole')){el('profileRole').textContent=displayRole==='teacher'?'👨‍🏫 Giáo viên':role==='admin'?'👑 Admin':role==='teacher'?'👨‍🏫 Giáo viên':'🎓 Học sinh';el('profileRole').className=`tag ${role!=='student'?'tag-published':''}`}
+    if(el('profileRole')){el('profileRole').textContent=role==='admin'?'👑 Admin':role==='teacher'?'👨‍🏫 Giáo viên':'🎓 Học sinh';el('profileRole').className=`tag ${role!=='student'?'tag-published':''}`}
     if(el('profileStreak'))el('profileStreak').textContent=Number(p.streak||0);
     if(el('profileBonus'))el('profileBonus').textContent=Number(p.totalBonusPoints||0);
     if(el('profileSets'))el('profileSets').textContent=Number(p.totalSetsCompleted||0);
     if(el('profileLast'))el('profileLast').textContent=String(p.lastCompletedDate||'—');
     if(el('profileNameInfo'))el('profileNameInfo').textContent=name;
     if(el('profileClass'))el('profileClass').textContent=String(p.className||'11T1');
-    if(el('profileRoleText'))el('profileRoleText').textContent=displayRole==='teacher'?'teacher':role;
+    if(el('profileRoleText'))el('profileRoleText').textContent=role;
     if(el('profileEmailInfo'))el('profileEmailInfo').textContent=user.email||'';
   }catch(e){console.error('Không tải được hồ sơ:',e);toast('Không tải được hồ sơ.','error')}
 }
