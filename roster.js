@@ -52,7 +52,7 @@ export async function initRosterGate(user,role){
     const students=await readRoster();
     if(!students.length)throw new Error('Thầy chưa cấu hình danh sách lớp. Vui lòng báo thầy tạo config/roster.');
     const modal=getModal(),select=modal.querySelector('#rosterSelect'),err=modal.querySelector('#rosterErr'),save=modal.querySelector('#rosterSave');
-    select.innerHTML='<option value="">-- Chọn tên của bạn --</option>'+students.map(x=>`<option value="${escLocal(x.id)}">${escLocal(x.name)}</option>`).join('')+'<option value="__teacher_dat__">👨‍🏫 Thầy Đạt</option>';
+    select.innerHTML='<option value="">-- Chọn tên của bạn --</option>'+students.map(x=>`<option value="${escLocal(x.id)}">${escLocal(x.name)}</option>`).join('');
     err.classList.add('d-none');save.disabled=false;
     const bs=window.bootstrap?.Modal?.getOrCreateInstance(modal,{backdrop:'static',keyboard:false});
     if(!bs)throw new Error('Bootstrap Modal chưa sẵn sàng.');
@@ -61,22 +61,6 @@ export async function initRosterGate(user,role){
       const rosterId=String(select.value||'').trim();if(!rosterId){err.textContent='Hãy chọn tên.';err.classList.remove('d-none');return}
       save.disabled=true;
       try{
-        if(rosterId==='__teacher_dat__'){
-          // Teacher/Admin bootstrap: bind the signed-in Google account to the special
-          // teacher identity. Firestore rules enforce the same marker server-side.
-          const teacherEmail=String(user.email||'').trim().toLowerCase();
-          if(!teacherEmail)throw new Error('Không lấy được Gmail Google.');
-          await setDoc(doc(db,'users',user.uid),{
-            rosterId:'__teacher_dat__',name:'Thầy Đạt',className:'Giáo viên',role:'admin',
-            teacherLabel:'Thầy Đạt',displayRole:'teacher',teacherEmail
-          },{merge:true});
-          // Persist the teacher Gmail separately for display/identity. Backend role remains admin.
-          const teachersRef=doc(db,'config','teachers');const teachersSnap=await getDoc(teachersRef);
-          const currentEmails=teachersSnap.exists()&&Array.isArray(teachersSnap.data()?.emails)?teachersSnap.data().emails:[];
-          const emails=Array.from(new Set([...currentEmails,teacherEmail].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean)));
-          await setDoc(teachersRef,{emails},{merge:true});
-          bs.hide();resolve();return;
-        }
         const target=students.find(x=>String(x.id)===rosterId);if(!target)throw new Error('Tên không còn trong roster.');
         const mappingRef=doc(db,'users_by_roster',rosterId);const mapping=await getDoc(mappingRef);
         if(mapping.exists()&&mapping.data()?.uid!==user.uid)throw new Error('Tên này đã được đăng ký. Liên hệ thầy.');
@@ -88,4 +72,4 @@ export async function initRosterGate(user,role){
     return true;
   }catch(error){console.error('Lỗi roster:',error);toastGlobal(error.message||'Không thể kiểm tra roster.','error');return false}
 }
-function toastGlobal(msg,type){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';el.className='toast-note';document.body.appendChild(el)}el.className=`toast-note ${type}`;el.textContent=String(msg??'');clearTimeout(window.__toast);requestAnimationFrame(()=>el.classList.add('show'));window.__toast=setTimeout(()=>el.classList.remove('show'),3500)}
+function toastGlobal(msg,type){return window.appToast?window.appToast(msg,type):undefined}

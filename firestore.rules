@@ -7,7 +7,7 @@ service cloud.firestore {
     function adminConfigExists() { return exists(/databases/$(database)/documents/config/admins); }
     function adminConfig() { return get(/databases/$(database)/documents/config/admins); }
     function isAdmin() {
-      return signedIn() && (bootstrapAdmin() || (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails) || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+      return signedIn() && (bootstrapAdmin() || (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails));
     }
     function sameUser(uid) { return signedIn() && request.auth.uid == uid; }
     function validRole(role) { return role == 'admin' || role == 'teacher' || role == 'student'; }
@@ -19,9 +19,9 @@ service cloud.firestore {
 
     match /config/admins {
       allow read: if signedIn();
-      allow create: if bootstrapAdmin() || (signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' && request.resource.data.emails is list && email() in request.resource.data.emails);
-      allow update: if isAdmin() || (signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' && request.resource.data.emails is list && email() in request.resource.data.emails);
-      allow delete: if isAdmin();
+      allow create, update: if owner() && request.resource.data.emails is list;
+
+      allow delete: if owner();
     }
 
     match /config/teachers {
@@ -43,11 +43,7 @@ service cloud.firestore {
         && validRole(request.resource.data.role)
         && (
           request.resource.data.role == 'student'
-          || (request.resource.data.role == 'admin' && (isAdmin() || (
-              request.resource.data.rosterId == '__teacher_dat__'
-              && request.resource.data.name == 'Thầy Đạt'
-              && request.resource.data.teacherEmail == email()
-            )))
+          || (request.resource.data.role == 'admin' && isAdmin())
           || (request.resource.data.role == 'teacher' && isAdmin())
         );
       allow update: if (
@@ -57,16 +53,7 @@ service cloud.firestore {
         ) || (
           sameUser(uid)
           && request.resource.data.email == resource.data.email
-          && (
-            request.resource.data.role == resource.data.role
-            || (request.resource.data.role == 'admin' && (isAdmin() || (
-                request.resource.data.rosterId == '__teacher_dat__'
-                && request.resource.data.name == 'Thầy Đạt'
-                && request.resource.data.teacherEmail == email()
-              )))
-            || (request.resource.data.role == 'teacher' && isTeacher())
-            || request.resource.data.role == 'student'
-          )
+          && request.resource.data.role == resource.data.role
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail',
             'streak','lastCompletedDate','totalSetsCompleted','totalBonusPoints'
@@ -115,7 +102,9 @@ service cloud.firestore {
         && request.resource.data.score >= 0
         && request.resource.data.score <= 20
         && request.resource.data.passed == (request.resource.data.score >= 15)
-        && request.resource.data.bonusPoints == (request.resource.data.passed ? 2 : 0)
+        && request.resource.data.bonusPoints is int
+        && request.resource.data.bonusPoints >= 0
+        && request.resource.data.bonusPoints <= 2
         && request.resource.data.date is string
         && request.resource.data.signature is string
         && request.resource.data.signature.size() > 0;

@@ -678,3 +678,28 @@ html[data-theme="dark"] .cms-tabs{background:#070b13!important}
 html[data-theme="dark"] .cms-tab{background:#171d29!important;color:#f3f4f6!important;border-color:#344054!important}
 html[data-theme="dark"] .cms-tab:hover{background:#243049!important;color:#fff!important}
 html[data-theme="dark"] .cms-tab.active{background:#fff!important;color:#111827!important;border-color:#fff!important}
+
+
+/* ===== QA FINAL PATCH 18.7.3 ===== */
+/* Light mode must never inherit the old black CMS strip. */
+html[data-theme="light"] .cms-tabs, html:not([data-theme]) .cms-tabs{background:#fff!important;border:1px solid var(--border);box-shadow:0 8px 24px rgba(16,24,40,.08);}
+html[data-theme="light"] .cms-tab, html:not([data-theme]) .cms-tab{background:#f8fafc!important;color:#1f2937!important;border-color:#d8dee8!important;}
+html[data-theme="light"] .cms-tab:hover, html:not([data-theme]) .cms-tab:hover{background:#eef4ff!important;color:#1d4ed8!important;}
+html[data-theme="light"] .cms-tab.active, html:not([data-theme]) .cms-tab.active{background:#111827!important;color:#fff!important;border-color:#111827!important;}
+.cms-tabs{position:relative!important;top:auto!important;margin-bottom:20px!important;}
+.cms-pane{position:relative;scroll-margin-top:20px;}
+#review{padding-bottom:110px;}
+@media(min-width:768px){#review{padding-bottom:40px;}}
+.hero h2{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;}
+.tag{min-height:0!important;line-height:1.35;}
+.toast-note[role="status"]{pointer-events:auto;}
+@media(max-width:767.98px){#review{padding-bottom:130px}.cms-tabs{max-width:100%;overflow-x:auto;flex-wrap:nowrap!important;position:relative!important;top:auto!important;}}
+
+.daily-answer-review{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--surface-2,#f9fafc)}
+.daily-answer-review summary{cursor:pointer;color:var(--ink)}
+.daily-review-list{display:grid;gap:8px}
+.daily-review-row{display:grid;grid-template-columns:70px 1fr 1fr;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card-bg,#fff);font-size:14px}
+.daily-review-row.is-wrong{border-left:4px solid #dc3545}.daily-review-row.is-correct{border-left:4px solid #198754}
+@media(max-width:650px){.daily-review-row{grid-template-columns:1fr;gap:4px}}
+html[data-theme="dark"] .daily-answer-review{background:var(--surface-2);color:var(--ink)}
+html[data-theme="dark"] .daily-review-row{background:var(--card-bg);color:var(--ink);border-color:var(--border)}
