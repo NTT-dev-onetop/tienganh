@@ -570,3 +570,111 @@ html[data-theme="dark"] .btn-outline-secondary{color:#d1d5db!important;border-co
 html[data-theme="dark"] hr{border-color:var(--border);opacity:1}
 html[data-theme="dark"] .table{--bs-table-bg:var(--card-bg);--bs-table-color:var(--ink);--bs-table-border-color:var(--border)}
 html[data-theme="dark"] .table thead th{background:var(--table-head);color:var(--ink)}
+
+/* ===== V18.7.2 FINAL · LIGHT/DARK + REVIEW CLEARANCE ===== */
+/* Keep the two themes independent: no dark-only text/background rules leak into light mode. */
+:root{
+  --nav-bg:#fff;
+  --card-bg:#fff;
+  --input-bg:#fff;
+  --table-head:#f8fafc;
+  --line:#e4e7ec;
+}
+html[data-theme="light"], html:not([data-theme]){
+  color-scheme:light;
+  --bg:#f6f7fb;
+  --surface:#fff;
+  --surface-2:#f9fafc;
+  --ink:#111827;
+  --muted:#667085;
+  --border:#e4e7ec;
+  --line:#e4e7ec;
+  --nav-bg:#fff;
+  --card-bg:#fff;
+  --input-bg:#fff;
+  --table-head:#f8fafc;
+}
+
+/* Light mode: make every CMS/import block readable even when an old rule used white text. */
+html[data-theme="light"] .cms-pane,
+html:not([data-theme]) .cms-pane{color:var(--ink)}
+html[data-theme="light"] .cms-pane .panel,
+html:not([data-theme]) .cms-pane .panel,
+html[data-theme="light"] .cms-form,
+html:not([data-theme]) .cms-form,
+html[data-theme="light"] .teacher-import-card,
+html:not([data-theme]) .teacher-import-card,
+html[data-theme="light"] .daily-word-import,
+html:not([data-theme]) .daily-word-import,
+html[data-theme="light"] .question-bank-toolbar,
+html:not([data-theme]) .question-bank-toolbar{background:#fff;color:var(--ink);border-color:var(--border)}
+html[data-theme="light"] .cms-item,
+html:not([data-theme]) .cms-item,
+html[data-theme="light"] .question-picker,
+html:not([data-theme]) .question-picker,
+html[data-theme="light"] .word-preview-list article,
+html:not([data-theme]) .word-preview-list article{background:#fff;color:var(--ink);border-color:var(--border)}
+html[data-theme="light"] .word-template-box,
+html:not([data-theme]) .word-template-box{background:#f8fafc;color:var(--ink);border-color:var(--border)}
+html[data-theme="light"] .word-template-text,
+html:not([data-theme]) .word-template-text{background:#fff;color:#344054;border-color:#cbd5e1}
+html[data-theme="light"] .word-opt,
+html:not([data-theme]) .word-opt{background:#f2f4f7;color:#475467}
+
+/* CMS tabs: stable layout, never sit on top of the pane content. */
+.cms-tabs{
+  position:relative!important;
+  top:auto!important;
+  z-index:2;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:stretch;
+  margin:0 0 16px!important;
+  padding:10px!important;
+  background:#000!important;
+  border-radius:14px;
+  overflow-x:auto;
+  scrollbar-width:thin;
+}
+.cms-tab{flex:0 0 auto;white-space:nowrap;min-height:44px}
+.cms-tab.active{background:#fff!important;color:#111827!important}
+
+/* The review page has its own content. Do not let sticky CMS/mobile navigation cover it. */
+#review{position:relative;scroll-margin-top:24px}
+#review .review-area{position:relative;z-index:1}
+#review .review-card{position:relative;z-index:1}
+html{scroll-padding-top:24px}
+
+/* Tablet/desktop: reserve the actual sidebar width and prevent centered pages from drifting left. */
+@media (min-width:992px) and (max-width:1279.98px){
+  .nav{width:72px!important;left:0!important}
+  main.container-fluid{
+    margin-left:72px!important;
+    width:calc(100% - 72px)!important;
+    max-width:none!important;
+    box-sizing:border-box;
+    padding-left:28px!important;
+    padding-right:28px!important;
+    overflow-x:clip;
+  }
+  main.container-fluid > .page{width:100%;max-width:none!important;margin-left:0;margin-right:0}
+}
+@media (min-width:1280px){
+  main.container-fluid{box-sizing:border-box;overflow-x:clip}
+  main.container-fluid > .page{width:100%;box-sizing:border-box}
+}
+
+/* Mobile: CMS tabs remain horizontally scrollable; the content starts below them. */
+@media (max-width:767.98px){
+  .cms-tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;margin-bottom:18px!important}
+  .cms-tab{flex:0 0 auto}
+  #review{padding-top:4px}
+  #review .head{margin-top:0}
+}
+
+/* Dark mode final values for the same components. */
+html[data-theme="dark"] .cms-tabs{background:#070b13!important}
+html[data-theme="dark"] .cms-tab{background:#171d29!important;color:#f3f4f6!important;border-color:#344054!important}
+html[data-theme="dark"] .cms-tab:hover{background:#243049!important;color:#fff!important}
+html[data-theme="dark"] .cms-tab.active{background:#fff!important;color:#111827!important;border-color:#fff!important}
