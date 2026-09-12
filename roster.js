@@ -29,11 +29,21 @@ async function readRoster(){
   return Array.isArray(students)&&students.length?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
 }
 export async function initRosterGate(user,role){
-  if(!user||!user.uid||role==='admin')return true;
+  if(!user||!user.uid)return true;
   try{
     const userSnap=await getDoc(doc(db,'users',user.uid));
     if(!userSnap.exists())throw new Error('Không tìm thấy hồ sơ người dùng.');
     const profile=userSnap.data()||{};
+    const ownerEmail='icloud07072010@gmail.com';
+    if(String(user.email||'').trim().toLowerCase()===ownerEmail){
+      const mappingRef=doc(db,'users_by_roster','s45');
+      const mapping=await getDoc(mappingRef);
+      if(!mapping.exists()||mapping.data()?.uid===user.uid){
+        await setDoc(mappingRef,{uid:user.uid,email:ownerEmail,name:'Nguyễn Trung Trực',rosterId:'s45'},{merge:true});
+        await setDoc(doc(db,'users',user.uid),{rosterId:'s45',name:'Nguyễn Trung Trực',className:'11T1',role:'admin'},{merge:true});
+        return true;
+      }
+    }
     if(profile.rosterId){
       const mapping=await getDoc(doc(db,'users_by_roster',String(profile.rosterId)));
       if(mapping.exists()&&mapping.data()?.uid===user.uid)return true;
@@ -58,14 +68,13 @@ export async function initRosterGate(user,role){
           if(!teacherEmail)throw new Error('Không lấy được Gmail Google.');
           await setDoc(doc(db,'users',user.uid),{
             rosterId:'__teacher_dat__',name:'Thầy Đạt',className:'Giáo viên',role:'admin',
-            teacherLabel:'Thầy Đạt',teacherEmail
+            teacherLabel:'Thầy Đạt',displayRole:'teacher',teacherEmail
           },{merge:true});
-          // Persist the Gmail in config/admins so later logins are recognized
-          // before the roster gate is shown.
-          const adminsRef=doc(db,'config','admins');const adminsSnap=await getDoc(adminsRef);
-          const currentEmails=adminsSnap.exists()&&Array.isArray(adminsSnap.data()?.emails)?adminsSnap.data().emails:[];
+          // Persist the teacher Gmail separately for display/identity. Backend role remains admin.
+          const teachersRef=doc(db,'config','teachers');const teachersSnap=await getDoc(teachersRef);
+          const currentEmails=teachersSnap.exists()&&Array.isArray(teachersSnap.data()?.emails)?teachersSnap.data().emails:[];
           const emails=Array.from(new Set([...currentEmails,teacherEmail].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean)));
-          await setDoc(adminsRef,{emails},{merge:true});
+          await setDoc(teachersRef,{emails},{merge:true});
           bs.hide();resolve();return;
         }
         const target=students.find(x=>String(x.id)===rosterId);if(!target)throw new Error('Tên không còn trong roster.');
