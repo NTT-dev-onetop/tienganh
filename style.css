@@ -402,3 +402,14 @@ main.container-fluid{padding:14px 14px calc(28px + env(safe-area-inset-bottom))!
   .question-bank-toolbar .d-flex{width:100%}
   .question-bank-toolbar .d-flex .btn{flex:1 1 calc(50% - 8px)}
 }
+
+/* ===== V18.6 · DAILY SET WORD POOL + RANDOM 20 ===== */
+.daily-word-import{border:1px solid #dfe5ee;border-radius:18px;padding:18px;background:#fff}
+.daily-word-import .word-template-text{max-height:230px;overflow:auto}
+.daily-word-import .form-actions{display:flex;gap:10px;flex-wrap:wrap}
+.daily-word-import .form-actions .btn{min-height:48px}
+.daily-word-import .word-import-preview{max-height:430px;overflow:auto}
+@media (min-width:768px){
+  .daily-word-import{padding:22px}
+  .daily-word-import .form-actions .btn{min-width:190px}
+}
