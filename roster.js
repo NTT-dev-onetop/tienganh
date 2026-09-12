@@ -2,6 +2,18 @@ import{doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/10.12.5/firebas
 import{db}from"./firebase-services.js";
 
 const escLocal=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+
+const DEFAULT_ROSTER=[
+'Trần Diễm Linh Giang','Võ Hồ Minh Hằng','Nguyễn Anh Khôi','Huỳnh Nguyễn Ly Lam','Nguyễn Thị Ngọc Mỹ',
+'Lê Bảo Ngọc','Phạm Minh Triết','Phan Trần Huỳnh Hương','Võ Mai Khánh','Nguyễn Trần Thùy Ngân',
+'Nguyễn Thanh Sang','Phạm Nhật Trường','Nguyễn Dương Gia Nghi','Nguyễn Phúc Thịnh','Lê Nguyễn Trung Trực',
+'Nguyễn Ngọc Bích Anh','Nguyễn Thùy Anh','Lê Ngọc Quốc Bảo','Huỳnh Lê Minh Đạt','Lê Minh Đạt',
+'Lê Ngọc Bảo Hân','Trương Thị Kim Hân','Trần Huy Hoàng','Nguyễn Tuấn Huy','Nguyễn Đăng Khoa',
+'Lê Nguyễn Hoàng Nam','Nguyễn Khánh Ngọc','Nguyễn Lê Hồng Ngọc','Nguyễn Vũ Bảo Ngọc','Bùi Ngọc An Nhi',
+'Dương Ngọc Tâm Như','Nguyễn Tấn Phát','Trần Minh Phi','Nguyễn Ngọc Bích Phương','Phạm Hà Mai Quỳnh',
+'Nguyễn Bùi Phúc Trí','Lê Nhã Thanh','Nguyễn Khánh Thi','Phạm Hoàng Thiên','Trần Thiện Tín',
+'Phạm Ngọc Bảo Trân','Vĩnh Huỳnh Diễm Trinh','Lê Quốc Trọng','Võ Hoàng Trọng','Nguyễn Trung Trực'
+].map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
 let modalEl=null;
 function getModal(){
   if(modalEl)return modalEl;
@@ -12,9 +24,9 @@ function getModal(){
 }
 async function readRoster(){
   const snap=await getDoc(doc(db,'config','roster'));
-  if(!snap.exists())return[];
+  if(!snap.exists())return DEFAULT_ROSTER;
   const students=snap.data()?.students;
-  return Array.isArray(students)?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):[];
+  return Array.isArray(students)&&students.length?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER;
 }
 export async function initRosterGate(user,role){
   if(!user||!user.uid||role==='admin')return true;
