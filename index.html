@@ -34,7 +34,8 @@
 <header class="mobile-topbar"><div class="brand"><span class="brand-mark">📘</span>English Notebook</div><button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Mở menu" aria-expanded="false">☰</button><div class="mobile-menu" id="mobileMenu" role="menu">
   <button data-page="home">⌂ Tổng quan</button><button data-page="capture">＋ Ghi bài</button><button data-page="mistakes">× Câu sai</button><button data-page="vocab">Aa Từ vựng</button><button data-page="grammar">ƒ Cấu trúc</button><button data-page="knowledge">📚 Kiến thức giáo viên</button><button data-page="textbook">▦ Ôn theo Unit</button><button data-page="exercises">✓ Bài tập</button><button data-page="listening">◖ Listening</button><button data-page="review">↯ Ôn nhanh</button><button data-page="profile">👤 Hồ sơ</button><button data-page="daily">🎯 Daily Set</button><button data-page="admin" data-admin-nav class="d-none">⚙ Dashboard</button>
 </div></header>
-<nav class="mobile-bottom" aria-label="Điều hướng nhanh"><button data-page="home"><span class="mb-icon">⌂</span>Trang chủ</button><button data-page="capture"><span class="mb-icon">＋</span>Ghi bài</button><button data-page="exercises"><span class="mb-icon">✓</span>Luyện</button><button data-page="mistakes"><span class="mb-icon">×</span>Câu sai</button><button data-page="daily"><span class="mb-icon">🎯</span>Daily</button></nav>
+<nav class="mobile-bottom" aria-label="Điều hướng nhanh"><button data-page="home"><span class="mb-icon">⌂</span>Trang chủ</button><button data-page="daily"><span class="mb-icon">🎯</span>Daily</button><button data-page="exercises"><span class="mb-icon">✓</span>Luyện</button><button data-page="mistakes"><span class="mb-icon">×</span>Câu sai</button><button class="mobile-more-trigger" id="mobileMoreTrigger" type="button" aria-controls="moreSheet" aria-expanded="false"><span class="mb-icon">•••</span>More</button></nav>
+<div class="more-sheet" id="moreSheet" aria-hidden="true"><div class="more-handle" aria-hidden="true"></div><div class="more-sheet-head"><strong>📚 Tất cả mục học</strong><button class="more-sheet-close" id="moreSheetClose" type="button" aria-label="Đóng menu">×</button></div><div class="more-grid"><button data-page="capture">＋ Ghi bài</button><button data-page="vocab">Aa Từ vựng</button><button data-page="grammar">ƒ Cấu trúc</button><button data-page="knowledge">📚 Kiến thức giáo viên</button><button data-page="textbook">▦ Ôn theo Unit</button><button data-page="listening">◖ Listening</button><button data-page="review">↯ Ôn nhanh</button><button data-page="profile">👤 Hồ sơ</button><button data-page="admin" data-admin-nav class="d-none">⚙ Dashboard</button></div></div><div class="more-backdrop" id="moreBackdrop"></div>
 <main class="container-fluid px-3 px-lg-5 py-4">
 <section id="home" class="page">
   <div class="hero">
@@ -112,4 +113,45 @@
 <section id="review" class="page d-none"><div class="head"><div><div class="eyebrow">TARGETED REVIEW</div><h2>Ôn nhanh phần yếu</h2><p>Không phải học lại cả web. Chọn một nhóm và tự kiểm tra trí nhớ.</p></div><span id="reviewProgress" class="badge text-bg-primary"></span></div><div id="reviewEmpty" class="empty d-none"><div>🎉</div><h3>Hiện chưa có mục cần ôn.</h3><p>Hãy ghi từ mới hoặc đánh dấu câu sai sau giờ học.</p><button class="btn btn-primary" data-page="capture">＋ Ghi ngay</button></div><div id="reviewArea" class="review-area d-none"><div class="review-card"><div class="review-type" id="reviewType"></div><div class="review-prompt" id="reviewPrompt"></div><div id="reviewExtra" class="review-extra"></div><div id="reviewAnswer" class="review-answer d-none"></div></div><div class="review-actions"><button id="reveal" class="btn btn-outline-primary btn-lg">👀 Xem đáp án</button><button id="reviewAgain" class="btn btn-outline-danger btn-lg d-none">❌ Chưa nhớ</button><button id="reviewKnown" class="btn btn-success btn-lg d-none">✓ Nhớ rồi</button></div></div></section>
 </main></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="quiz-bank.js"></script><script src="exercise-bank.js"></script><script src="listening-bank.js"></script><script src="vocab-expansion.js"></script><script type="module" src="exercises.js"></script><script type="module" src="knowledge.js"></script><script type="module" src="teacher-content.js"></script><script type="module" src="daily-set.js"></script><script type="module" src="admin.js"></script><script type="module" src="app.js"></script></body></html>
+<script src="quiz-bank.js"></script><script src="exercise-bank.js"></script><script src="listening-bank.js"></script><script src="vocab-expansion.js"></script><script type="module" src="exercises.js"></script><script type="module" src="knowledge.js"></script><script type="module" src="teacher-content.js"></script><script type="module" src="daily-set.js"></script><script type="module" src="admin.js"></script><script type="module" src="app.js"></script>
+<script>
+(() => {
+  const sheet=document.getElementById('moreSheet');
+  const trigger=document.getElementById('mobileMoreTrigger');
+  const close=document.getElementById('moreSheetClose');
+  const backdrop=document.getElementById('moreBackdrop');
+  let startY=0;
+  const setOpen=(open)=>{
+    if(!sheet||!trigger)return;
+    sheet.classList.toggle('is-open',open);sheet.setAttribute('aria-hidden',String(!open));trigger.setAttribute('aria-expanded',String(open));document.body.classList.toggle('more-open',open);
+  };
+  trigger?.addEventListener('click',()=>setOpen(true));
+  close?.addEventListener('click',()=>setOpen(false));
+  backdrop?.addEventListener('click',()=>setOpen(false));
+  sheet?.addEventListener('touchstart',e=>{startY=e.touches[0].clientY},{passive:true});
+  sheet?.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-startY>70)setOpen(false)},{passive:true});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')setOpen(false)});
+  sheet?.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>setOpen(false)));
+
+  const isKeyboardOpen=()=>window.visualViewport&&window.innerHeight-window.visualViewport.height>140;
+  const syncKeyboard=()=>document.querySelector('.mobile-bottom')?.classList.toggle('keyboard-open',!!isKeyboardOpen());
+  window.visualViewport?.addEventListener('resize',syncKeyboard);window.visualViewport?.addEventListener('scroll',syncKeyboard);window.addEventListener('resize',syncKeyboard);syncKeyboard();
+
+  const wireListeningInputs=()=>document.querySelectorAll('.blank-row input').forEach(input=>{
+    if(input.dataset.v18Bound)return;input.dataset.v18Bound='1';
+    input.addEventListener('focus',()=>setTimeout(()=>input.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'}),80));
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur()}});
+  });
+  new MutationObserver(wireListeningInputs).observe(document.body,{childList:true,subtree:true});wireListeningInputs();
+
+  const toast=document.getElementById('toast');
+  const toastObserver=new MutationObserver(()=>{
+    const t=document.getElementById('toast');if(!t||!t.classList.contains('show')||t.dataset.v18Timer)return;
+    t.dataset.v18Timer='1';
+    const long=t.textContent.trim().length>60;const ms=long?5000:3500;
+    setTimeout(()=>{t.classList.remove('show');delete t.dataset.v18Timer},ms);
+  });
+  toastObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','textContent']});
+  document.addEventListener('click',e=>{if(e.target.closest('#toast')){const t=document.getElementById('toast');if(t){t.classList.remove('show');delete t.dataset.v18Timer}}});
+})();
+</script></body></html>
