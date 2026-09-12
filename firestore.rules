@@ -25,9 +25,15 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if sameUser(uid) || isAdmin();
+      // Người dùng mới luôn được phép tạo hồ sơ của chính mình.
+      // Student không phụ thuộc vào config/admins. Admin chỉ được bootstrap bằng Gmail
+      // hoặc bằng email đã có trong config/admins.
       allow create: if sameUser(uid)
         && validRole(request.resource.data.role)
-        && request.resource.data.role == (isAdmin() ? 'admin' : 'student');
+        && (
+          request.resource.data.role == 'student'
+          || (request.resource.data.role == 'admin' && isAdmin())
+        );
       allow update: if sameUser(uid)
         && request.resource.data.role == resource.data.role
         && request.resource.data.email == resource.data.email;
@@ -46,13 +52,7 @@ service cloud.firestore {
 
 
     match /knowledge/{knowledgeId} {
-      allow read: if isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Bản công khai tách riêng khỏi bản nháp để query của học sinh luôn ổn định.
-    match /knowledge_public/{knowledgeId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && resource.data.published == true || isAdmin();
       allow create, update, delete: if isAdmin();
     }
 

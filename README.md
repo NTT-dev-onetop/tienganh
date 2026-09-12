@@ -55,7 +55,3 @@ Deploy web bằng GitHub/Vercel như workflow hiện tại.
 - Học sinh chỉ đọc nội dung đã `published`.
 - Quyền admin vẫn dựa trên `config/admins` + tài khoản bootstrap hiện tại.
 - Không cần Cloud Functions/Blaze cho CMS này.
-
-
-## Teacher Knowledge fix
-Published knowledge is mirrored to `knowledge_public`; students read only that public collection, while drafts remain in `knowledge`.
