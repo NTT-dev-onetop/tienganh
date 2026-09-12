@@ -27,34 +27,54 @@ async function loadUsers(){
   const r=document.getElementById('adminUsers');if(!r)return;
   if(stopUsersProgress){stopUsersProgress();stopUsersProgress=null}
   try{
-    let latestUsers=[],latestSubmissions=[];let renderTimer=null;
+    let latestUsers=[],latestSubmissions=[],latestRoster=[];let renderTimer=null;
+    const normName=v=>String(v??'').trim().replace(/\s+/g,' ').toLowerCase();
     const render=()=>{
       const progress=progressFromSubmissionDocs(latestSubmissions);
       const byUid=new Map();
+      const byRoster=new Map();
+      const byName=new Map();
+      // Roster là thứ tự chuẩn của lớp: học sinh chưa đăng nhập vẫn được hiển thị với streak 0.
+      latestRoster.forEach((x,i)=>{
+        const row={uid:'',name:String(x.name||'Học sinh'),className:'11T1',role:'student',rosterId:String(x.id||`s${String(i+1).padStart(2,'0')}`),rosterIndex:i};
+        byRoster.set(row.rosterId,row);byName.set(normName(row.name),row);
+      });
       latestUsers.forEach(x=>{
         const userRole=String(x.role||'student');
         if(userRole==='admin'||userRole==='teacher'||x.rosterId==='__teacher_dat__')return;
-        if(x.uid)byUid.set(String(x.uid),{...x});
-      });
-      latestSubmissions.forEach(d=>{
-        const x=d.data?d.data():(d||{});
         const uid=String(x.uid||'');
-        if(!uid||byUid.has(uid))return;
-        byUid.set(uid,{uid,name:String(x.name||'Học sinh'),className:String(x.className||'11T1'),role:'student'});
+        const rosterId=String(x.rosterId||'');
+        const nameKey=normName(x.name||'');
+        let row=(rosterId&&byRoster.get(rosterId))||(nameKey&&byName.get(nameKey));
+        if(row){
+          Object.assign(row,x,{uid:uid||row.uid,name:String(x.name||row.name),className:String(x.className||row.className||'11T1'),role:'student',rosterId:rosterId||row.rosterId});
+        }else if(uid){
+          row={...x,uid,name:String(x.name||x.email||'Học sinh'),className:String(x.className||'11T1'),role:'student',rosterIndex:999999};
+        }else return;
+        if(uid)byUid.set(uid,row);
       });
-      const rows=[...byUid.values()].map(x=>{
+      // Submission legacy có thể tồn tại trước khi user document được tạo.
+      latestSubmissions.forEach(d=>{
+        const x=d.data?d.data():(d||{}),uid=String(x.uid||'');if(!uid)return;
+        if(byUid.has(uid))return;
+        const nameKey=normName(x.name||'');
+        const row=(nameKey&&byName.get(nameKey))||{uid,name:String(x.name||'Học sinh'),className:String(x.className||'11T1'),role:'student',rosterIndex:999999};
+        row.uid=uid;byUid.set(uid,row);
+      });
+      const rows=[...new Set([...byRoster.values(),...byUid.values()])].filter(x=>String(x.role||'student')==='student').map(x=>{
         const p=progress.get(String(x.uid))||{streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};
         return {...x,streak:p.streak,totalSetsCompleted:p.totalPassed,totalBonusPoints:p.totalBonus,lastCompletedDate:p.lastCompletedDate||x.lastCompletedDate||''};
       });
-      rows.sort((a,b)=>Number(b.streak||0)-Number(a.streak||0)||Number(b.totalBonusPoints||0)-Number(a.totalBonusPoints||0)||String(a.name||'').localeCompare(String(b.name||''),'vi'));
-      r.innerHTML=`<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Tên</th><th>Lớp</th><th>Bonus</th><th>🔥 Streak</th><th>Set pass</th><th>Gần nhất</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.name||x.email||'')}</td><td>${esc(x.className||'11T1')}</td><td>${Number(x.totalBonusPoints||0)}</td><td>${Number(x.streak||0)}</td><td>${Number(x.totalSetsCompleted||0)}</td><td>${esc(x.lastCompletedDate||'—')}</td></tr>`).join('')||'<tr><td colspan="6">Chưa có học sinh.</td></tr>'}</tbody></table></div>`;
+      rows.sort((a,b)=>Number(a.rosterIndex??999999)-Number(b.rosterIndex??999999)||String(a.name||'').localeCompare(String(b.name||''),'vi'));
+      r.innerHTML=`<div class="table-responsive"><table class="table align-middle"><thead><tr><th>STT</th><th>Tên</th><th>Lớp</th><th>Bonus</th><th>🔥 Streak</th><th>Set pass</th><th>Gần nhất</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.name||x.email||'')}</td><td>${esc(x.className||'11T1')}</td><td>${Number(x.totalBonusPoints||0)}</td><td>${Number(x.streak||0)}</td><td>${Number(x.totalSetsCompleted||0)}</td><td>${esc(x.lastCompletedDate||'—')}</td></tr>`).join('')||'<tr><td colspan="7">Chưa có học sinh.</td></tr>'}</tbody></table></div>`;
     };
     const scheduleRender=()=>{clearTimeout(renderTimer);renderTimer=setTimeout(render,0)};
+    const rosterSnap=await getDoc(doc(db,'config','roster'));
+    latestRoster=rosterSnap.exists()&&Array.isArray(rosterSnap.data()?.students)?rosterSnap.data().students:DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
     const stopUsers=onSnapshot(collection(db,'users'),snap=>{latestUsers=[];snap.forEach(d=>latestUsers.push({uid:d.id,...d.data()}));scheduleRender()},e=>{console.error('Realtime users:',e);r.innerHTML='<div class="alert alert-danger">Không đồng bộ được danh sách học sinh.</div>'});
-    // Đọc toàn bộ submissions cho staff rồi ghép theo UID.
-    // Không phụ thuộc className trong submission cũ => không làm mất streak của dữ liệu legacy.
     const stopSubmissions=onSnapshot(query(collection(db,'submissions'),where('passed','==',true)),snap=>{latestSubmissions=snap.docs;scheduleRender()},e=>{console.error('Realtime submissions:',e);r.innerHTML='<div class="alert alert-danger">Không đồng bộ được tiến độ bài làm.</div>'});
     stopUsersProgress=()=>{stopUsers();stopSubmissions();clearTimeout(renderTimer)};
+    render();
   }catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được học sinh.</div>'}
 }
 async function loadAdmins(){const r=document.getElementById('adminAdmins');if(!r)return;try{const snap=await getDoc(doc(db,'config','admins'));const emails=snap.exists()&&Array.isArray(snap.data()?.emails)?snap.data().emails.map(x=>String(x).trim().toLowerCase()).filter(Boolean):[];const me=String(currentUser?.email||'').trim().toLowerCase();if(me&&!emails.includes(me))emails.unshift(me);r.innerHTML=`<textarea id="adminEmails" class="form-control" rows="4" placeholder="thayco@example.com">${esc(emails.join('\n'))}</textarea><div class="small muted mt-2">Mỗi dòng một Gmail. Email của bạn luôn được giữ lại.</div><button id="saveAdmins" class="btn btn-success mt-2">Lưu danh sách admin</button>`;document.getElementById('saveAdmins').onclick=saveAdmins}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được danh sách admin.</div>'}}
@@ -236,23 +256,37 @@ function downloadXLSX(filename,header,rows,sheetName='Sheet1'){const cols=header
 async function exportStudentsStreak(){
   if(!staff())return;
   try{
-    const [userSnap,subSnap]=await Promise.all([getDocs(collection(db,'users')),getDocs(query(collection(db,'submissions'),where('passed','==',true)))]);
-    const students=new Map();
-    userSnap.forEach(d=>{
-      const x=d.data()||{};
-      const userRole=String(x.role||'student');
-      if(userRole==='admin'||userRole==='teacher'||x.rosterId==='__teacher_dat__')return;
-      students.set(d.id,{uid:d.id,...x});
-    });
-    subSnap.forEach(d=>{
-      const x=d.data()||{},uid=String(x.uid||'');
-      if(uid&&!students.has(uid))students.set(uid,{uid,name:String(x.name||'Học sinh'),role:'student'});
-    });
+    const [userSnap,subSnap,rosterSnap]=await Promise.all([
+      getDocs(collection(db,'users')),
+      getDocs(query(collection(db,'submissions'),where('passed','==',true))),
+      getDoc(doc(db,'config','roster'))
+    ]);
+    const normName=v=>String(v??'').trim().replace(/\s+/g,' ').toLowerCase();
+    const roster=rosterSnap.exists()&&Array.isArray(rosterSnap.data()?.students)?rosterSnap.data().students:DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
     const progress=progressFromSubmissionDocs(subSnap.docs);
-    const rows=[...students.values()].map(x=>[String(x.name||x.email||'Học sinh'),Number(progress.get(String(x.uid))?.streak||0)]);
-    rows.sort((a,b)=>Number(b[1])-Number(a[1])||String(a[0]).localeCompare(String(b[0]),'vi'));
-    downloadXLSX('english-notebook-streak.xlsx',['Học sinh','🔥 Streak'],rows,'Streak');
-    toast(`Đã xuất Excel: ${rows.length} học sinh.`);
+    const usersByUid=new Map(),usersByRoster=new Map(),usersByName=new Map();
+    userSnap.forEach(d=>{
+      const x=d.data()||{},userRole=String(x.role||'student');
+      if(userRole==='admin'||userRole==='teacher'||x.rosterId==='__teacher_dat__')return;
+      const row={uid:d.id,...x};usersByUid.set(d.id,row);
+      if(x.rosterId)usersByRoster.set(String(x.rosterId),row);
+      if(x.name)usersByName.set(normName(x.name),row);
+    });
+    const ordered=[];const seen=new Set();
+    roster.forEach((r,i)=>{
+      const user=usersByRoster.get(String(r.id||''))||usersByName.get(normName(r.name));
+      const uid=String(user?.uid||'');
+      const p=uid?(progress.get(uid)||{streak:0}):{streak:0};
+      const name=String(user?.name||r.name||'Học sinh');
+      ordered.push([i+1,name,Number(p.streak||0)]);
+      if(uid)seen.add(uid);
+    });
+    // Không làm mất học sinh hợp lệ ngoài roster (legacy/new account): nối phía sau.
+    [...usersByUid.values()].filter(x=>!seen.has(String(x.uid))).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'vi')).forEach(x=>{
+      ordered.push([ordered.length+1,String(x.name||x.email||'Học sinh'),Number(progress.get(String(x.uid))?.streak||0)]);
+    });
+    downloadXLSX('english-notebook-danh-sach-streak.xlsx',['STT','Học sinh','🔥 Streak'],ordered,'Danh sách lớp');
+    toast(`Đã xuất Excel: ${ordered.length} học sinh.`);
   }catch(e){console.error('Export streak:',e);toast('Không thể xuất Excel.','error')}
 }
 document.addEventListener('click',e=>{if(e.target?.id==='exportStreak')exportStudentsStreak()});

@@ -430,3 +430,25 @@ main.container-fluid{padding:14px 14px calc(28px + env(safe-area-inset-bottom))!
   .daily-head-actions{width:100%;justify-content:space-between}
   .live-sync-badge{min-height:32px;font-size:11px}
 }
+
+/* Theme: light/dark, lưu theo thiết bị; không ảnh hưởng logic dữ liệu. */
+:root{color-scheme:light;--table-head:#f8fafc;--input-bg:#fff;--nav-bg:#fff;--card-bg:#fff}
+html[data-theme="dark"]{color-scheme:dark;--bg:#0b1220;--surface:#111827;--surface-2:#172033;--ink:#f3f4f6;--muted:#aab4c3;--primary-soft:#172554;--success-soft:#063b2d;--danger-soft:#3b1513;--warning-soft:#3a270e;--border:#263244;--table-head:#172033;--input-bg:#0f172a;--nav-bg:#0f172a;--card-bg:#111827;--shadow:0 1px 2px rgba(0,0,0,.25),0 10px 30px rgba(0,0,0,.22)}
+html[data-theme="dark"] body,html[data-theme="dark"] .page,html[data-theme="dark"] .app-shell{background:var(--bg);color:var(--ink)}
+html[data-theme="dark"] .nav{background:var(--nav-bg);border-color:var(--border)}
+html[data-theme="dark"] .navbar-brand,html[data-theme="dark"] .nav-link,html[data-theme="dark"] label{color:var(--ink)}
+html[data-theme="dark"] .nav-link:hover,html[data-theme="dark"] .nav-link.active{background:#18243a;color:#fff}
+html[data-theme="dark"] .panel,html[data-theme="dark"] .card,html[data-theme="dark"] .home-action,html[data-theme="dark"] .exercise-option,html[data-theme="dark"] .blank-row,html[data-theme="dark"] .listening-card,html[data-theme="dark"] .daily-set-card,.modal-content{background:var(--card-bg);color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .form-control,html[data-theme="dark"] .form-select{background:var(--input-bg);color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .form-control::placeholder{color:#7f8ba0}
+html[data-theme="dark"] .table{--bs-table-bg:var(--card-bg);--bs-table-color:var(--ink);--bs-table-border-color:var(--border)}
+html[data-theme="dark"] .table thead th{background:var(--table-head);color:var(--ink)}
+html[data-theme="dark"] .mini-box,html[data-theme="dark"] .answer-box,html[data-theme="dark"] .rule-box,html[data-theme="dark"] .formula,html[data-theme="dark"] .listening-transcript{background:#0f172a;border-color:var(--border);color:var(--ink)}
+html[data-theme="dark"] .capture-tabs{background:#172033}html[data-theme="dark"] .capture-tab.active{background:#22304a;color:#fff}
+html[data-theme="dark"] .daily-streak{background:#3a2b0b;color:#ffe8a3}
+html[data-theme="dark"] .auth{background:radial-gradient(circle at top right,#172554 0,transparent 38%),var(--bg)}
+html[data-theme="dark"] .auth-card{background:var(--surface);border-color:var(--border);color:var(--ink)}
+html[data-theme="dark"] .mobile-topbar,html[data-theme="dark"] .mobile-bottom,html[data-theme="dark"] .more-sheet{background:var(--nav-bg);color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .btn-light{background:#1f2937;color:#f3f4f6;border-color:#374151}
+html[data-theme="dark"] .btn-outline-secondary{color:#d1d5db;border-color:#475467}
+.theme-toggle{min-width:40px;padding:.35rem .55rem;border-radius:10px}
