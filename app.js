@@ -29,7 +29,7 @@ async function renderProfile(){
     if(el('profileDisplayName'))el('profileDisplayName').textContent=name;
     if(el('profileEmail'))el('profileEmail').textContent=user.email||'';
     if(el('profileAvatar'))el('profileAvatar').textContent=name.trim().charAt(0).toUpperCase()||'U';
-    if(el('profileRole')){el('profileRole').textContent=role==='admin'?'👑 Admin':role==='teacher'?'👨‍🏫 Giáo viên':role==='builder'?'🛠️ Builder':'🎓 Học sinh';el('profileRole').className=`tag ${role!=='student'?'tag-published':''}`}
+    if(el('profileRole')){el('profileRole').textContent=role==='admin'?'👑 Admin':role==='builder'?'🛠️ Builder':'🎓 Học sinh';el('profileRole').className=`tag ${role!=='student'?'tag-published':''}`}
     if(el('profileStreak'))el('profileStreak').textContent=Number(p.streak||0);
     if(el('profileBonus'))el('profileBonus').textContent=Number(p.totalBonusPoints||0);
     if(el('profileSets'))el('profileSets').textContent=Number(p.totalSetsCompleted||0);

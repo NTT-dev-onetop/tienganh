@@ -30,7 +30,7 @@ async function readRoster(){
   return Array.isArray(students)&&students.length?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER;
 }
 export async function initRosterGate(user,role){
-  if(!user||!user.uid||role==='admin'||role==='builder'||role==='teacher')return true;
+  if(!user||!user.uid||role==='admin'||role==='builder')return true;
   try{
     const userSnap=await getDoc(doc(db,'users',user.uid));
     if(!userSnap.exists())throw new Error('Không tìm thấy hồ sơ người dùng.');
@@ -59,7 +59,7 @@ export async function initRosterGate(user,role){
         if(mapping.exists()&&mapping.data()?.uid!==user.uid)throw new Error('Tên này đã được đăng ký. Liên hệ thầy.');
         await setDoc(mappingRef,{uid:user.uid,email:String(user.email||'').toLowerCase(),name:String(target.name),rosterId, specialTeacher:rosterId==='teacher-dat'});
         const specialTeacher=rosterId==='teacher-dat';
-        await setDoc(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1',...(specialTeacher?{role:'teacher',isTeacher:true}:{})},{merge:true});
+        await setDoc(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1',...(specialTeacher?{role:'admin',isTeacher:true}:{})},{merge:true});
         bs.hide();resolve();
       }catch(e){console.error('Lỗi gắn roster:',e);err.textContent=e.message||'Không thể lưu tên.';err.classList.remove('d-none');save.disabled=false}
     }});
