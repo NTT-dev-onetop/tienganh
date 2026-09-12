@@ -44,6 +44,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+
+    match /knowledge/{knowledgeId} {
+      allow read: if signedIn() && resource.data.published == true || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /questionBank/{questionId} {
+      allow read: if signedIn() && resource.data.published == true || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /listeningContent/{listeningId} {
+      allow read: if signedIn() && resource.data.published == true || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
     match /sets/{setId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();

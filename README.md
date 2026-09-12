@@ -1,40 +1,57 @@
-# English Notebook v17
+# English Notebook v17 — Teacher CMS
 
-Firebase project: `englishproject-c0131`
+Bản này giữ Firebase project/config hiện tại và thêm CMS cho giáo viên.
 
-## Build
-- Vanilla JS ES Modules
-- Firebase 10.12.5
-- Bootstrap 5.3.3 + Bootstrap Icons
-- No build step / no extra library
+## Luồng mới
 
-## First-time Firebase setup
-1. Firestore: create `config/admins` with `{ emails: ["GMAIL_CUA_THAY"] }`.
-2. Deploy `firestore.rules`.
-3. Admin login once. Dashboard appears automatically.
-4. Dashboard → Roster: nhập đúng 46 tên, mỗi dòng một tên.
-5. Dashboard → Daily Sets → `Tạo 5 Set mẫu từ ngân hàng`.
+Giáo viên → Dashboard → chọn module → nhập nội dung → Lưu/Đăng → Firestore → học sinh thấy nội dung đã xuất bản theo realtime listener.
 
-## Data
-- `users/{uid}`: hồ sơ + role + streak.
-- `users_by_roster/{rosterId}`: khóa một tên với một UID.
-- `sets/{setId}`: 5 Daily Set, mỗi set 20 câu.
-- `submissions/{uid_date_setId}`: mỗi học sinh chỉ có một submission cho một set trong một ngày.
-- `config/admins`: danh sách admin.
-- `config/roster`: 46 tên lớp.
+### 1. Kiến thức
+Collection: `knowledge`
 
-## Đổi Gmail admin
-Sửa mảng `emails` trong `config/admins` bằng Firestore Console. Whitelist `ADMIN_EMAILS` trong `roles.js` chỉ là fallback khẩn cấp.
+Các trường chính:
+- `title`
+- `unit`
+- `category`
+- `content`
+- `examples`
+- `notes`
+- `exercises`
+- `author`, `authorName`
+- `published`
+- `createdAt`, `updatedAt`
 
-## Chống nhiều Gmail
-Roster binding khóa `rosterId` vào UID. Nếu học sinh đổi Gmail, admin xóa mapping `users_by_roster/{rosterId}` rồi học sinh đăng nhập Gmail mới và chọn lại tên.
+### 2. Bài tập
+Collection: `questionBank`
 
-## Lưu ý bảo mật
-Phase 6 chỉ làm khó client-side. Đáp án và điểm vẫn có thể bị phân tích trong trình duyệt; muốn chống gian lận nghiêm túc phải chuyển chấm điểm/signature sang backend đáng tin cậy.
+Giáo viên thêm câu bằng form, chọn dạng MCQ/2 lựa chọn/điền dạng đúng/viết lại. Câu đã xuất bản xuất hiện ở mục Bài tập giáo viên đăng.
 
-## Firebase CLI
+### 3. Listening
+Collection: `listeningContent`
+
+Giáo viên nhập Unit, tiêu đề, audio URL, nguồn, 6 gợi ý, 6 đáp án và transcript. Nội dung đã xuất bản xuất hiện trong mục Listening giáo viên đăng.
+
+### 4. Daily Set
+Dashboard → Daily Set → chọn đúng 20 câu đã xuất bản từ `questionBank` → chọn Set 01–05 → xuất bản.
+
+Set lưu câu hỏi kèm `sourceQuestionId`, nên có thể truy ngược câu trong ngân hàng.
+
+## Firebase
+
+Project hiện tại: `englishproject-c0131`
+
+Deploy Rules:
+
 ```bash
 firebase use englishproject-c0131
 firebase deploy --only firestore:rules
 ```
-Admin gốc: `icloud07072010@gmail.com`.
+
+Deploy web bằng GitHub/Vercel như workflow hiện tại.
+
+## Lưu ý bảo mật
+
+- Chỉ admin/giáo viên được ghi `knowledge`, `questionBank`, `listeningContent`, `sets`.
+- Học sinh chỉ đọc nội dung đã `published`.
+- Quyền admin vẫn dựa trên `config/admins` + tài khoản bootstrap hiện tại.
+- Không cần Cloud Functions/Blaze cho CMS này.

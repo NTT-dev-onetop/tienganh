@@ -81,3 +81,4 @@ export async function submitSet(){
   }catch(e){console.error('Lỗi nộp Daily Set:',e);toast('Không thể nộp bài. Vui lòng thử lại.','error');submitting=false}
 }
 function rootResult(score,passed,streak){const root=document.getElementById('dailyWork');if(!root)return;root.innerHTML=`<div class="panel daily-result"><div class="result-icon">${passed?'🏆':'📚'}</div><h2>${score}/20</h2><p>${passed?'Đạt — Set đã được mở tiếp theo.':'Chưa đạt — bạn có thể xem lại kiến thức và làm Set khác vào ngày sau.'}</p><div class="streak-result">🔥 Streak: <b>${streak}</b> ngày ${passed?'<span class="text-success"> · +2 điểm</span>':''}</div><button id="dailyBack" class="btn btn-primary mt-3">← Về Daily Set</button></div>`;document.getElementById('dailyBack').onclick=()=>{selectedSet=null;loadSets()}}
+initDailySet();
