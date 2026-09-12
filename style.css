@@ -329,3 +329,46 @@ main.container-fluid{padding:14px 14px calc(28px + env(safe-area-inset-bottom))!
   .mobile-more-trigger{touch-action:manipulation}
   .more-sheet{touch-action:pan-y}
 }
+
+/* ===== V18.3 · FIX DESKTOP/LAPTOP SIDEBAR VISIBILITY ===== */
+/* Laptop/PC ≥1280px: use the intended full sidebar instead of the 72px icon rail. */
+@media (min-width:1280px){
+  .nav{width:248px;}
+  .nav .navbar-brand{font-size:18px;text-align:left;padding:6px 10px 20px;}
+  .nav .brand-mark{margin-right:8px;}
+  .navbar-collapse{
+    overflow-x:hidden;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-gutter:stable;
+  }
+  .navbar-nav{
+    flex:0 0 auto;
+  }
+  .nav-link{
+    width:100%;
+    min-height:48px;
+    justify-content:flex-start;
+    gap:10px;
+    padding:10px 11px;
+    font-size:15px;
+  }
+  .nav-icon{width:22px;font-size:16px;flex:0 0 22px;}
+  .nav-section{font-size:11px;padding:18px 10px 6px;}
+  .nav-section::before{display:none;}
+  .user-block{justify-content:flex-start;}
+  .user-meta{display:block;}
+  #logout{display:inline-flex;}
+  main.container-fluid{margin-left:248px;width:calc(100% - 248px);}
+}
+
+/* Never clip the desktop sidebar contents; allow the navigation column to scroll. */
+@media (min-width:767.98px){
+  .nav .navbar-collapse{
+    overflow-x:hidden;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-gutter:stable;
+  }
+  .nav .navbar-nav{flex:0 0 auto;}
+}
