@@ -31,3 +31,10 @@ Roster binding khóa `rosterId` vào UID. Nếu học sinh đổi Gmail, admin x
 
 ## Lưu ý bảo mật
 Phase 6 chỉ làm khó client-side. Đáp án và điểm vẫn có thể bị phân tích trong trình duyệt; muốn chống gian lận nghiêm túc phải chuyển chấm điểm/signature sang backend đáng tin cậy.
+
+## Firebase CLI
+```bash
+firebase use englishproject-c0131
+firebase deploy --only firestore:rules
+```
+Admin gốc: `icloud07072010@gmail.com`.

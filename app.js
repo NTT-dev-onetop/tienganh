@@ -10,7 +10,7 @@ const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),p
 const $=id=>document.getElementById(id);let user=null,unsub=null,data={vocab:[],grammar:[],mistakes:[]},reviewQueue=[],reviewIndex=0;
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-function page(id){if(id==='admin'&&getCurrentRole()!=='admin'){id='home'}document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));const target=$(id);target?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();requestAnimationFrame(()=>target?.scrollIntoView({behavior:'smooth',block:'start'}))}
+function page(id){if(id==='admin'&&getCurrentRole()!=='admin'){id='home'}document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));const target=$(id);target?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();requestAnimationFrame(()=>{if(target){const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-78);window.scrollTo({top:y,behavior:'smooth'})}})}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false')});
 const mobileMenuToggle=document.getElementById('mobileMenuToggle');
 mobileMenuToggle?.addEventListener('click',()=>{const menu=document.getElementById('mobileMenu');const open=menu?.classList.toggle('open');mobileMenuToggle.setAttribute('aria-expanded',open?'true':'false')});
@@ -2239,7 +2239,7 @@ async function checkExerciseAnswer(){
     const correctIndex=Number(item.correctIndex);
     const letters='ABCD';
     const answerLabel=(item.kind==='form'||item.kind==='rewrite')?answer:(Number.isInteger(correctIndex)&&correctIndex>=0&&correctIndex<letters.length?`${letters[correctIndex]}. ${answer}`:answer);
-    const explain=String(item.explain||\`Đáp án đúng: ${answer}\`);
+    const explain=String(item.explain||`Đáp án đúng: ${answer}`);
     fb.innerHTML=`<b>${ok?'✓ Chính xác':'✗ Chưa đúng'}</b><div class="mt-1">Đáp án: <b>${esc(answerLabel)}</b></div><small>${esc(explain)}</small>`;
     if(!ok&&user){
       try{
