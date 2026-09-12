@@ -36,7 +36,8 @@ export async function ensureUserDoc(user){
  try{
   const snap=await getDoc(ref);
   const owner=normalized===cleanEmail(OWNER_EMAIL);
-  const specialTeacher=String(profile?.rosterId||'')==='__teacher_dat__' && String(profile?.name||'')==='Thầy Đạt';
+  const existingProfile=snap.exists()?snap.data()||{}:{};
+  const specialTeacher=String(existingProfile.rosterId||'')==='__teacher_dat__' && String(existingProfile.name||'')==='Thầy Đạt';
   const adminFromConfig=await checkIsAdmin(normalized);
   const teacher=adminFromConfig||specialTeacher?false:await checkIsTeacher(normalized);
   // Thầy Đạt hiển thị là Giáo viên nhưng quyền backend vẫn là ADMIN.
