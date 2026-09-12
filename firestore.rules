@@ -66,7 +66,9 @@ service cloud.firestore {
     }
 
     match /users_by_roster/{rosterId} {
-      allow read: if sameUser(resource.data.uid) || isAdmin();
+      // Cho phép tài khoản đã đăng nhập kiểm tra tên lớp chưa được liên kết.
+      // Không thay đổi quyền ghi; chỉ tránh lỗi permission khi getDoc() đọc tài liệu chưa tồn tại.
+      allow read: if signedIn();
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.rosterId == rosterId
