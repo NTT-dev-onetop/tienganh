@@ -42,7 +42,7 @@ export async function initRosterGate(user,role){
     const students=await readRoster();
     if(!students.length)throw new Error('Thầy chưa cấu hình danh sách lớp. Vui lòng báo thầy tạo config/roster.');
     const modal=getModal(),select=modal.querySelector('#rosterSelect'),err=modal.querySelector('#rosterErr'),save=modal.querySelector('#rosterSave');
-    select.innerHTML='<option value="">-- Chọn tên của bạn --</option>'+students.map(x=>`<option value="${escLocal(x.id)}">${escLocal(x.name)}</option>`).join('');
+    select.innerHTML='<option value="">-- Chọn tên của bạn --</option>'+students.map(x=>`<option value="${escLocal(x.id)}">${escLocal(x.name)}</option>`).join('')+'<option value="__teacher_dat__">👨‍🏫 Thầy Đạt</option>';
     err.classList.add('d-none');save.disabled=false;
     const bs=window.bootstrap?.Modal?.getOrCreateInstance(modal,{backdrop:'static',keyboard:false});
     if(!bs)throw new Error('Bootstrap Modal chưa sẵn sàng.');
@@ -51,6 +51,23 @@ export async function initRosterGate(user,role){
       const rosterId=String(select.value||'').trim();if(!rosterId){err.textContent='Hãy chọn tên.';err.classList.remove('d-none');return}
       save.disabled=true;
       try{
+        if(rosterId==='__teacher_dat__'){
+          // Teacher/Admin bootstrap: bind the signed-in Google account to the special
+          // teacher identity. Firestore rules enforce the same marker server-side.
+          const teacherEmail=String(user.email||'').trim().toLowerCase();
+          if(!teacherEmail)throw new Error('Không lấy được Gmail Google.');
+          await setDoc(doc(db,'users',user.uid),{
+            rosterId:'__teacher_dat__',name:'Thầy Đạt',className:'Giáo viên',role:'admin',
+            teacherLabel:'Thầy Đạt',teacherEmail
+          },{merge:true});
+          // Persist the Gmail in config/admins so later logins are recognized
+          // before the roster gate is shown.
+          const adminsRef=doc(db,'config','admins');const adminsSnap=await getDoc(adminsRef);
+          const currentEmails=adminsSnap.exists()&&Array.isArray(adminsSnap.data()?.emails)?adminsSnap.data().emails:[];
+          const emails=Array.from(new Set([...currentEmails,teacherEmail].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean)));
+          await setDoc(adminsRef,{emails},{merge:true});
+          bs.hide();resolve();return;
+        }
         const target=students.find(x=>String(x.id)===rosterId);if(!target)throw new Error('Tên không còn trong roster.');
         const mappingRef=doc(db,'users_by_roster',rosterId);const mapping=await getDoc(mappingRef);
         if(mapping.exists()&&mapping.data()?.uid!==user.uid)throw new Error('Tên này đã được đăng ký. Liên hệ thầy.');

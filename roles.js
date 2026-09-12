@@ -36,14 +36,15 @@ export async function ensureUserDoc(user){
  try{
   const snap=await getDoc(ref);
   const owner=normalized===cleanEmail(OWNER_EMAIL);
-  const admin=await checkIsAdmin(normalized);
-  const teacher=admin?false:await checkIsTeacher(normalized);
-  const desiredRole=owner||admin?'admin':teacher?'teacher':'student';
+  const adminFromConfig=await checkIsAdmin(normalized);
+  const teacher=adminFromConfig?false:await checkIsTeacher(normalized);
+  const desiredRole=owner||adminFromConfig?'admin':teacher?'teacher':'student';
   if(snap.exists()){
    const existing=snap.data()||{};
    // Sửa legacy role như builder và luôn ép chủ sở hữu về admin.
    const existingRole=['admin','teacher','student'].includes(existing.role)?existing.role:'student';
-   const role=owner||admin? 'admin' : (teacher?'teacher':existingRole==='teacher'?'teacher':'student');
+   // Giữ quyền admin đã được cấp qua luồng chọn "Thầy Đạt".
+   const role=owner||adminFromConfig||existingRole==='admin' ? 'admin' : (teacher?'teacher':existingRole==='teacher'?'teacher':'student');
    const patch={lastLoginAt:serverTimestamp()};
    if(existing.role!==role)patch.role=role;
    if(!existing.email)patch.email=normalized;
@@ -55,6 +56,7 @@ export async function ensureUserDoc(user){
   await setDoc(ref,profile);currentRole=desiredRole;return {...profile,role:desiredRole};
  }catch(error){currentRole=null;console.error('Không thể tạo/đọc hồ sơ người dùng:',error);throw error}
 }
+export function setCurrentRole(role){currentRole=role}
 export function getCurrentRole(){return currentRole}
 export function clearCurrentRole(){currentRole=null}
 export function isStaffRole(role){return role==='admin'||role==='teacher'}
