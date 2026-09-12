@@ -3,11 +3,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function email() { return signedIn() && request.auth.token.email != null ? request.auth.token.email.lower() : ''; }
-    function bootstrapAdmin() { return signedIn() && email() == 'icloud07072010@gmail.com'; }
+    function bootstrapAdmin() { return false; }
+    function isBuilder() { return signedIn() && email() == 'icloud07072010@gmail.com'; }
     function adminConfigExists() { return exists(/databases/$(database)/documents/config/admins); }
     function adminConfig() { return get(/databases/$(database)/documents/config/admins); }
     function isAdmin() {
-      return signedIn() && (bootstrapAdmin() || (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails));
+      return signedIn() && !isBuilder() && (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails);
     }
     function sameUser(uid) { return signedIn() && request.auth.uid == uid; }
     function validRole(role) { return role == 'admin' || role == 'teacher' || role == 'student'; }
@@ -15,12 +16,12 @@ service cloud.firestore {
     function teacherConfigExists() { return exists(/databases/$(database)/documents/config/teachers); }
     function teacherConfig() { return get(/databases/$(database)/documents/config/teachers); }
     function isTeacher() { return signedIn() && !isAdmin() && teacherConfigExists() && teacherConfig().data.emails is list && email() in teacherConfig().data.emails; }
-    function isStaff() { return isAdmin() || isTeacher(); }
+    function isStaff() { return isAdmin() || isTeacher() || isBuilder(); }
 
     match /config/admins {
       allow read: if signedIn();
-      allow create: if bootstrapAdmin();
-      allow update, delete: if isAdmin();
+      allow create: if isBuilder() || bootstrapAdmin();
+      allow update, delete: if isAdmin() || isBuilder();
     }
 
     match /config/teachers {
@@ -34,7 +35,7 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if sameUser(uid) || isAdmin();
+      allow read: if sameUser(uid) || isAdmin() || isTeacher() || isBuilder();
       // Người dùng mới luôn được phép tạo hồ sơ của chính mình.
       // Student không phụ thuộc vào config/admins. Admin chỉ được bootstrap bằng Gmail
       // hoặc bằng email đã có trong config/admins.
@@ -42,8 +43,9 @@ service cloud.firestore {
         && validRole(request.resource.data.role)
         && (
           request.resource.data.role == 'student'
-          || (request.resource.data.role == 'admin' && isAdmin())
-          || (request.resource.data.role == 'teacher' && isAdmin())
+          || (request.resource.data.role == 'builder' && isBuilder())
+          || (request.resource.data.role == 'admin' && (isAdmin() || isBuilder()))
+          || (request.resource.data.role == 'teacher' && (isAdmin() || isBuilder()))
         );
       allow update: if (
           isAdmin()
@@ -54,8 +56,9 @@ service cloud.firestore {
           && request.resource.data.email == resource.data.email
           && (
             request.resource.data.role == resource.data.role
-            || (request.resource.data.role == 'admin' && isAdmin())
-            || (request.resource.data.role == 'teacher' && isTeacher())
+            || (request.resource.data.role == 'admin' && (isAdmin() || isBuilder()))
+            || (request.resource.data.role == 'builder' && isBuilder())
+            || (request.resource.data.role == 'teacher' && (isTeacher() || isBuilder()))
             || request.resource.data.role == 'student'
           )
         );
@@ -93,8 +96,16 @@ service cloud.firestore {
       allow create, update, delete: if isStaff();
     }
 
+
+    match /teacherTasks/{taskId} {
+      allow read: if isBuilder() || isAdmin() || (isTeacher() && resource.data.assignedEmail == email());
+      allow create: if isBuilder() || isAdmin();
+      allow update: if isBuilder() || isAdmin() || (isTeacher() && resource.data.assignedEmail == email() && request.resource.data.assignedEmail == resource.data.assignedEmail && request.resource.data.status == 'done');
+      allow delete: if isBuilder() || isAdmin();
+    }
+
     match /submissions/{submissionId} {
-      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin() || isTeacher() || isBuilder());
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.total == 20

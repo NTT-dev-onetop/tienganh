@@ -4,13 +4,14 @@ import{db}from"./firebase-services.js";
 // Chủ sở hữu hệ thống: chỉ email này được bootstrap thành ADMIN cao nhất.
 export const OWNER_EMAIL="icloud07072010@gmail.com";
 export const ADMIN_EMAILS=[OWNER_EMAIL];
+export const BUILDER_EMAIL=OWNER_EMAIL;
 let currentRole=null;
 const cleanEmail=e=>String(e??'').trim().toLowerCase();
 
 export async function checkIsAdmin(email){
  const normalized=cleanEmail(email);
  if(!normalized)return false;
- if(normalized===cleanEmail(OWNER_EMAIL))return true;
+ if(normalized===cleanEmail(OWNER_EMAIL))return false;
  try{
   const snap=await getDoc(doc(db,'config','admins'));
   const emails=snap.exists()&&Array.isArray(snap.data()?.emails)?snap.data().emails:[];
@@ -38,12 +39,12 @@ export async function ensureUserDoc(user){
   const owner=normalized===cleanEmail(OWNER_EMAIL);
   const admin=await checkIsAdmin(normalized);
   const teacher=admin?false:await checkIsTeacher(normalized);
-  const desiredRole=owner||admin?'admin':teacher?'teacher':'student';
+  const desiredRole=owner?'builder':admin?'admin':teacher?'teacher':'student';
   if(snap.exists()){
    const existing=snap.data()||{};
    // Sửa legacy role như builder và luôn ép chủ sở hữu về admin.
-   const existingRole=['admin','teacher','student'].includes(existing.role)?existing.role:'student';
-   const role=owner||admin? 'admin' : (teacher?'teacher':existingRole==='teacher'?'teacher':'student');
+   const existingRole=['admin','teacher','builder','student'].includes(existing.role)?existing.role:'student';
+   const role=owner? 'builder' : (admin?'admin':(teacher?'teacher':existingRole==='teacher'?'teacher':existingRole==='builder'?'builder':'student'));
    const patch={lastLoginAt:serverTimestamp()};
    if(existing.role!==role)patch.role=role;
    if(!existing.email)patch.email=normalized;
@@ -57,4 +58,5 @@ export async function ensureUserDoc(user){
 }
 export function getCurrentRole(){return currentRole}
 export function clearCurrentRole(){currentRole=null}
-export function isStaffRole(role){return role==='admin'||role==='teacher'}
+export function isBuilderRole(role){return role==='builder'}
+export function isStaffRole(role){return role==='admin'||role==='teacher'||role==='builder'}
