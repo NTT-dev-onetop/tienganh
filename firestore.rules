@@ -46,7 +46,13 @@ service cloud.firestore {
 
 
     match /knowledge/{knowledgeId} {
-      allow read: if signedIn() && resource.data.published == true || isAdmin();
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Bản công khai tách riêng khỏi bản nháp để query của học sinh luôn ổn định.
+    match /knowledge_public/{knowledgeId} {
+      allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }
 

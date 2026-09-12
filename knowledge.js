@@ -7,7 +7,7 @@ export function stopKnowledge(){if(stop){stop();stop=null}}
 export function initKnowledge(){
   const root=document.getElementById('knowledgeList');if(!root)return;
   if(stop)stop();
-  const q=query(collection(db,'knowledge'),where('published','==',true));
+  const q=query(collection(db,'knowledge_public'));
   stop=onSnapshot(q,snap=>{
     const rows=[];snap.forEach(d=>rows.push({id:d.id,...d.data()}));
     rows.sort((a,b)=>String(b.updatedAt?.seconds||b.createdAt?.seconds||0).localeCompare(String(a.updatedAt?.seconds||a.createdAt?.seconds||0)));
