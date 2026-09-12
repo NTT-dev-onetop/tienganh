@@ -28,12 +28,32 @@ async function loadUsers(){
   if(stopUsersProgress){stopUsersProgress();stopUsersProgress=null}
   try{
     let latestUsers=[],latestSubmissions=[];let renderTimer=null;
-    const render=()=>{const progress=progressFromSubmissionDocs(latestSubmissions);const rows=latestUsers.filter(x=>x.role==='student').map(x=>{const p=progress.get(x.uid)||{streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};return {...x,streak:p.streak,totalSetsCompleted:p.totalPassed,totalBonusPoints:p.totalBonus,lastCompletedDate:p.lastCompletedDate||x.lastCompletedDate||''}});rows.sort((a,b)=>Number(b.totalBonusPoints||0)-Number(a.totalBonusPoints||0)||Number(b.streak||0)-Number(a.streak||0));r.innerHTML=`<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Tên</th><th>Lớp</th><th>Bonus</th><th>🔥 Streak</th><th>Set pass</th><th>Gần nhất</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.name||x.email||'')}</td><td>${esc(x.className||'11T1')}</td><td>${Number(x.totalBonusPoints||0)}</td><td>${Number(x.streak||0)}</td><td>${Number(x.totalSetsCompleted||0)}</td><td>${esc(x.lastCompletedDate||'—')}</td></tr>`).join('')||'<tr><td colspan="6">Chưa có học sinh.</td></tr>'}</tbody></table></div>`};
+    const render=()=>{
+      const progress=progressFromSubmissionDocs(latestSubmissions);
+      const byUid=new Map();
+      latestUsers.forEach(x=>{
+        const userRole=String(x.role||'student');
+        if(userRole==='admin'||userRole==='teacher'||x.rosterId==='__teacher_dat__')return;
+        if(x.uid)byUid.set(String(x.uid),{...x});
+      });
+      latestSubmissions.forEach(d=>{
+        const x=d.data?d.data():(d||{});
+        const uid=String(x.uid||'');
+        if(!uid||byUid.has(uid))return;
+        byUid.set(uid,{uid,name:String(x.name||'Học sinh'),className:String(x.className||'11T1'),role:'student'});
+      });
+      const rows=[...byUid.values()].map(x=>{
+        const p=progress.get(String(x.uid))||{streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};
+        return {...x,streak:p.streak,totalSetsCompleted:p.totalPassed,totalBonusPoints:p.totalBonus,lastCompletedDate:p.lastCompletedDate||x.lastCompletedDate||''};
+      });
+      rows.sort((a,b)=>Number(b.streak||0)-Number(a.streak||0)||Number(b.totalBonusPoints||0)-Number(a.totalBonusPoints||0)||String(a.name||'').localeCompare(String(b.name||''),'vi'));
+      r.innerHTML=`<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Tên</th><th>Lớp</th><th>Bonus</th><th>🔥 Streak</th><th>Set pass</th><th>Gần nhất</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.name||x.email||'')}</td><td>${esc(x.className||'11T1')}</td><td>${Number(x.totalBonusPoints||0)}</td><td>${Number(x.streak||0)}</td><td>${Number(x.totalSetsCompleted||0)}</td><td>${esc(x.lastCompletedDate||'—')}</td></tr>`).join('')||'<tr><td colspan="6">Chưa có học sinh.</td></tr>'}</tbody></table></div>`;
+    };
     const scheduleRender=()=>{clearTimeout(renderTimer);renderTimer=setTimeout(render,0)};
     const stopUsers=onSnapshot(collection(db,'users'),snap=>{latestUsers=[];snap.forEach(d=>latestUsers.push({uid:d.id,...d.data()}));scheduleRender()},e=>{console.error('Realtime users:',e);r.innerHTML='<div class="alert alert-danger">Không đồng bộ được danh sách học sinh.</div>'});
     // Đọc toàn bộ submissions cho staff rồi ghép theo UID.
     // Không phụ thuộc className trong submission cũ => không làm mất streak của dữ liệu legacy.
-    const stopSubmissions=onSnapshot(collection(db,'submissions'),snap=>{latestSubmissions=snap.docs;scheduleRender()},e=>{console.error('Realtime submissions:',e);r.innerHTML='<div class="alert alert-danger">Không đồng bộ được tiến độ bài làm.</div>'});
+    const stopSubmissions=onSnapshot(query(collection(db,'submissions'),where('passed','==',true)),snap=>{latestSubmissions=snap.docs;scheduleRender()},e=>{console.error('Realtime submissions:',e);r.innerHTML='<div class="alert alert-danger">Không đồng bộ được tiến độ bài làm.</div>'});
     stopUsersProgress=()=>{stopUsers();stopSubmissions();clearTimeout(renderTimer)};
   }catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được học sinh.</div>'}
 }
@@ -202,26 +222,36 @@ function crc32(bytes){let c=0xffffffff;for(let i=0;i<bytes.length;i++){c^=bytes[
 function u16(n){return new Uint8Array([n&255,(n>>>8)&255])}
 function u32(n){return new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255])}
 function concatBytes(parts){const total=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(total);let o=0;for(const p of parts){out.set(p,o);o+=p.length}return out}
-function zipStore(files){const enc=new TextEncoder(),local=[],central=[];let offset=0;for(const file of files){const name=enc.encode(file.name),data=typeof file.data==='string'?enc.encode(file.data):file.data,crc=crc32(data);const head=concatBytes([new Uint8Array([0x50,0x4b,0x03,0x04,20,0,0,0,0,0,0,0,0,0]),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);local.push(head);const ch=concatBytes([new Uint8Array([0x50,0x4b,0x01,0x02,20,0,20,0,0,0,0,0,0,0]),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]);central.push(ch);offset+=head.length}const cd=concatBytes(central),allLocal=concatBytes(local);const end=concatBytes([new Uint8Array([0x50,0x4b,0x05,0x06,0,0,0,0]),u16(files.length),u16(files.length),u32(cd.length),u32(allLocal.length),u16(0)]);return concatBytes([allLocal,cd,end])}
+function zipStore(files){const enc=new TextEncoder(),local=[],central=[];let offset=0;for(const file of files){const name=enc.encode(file.name),data=typeof file.data==='string'?enc.encode(file.data):file.data,crc=crc32(data);const head=concatBytes([new Uint8Array([0x50,0x4b,0x03,0x04,20,0,0,0,0,0,0,0,0,0]),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);local.push(head);const ch=concatBytes([new Uint8Array([0x50,0x4b,0x01,0x02,20,0,20,0,0,0,0,0,0,0,0,0]),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]);central.push(ch);offset+=head.length}const cd=concatBytes(central),allLocal=concatBytes(local);const end=concatBytes([new Uint8Array([0x50,0x4b,0x05,0x06,0,0,0,0]),u16(files.length),u16(files.length),u32(cd.length),u32(allLocal.length),u16(0)]);return concatBytes([allLocal,cd,end])}
 function xlsxCell(ref,v,style){if(typeof v==='number'&&Number.isFinite(v))return `<c r="${ref}"${style?` s="${style}"`:''}><v>${v}</v></c>`;return `<c r="${ref}" t="inlineStr"${style?` s="${style}"`:''}><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`}
-function downloadXLSX(filename,header,rows,sheetName='Sheet1'){const cols=header.length;const colName=n=>{let s='';while(n){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26)}return s};const all=[header,...rows];const body=all.map((row,ri)=>`<row r="${ri+1}">${Array.from({length:cols},(_,ci)=>xlsxCell(colName(ci+1)+(ri+1),row[ci]??'',ri===0?1:0)).join('')}</row>`).join('');const last=`${colName(cols)}${all.length}`;const files=[
+function downloadXLSX(filename,header,rows,sheetName='Sheet1'){const cols=header.length;const colName=n=>{let s='';while(n){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26)}return s};const all=[header,...rows];const body=all.map((row,ri)=>`<row r="${ri+1}"${ri===0?' ht="24" customHeight="1"':''}>${Array.from({length:cols},(_,ci)=>xlsxCell(colName(ci+1)+(ri+1),row[ci]??'',ri===0?1:(ci===1?2:0))).join('')}</row>`).join('');const last=`${colName(cols)}${all.length}`;const files=[
 {name:'[Content_Types].xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
 {name:'_rels/.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
 {name:'xl/_rels/workbook.xml.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
 {name:'xl/workbook.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${xmlEsc(sheetName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`},
-{name:'xl/styles.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0"/></cellXfs></styleSheet>`},
-{name:'xl/worksheets/sheet1.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><dimension ref="A1:${last}"/><sheetData>${body}</sheetData><autoFilter ref="A1:${last}"/></worksheet>`}
+{name:'xl/styles.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="D9EAF7"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="D9E2F3"/></left><right style="thin"><color rgb="D9E2F3"/></right><top style="thin"><color rgb="D9E2F3"/></top><bottom style="thin"><color rgb="D9E2F3"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs></styleSheet>`},
+{name:'xl/worksheets/sheet1.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="20"/><cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="2" width="14" customWidth="1"/></cols><dimension ref="A1:${last}"/><sheetData>${body}</sheetData><autoFilter ref="A1:${last}"/></worksheet>`}
 ];const bytes=zipStore(files);const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
 async function exportStudentsStreak(){
   if(!staff())return;
   try{
-    const [userSnap,subSnap]=await Promise.all([getDocs(collection(db,'users')),getDocs(collection(db,'submissions'))]);
-    const students=[];userSnap.forEach(d=>{const x=d.data()||{};if(x.role==='student')students.push({uid:d.id,...x})});
+    const [userSnap,subSnap]=await Promise.all([getDocs(collection(db,'users')),getDocs(query(collection(db,'submissions'),where('passed','==',true)))]);
+    const students=new Map();
+    userSnap.forEach(d=>{
+      const x=d.data()||{};
+      const userRole=String(x.role||'student');
+      if(userRole==='admin'||userRole==='teacher'||x.rosterId==='__teacher_dat__')return;
+      students.set(d.id,{uid:d.id,...x});
+    });
+    subSnap.forEach(d=>{
+      const x=d.data()||{},uid=String(x.uid||'');
+      if(uid&&!students.has(uid))students.set(uid,{uid,name:String(x.name||'Học sinh'),role:'student'});
+    });
     const progress=progressFromSubmissionDocs(subSnap.docs);
-    const rows=students.map(x=>[String(x.name||x.email||'Học sinh'),Number(progress.get(x.uid)?.streak||0)]);
+    const rows=[...students.values()].map(x=>[String(x.name||x.email||'Học sinh'),Number(progress.get(String(x.uid))?.streak||0)]);
     rows.sort((a,b)=>Number(b[1])-Number(a[1])||String(a[0]).localeCompare(String(b[0]),'vi'));
-    downloadXLSX('english-notebook-streak.xlsx',['Học sinh','Streak'],rows,'Streak');
+    downloadXLSX('english-notebook-streak.xlsx',['Học sinh','🔥 Streak'],rows,'Streak');
     toast(`Đã xuất Excel: ${rows.length} học sinh.`);
   }catch(e){console.error('Export streak:',e);toast('Không thể xuất Excel.','error')}
 }
