@@ -97,8 +97,6 @@ export async function submitSet(){
     await setDoc(ref,{uid:currentUser.uid,name:String(profile.name||currentUser.displayName||'Tài khoản'),className:String(profile.className||'11T1'),setId:selectedSet.id,score,total:20,passed,bonusPoints,submittedAt:serverTimestamp(),date,streakAtSubmission:streak,signature:makeSignature(currentUser.uid,selectedSet.id,score,date)});
     if(passed&&last!==date){await updateDoc(userRef,{lastCompletedDate:date,streak,totalSetsCompleted:Number(profile.totalSetsCompleted||0)+1,totalBonusPoints:Number(profile.totalBonusPoints||0)+bonusPoints})}
     else if(passed){await updateDoc(userRef,{streak})}
-    const streakEl=document.getElementById('dailyStreak');if(streakEl)streakEl.textContent=`🔥 ${streak} ngày`;
-    document.dispatchEvent(new CustomEvent('daily:streak-updated',{detail:{streak}}));
     rootResult(score,passed,streak);
   }catch(e){console.error('Lỗi nộp Daily Set:',e);toast('Không thể nộp bài. Vui lòng thử lại.','error');submitting=false}
 }
