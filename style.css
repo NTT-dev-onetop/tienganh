@@ -466,3 +466,107 @@ html[data-theme="dark"] .cms-tab.active{background:#fff !important;color:#111 !i
 
 /* Final mobile dashboard clearance: lift the bottom navigation slightly so it does not cover CMS content. */
 @media (max-width: 767.98px){.mobile-bottom{bottom:8px}.more-sheet{bottom:calc(68px + env(safe-area-inset-bottom))}}
+
+/* ===== V18.7.1 · GLOBAL DARK THEME CONTRAST FIX =====
+   Fix every admin/import/card component that previously hard-coded white/light colors.
+*/
+html[data-theme="dark"]{
+  --line:var(--border);
+  --card:var(--card-bg);
+}
+html[data-theme="dark"] .nav{background:var(--nav-bg)!important}
+html[data-theme="dark"] .nav-link{color:#cbd5e1}
+html[data-theme="dark"] .nav-link:hover{background:#18243a;color:#fff}
+html[data-theme="dark"] .eyebrow,
+html[data-theme="dark"] .section-label,
+html[data-theme="dark"] .listening-label,
+html[data-theme="dark"] .review-type{color:#aab4c3}
+html[data-theme="dark"] label,
+html[data-theme="dark"] .attention-item,
+html[data-theme="dark"] .meaning{color:var(--ink)}
+html[data-theme="dark"] .recent-item,
+html[data-theme="dark"] .attention-item{border-color:var(--border);color:var(--ink)}
+html[data-theme="dark"] .tag{background:#202b3d;color:#dbe4f0}
+html[data-theme="dark"] .capture-tabs{background:#172033}
+html[data-theme="dark"] .capture-tab{color:#aab4c3}
+html[data-theme="dark"] .capture-tab.active{background:#22304a;color:#fff}
+html[data-theme="dark"] .level span{background:var(--card-bg);color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .smart-hint,
+html[data-theme="dark"] .listening-rule,
+html[data-theme="dark"] .listen-note{color:#dbe4f0;border-color:#31446f}
+html[data-theme="dark"] .mini-box,
+html[data-theme="dark"] .answer-box,
+html[data-theme="dark"] .rule-box,
+html[data-theme="dark"] .formula{color:var(--ink)}
+html[data-theme="dark"] .mini-box b,
+html[data-theme="dark"] .answer-box b,
+html[data-theme="dark"] .rule-box b{color:#cbd5e1}
+html[data-theme="dark"] .exercise-option,
+html[data-theme="dark"] .blank-row,
+html[data-theme="dark"] .listening-card,
+html[data-theme="dark"] .daily-set-card{background:var(--card-bg);color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .exercise-option:hover{background:#17243a;border-color:#4867ad}
+html[data-theme="dark"] .reading-highlight{color:#171717}
+html[data-theme="dark"] .exercise-progress,
+html[data-theme="dark"] .listening-progress{background:#293548}
+html[data-theme="dark"] .source-listening-box{background:#172554;border-color:#415a9a;color:#e5edff}
+html[data-theme="dark"] .blank-row input{background:transparent;color:var(--ink);border-color:#475467}
+html[data-theme="dark"] .blank-row input.is-correct{background:#0c2f26;border-color:#168d69}
+html[data-theme="dark"] .daily-streak{background:#3a2b0b;color:#ffe8a3}
+html[data-theme="dark"] .daily-progress{color:var(--ink)}
+html[data-theme="dark"] .admin-set-card{background:var(--card-bg);border-color:var(--border);color:var(--ink)}
+
+/* Admin / teacher CMS */
+html[data-theme="dark"] .cms-tabs{background:#070b13!important;border-color:var(--border);box-shadow:0 8px 24px rgba(0,0,0,.28)}
+html[data-theme="dark"] .cms-tab{background:#171d29!important;color:#f3f4f6!important;border-color:#344054!important}
+html[data-theme="dark"] .cms-tab:hover{background:#243049!important;color:#fff!important}
+html[data-theme="dark"] .cms-tab.active{background:#fff!important;color:#111827!important;border-color:#fff!important}
+html[data-theme="dark"] .cms-form,
+html[data-theme="dark"] .cms-help,
+html[data-theme="dark"] .question-bank-toolbar,
+html[data-theme="dark"] .daily-word-import,
+html[data-theme="dark"] .teacher-import-card,
+html[data-theme="dark"] .word-template-box{background:var(--surface-2)!important;color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .cms-item,
+html[data-theme="dark"] .question-picker,
+html[data-theme="dark"] .knowledge-card,
+html[data-theme="dark"] .teacher-question,
+html[data-theme="dark"] .teacher-listening,
+html[data-theme="dark"] .word-preview-list article{background:var(--card-bg)!important;color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .word-template-text{background:#0f172a!important;color:#dbe4f0!important;border-color:#475467!important}
+html[data-theme="dark"] .word-template-text strong,
+html[data-theme="dark"] .word-template-text b{color:#fff!important}
+html[data-theme="dark"] .word-opt{background:#202b3d;color:#dbe4f0}
+html[data-theme="dark"] .question-picker{background:#0f172a!important}
+html[data-theme="dark"] .question-pick:hover,
+html[data-theme="dark"] .question-pick.selected{background:#172b4d;color:#fff}
+html[data-theme="dark"] .knowledge-block{background:#0f172a;border-color:var(--border);color:var(--ink)}
+html[data-theme="dark"] .knowledge-note{background:#30240c;color:#ffe8b0}
+html[data-theme="dark"] .knowledge-exercises{background:#122542;color:#dbeafe}
+html[data-theme="dark"] .teacher-option{background:#111827;border-color:var(--border);color:var(--ink)}
+html[data-theme="dark"] .teacher-option.correct-option{background:#0c2f26;border-color:#168d69}
+html[data-theme="dark"] .teacher-answer{background:#12213a;color:#dbeafe}
+html[data-theme="dark"] .tag-published{background:#103b2d!important;color:#9be7c6!important}
+html[data-theme="dark"] .tag-draft{background:#3a2b0b!important;color:#ffe08a!important}
+html[data-theme="dark"] .live-sync-badge{background:#172033;color:#dbe4f0}
+
+/* Mobile menus / sheets also follow the selected theme. */
+html[data-theme="dark"] .mobile-topbar,
+html[data-theme="dark"] .mobile-bottom,
+html[data-theme="dark"] .more-sheet,
+html[data-theme="dark"] .mobile-menu{background:rgba(15,23,42,.97);color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .mobile-menu button,
+html[data-theme="dark"] .mobile-bottom button{color:#cbd5e1}
+html[data-theme="dark"] .more-grid button{background:#111827;color:var(--ink);border-color:var(--border)}
+html[data-theme="dark"] .more-sheet-close{background:#202b3d;color:#fff}
+html[data-theme="dark"] .more-handle{background:#475467}
+html[data-theme="dark"] .mobile-menu button:hover,
+html[data-theme="dark"] .mobile-menu button.active{background:#172b4d;color:#fff}
+
+/* Bootstrap helpers that otherwise remain bright in dark mode. */
+html[data-theme="dark"] .text-bg-light{background:#202b3d!important;color:#e5e7eb!important}
+html[data-theme="dark"] .btn-light{background:#202b3d!important;color:#f3f4f6!important;border-color:#374151!important}
+html[data-theme="dark"] .btn-outline-secondary{color:#d1d5db!important;border-color:#475467!important}
+html[data-theme="dark"] hr{border-color:var(--border);opacity:1}
+html[data-theme="dark"] .table{--bs-table-bg:var(--card-bg);--bs-table-color:var(--ink);--bs-table-border-color:var(--border)}
+html[data-theme="dark"] .table thead th{background:var(--table-head);color:var(--ink)}
