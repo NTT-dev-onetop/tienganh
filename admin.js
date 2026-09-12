@@ -48,9 +48,7 @@ async function loadUsers(){
         let row=(rosterId&&byRoster.get(rosterId))||(nameKey&&byName.get(nameKey));
         if(row){
           Object.assign(row,x,{uid:uid||row.uid,name:String(x.name||row.name),className:String(x.className||row.className||'11T1'),role:'student',rosterId:rosterId||row.rosterId});
-        }else if(uid){
-          row={...x,uid,name:String(x.name||x.email||'Học sinh'),className:String(x.className||'11T1'),role:'student',rosterIndex:999999};
-        }else return;
+        }else return; // Chỉ hiển thị học sinh thuộc roster 45; không tạo dòng ngoài danh sách.
         if(uid)byUid.set(uid,row);
       });
       // Submission legacy có thể tồn tại trước khi user document được tạo.
@@ -58,7 +56,8 @@ async function loadUsers(){
         const x=d.data?d.data():(d||{}),uid=String(x.uid||'');if(!uid)return;
         if(byUid.has(uid))return;
         const nameKey=normName(x.name||'');
-        const row=(nameKey&&byName.get(nameKey))||{uid,name:String(x.name||'Học sinh'),className:String(x.className||'11T1'),role:'student',rosterIndex:999999};
+        const row=nameKey&&byName.get(nameKey);
+        if(!row)return; // Submission cũ không thuộc roster 45 thì không tạo học sinh thứ 46.
         row.uid=uid;byUid.set(uid,row);
       });
       const rows=[...new Set([...byRoster.values(),...byUid.values()])].filter(x=>String(x.role||'student')==='student').map(x=>{

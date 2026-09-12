@@ -463,3 +463,6 @@ html[data-theme="dark"] .trap{background:#211b45 !important;border-color:#6d5bd0
 html[data-theme="dark"] .cms-tabs{background:#000 !important;}
 html[data-theme="dark"] .cms-tab{background:#171717 !important;color:#fff !important;border-color:#333 !important;}
 html[data-theme="dark"] .cms-tab.active{background:#fff !important;color:#111 !important;border-color:#fff !important;}
+
+/* Final mobile dashboard clearance: lift the bottom navigation slightly so it does not cover CMS content. */
+@media (max-width: 767.98px){.mobile-bottom{bottom:8px}.more-sheet{bottom:calc(68px + env(safe-area-inset-bottom))}}

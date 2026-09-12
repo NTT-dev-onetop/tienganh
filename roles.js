@@ -36,15 +36,17 @@ export async function ensureUserDoc(user){
  try{
   const snap=await getDoc(ref);
   const owner=normalized===cleanEmail(OWNER_EMAIL);
+  const specialTeacher=String(profile?.rosterId||'')==='__teacher_dat__' && String(profile?.name||'')==='Thầy Đạt';
   const adminFromConfig=await checkIsAdmin(normalized);
-  const teacher=adminFromConfig?false:await checkIsTeacher(normalized);
-  const desiredRole=owner||adminFromConfig?'admin':teacher?'teacher':'student';
+  const teacher=adminFromConfig||specialTeacher?false:await checkIsTeacher(normalized);
+  // Thầy Đạt hiển thị là Giáo viên nhưng quyền backend vẫn là ADMIN.
+  const desiredRole=owner||adminFromConfig||specialTeacher?'admin':teacher?'teacher':'student';
   if(snap.exists()){
    const existing=snap.data()||{};
    const existingRole=['admin','teacher','student'].includes(existing.role)?existing.role:'student';
    // OWNER_EMAIL is simultaneously the student's account (STT 45) and an admin.
    // The teacher account remains separate and is never promoted to admin here.
-   const role=owner||adminFromConfig?'admin':teacher?'teacher':existingRole;
+   const role=owner||adminFromConfig||specialTeacher?'admin':teacher?'teacher':existingRole;
    const patch={lastLoginAt:serverTimestamp()};
    if(existing.role!==role)patch.role=role;
    if(!existing.email)patch.email=normalized;
@@ -53,12 +55,20 @@ export async function ensureUserDoc(user){
     patch.name='Nguyễn Trung Trực';
     patch.className='11T1';
    }
+   if(specialTeacher){
+    patch.rosterId='__teacher_dat__';
+    patch.name='Thầy Đạt';
+    patch.className='Giáo viên';
+    patch.teacherLabel='Thầy Đạt';
+    patch.displayRole='teacher';
+   }
    await setDoc(ref,patch,{merge:true});
    currentRole=role;
    return {...existing,...patch,role};
   }
   const profile={email:normalized,name:owner?'Nguyễn Trung Trực':String(user.displayName||'').trim(),className:owner?'11T1':'11T1',role:desiredRole,createdAt:serverTimestamp(),lastLoginAt:serverTimestamp(),streak:0,lastCompletedDate:'',totalSetsCompleted:0,totalBonusPoints:0};
   if(owner)profile.rosterId='s45';
+  if(specialTeacher){profile.rosterId='__teacher_dat__';profile.name='Thầy Đạt';profile.className='Giáo viên';profile.teacherLabel='Thầy Đạt';profile.displayRole='teacher';}
   await setDoc(ref,profile);
   // Bind the owner's account to STT 45 so Admin + Student is a single account.
   if(owner){

@@ -67,10 +67,10 @@ export async function initRosterGate(user,role){
           const teacherEmail=String(user.email||'').trim().toLowerCase();
           if(!teacherEmail)throw new Error('Không lấy được Gmail Google.');
           await setDoc(doc(db,'users',user.uid),{
-            rosterId:'__teacher_dat__',name:'Thầy Đạt',className:'Giáo viên',role:'teacher',
-            teacherLabel:'Thầy Đạt',teacherEmail
+            rosterId:'__teacher_dat__',name:'Thầy Đạt',className:'Giáo viên',role:'admin',
+            teacherLabel:'Thầy Đạt',displayRole:'teacher',teacherEmail
           },{merge:true});
-          // Persist the teacher Gmail separately. It must NOT become an admin.
+          // Persist the teacher Gmail separately for display/identity. Backend role remains admin.
           const teachersRef=doc(db,'config','teachers');const teachersSnap=await getDoc(teachersRef);
           const currentEmails=teachersSnap.exists()&&Array.isArray(teachersSnap.data()?.emails)?teachersSnap.data().emails:[];
           const emails=Array.from(new Set([...currentEmails,teacherEmail].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean)));

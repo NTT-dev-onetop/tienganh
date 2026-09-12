@@ -7,7 +7,7 @@ service cloud.firestore {
     function adminConfigExists() { return exists(/databases/$(database)/documents/config/admins); }
     function adminConfig() { return get(/databases/$(database)/documents/config/admins); }
     function isAdmin() {
-      return signedIn() && (bootstrapAdmin() || (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails));
+      return signedIn() && (bootstrapAdmin() || (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails) || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
     function sameUser(uid) { return signedIn() && request.auth.uid == uid; }
     function validRole(role) { return role == 'admin' || role == 'teacher' || role == 'student'; }
