@@ -45,7 +45,7 @@ service cloud.firestore {
           request.resource.data.role == 'student'
           || (request.resource.data.role == 'builder' && isBuilder())
           || (request.resource.data.role == 'admin' && (isAdmin() || isBuilder()))
-          || (request.resource.data.role == 'teacher' && (isAdmin() || isBuilder() || (sameUser(uid) && request.resource.data.rosterId == 'teacher-dat')))
+          || (request.resource.data.role == 'admin' && (isAdmin() || isBuilder() || (sameUser(uid) && request.resource.data.rosterId == 'teacher-dat')))
         );
       allow update: if (
           isAdmin()
@@ -58,7 +58,7 @@ service cloud.firestore {
             request.resource.data.role == resource.data.role
             || (request.resource.data.role == 'admin' && (isAdmin() || isBuilder()))
             || (request.resource.data.role == 'builder' && isBuilder())
-            || (request.resource.data.role == 'teacher' && (isTeacher() || isBuilder() || (sameUser(uid) && request.resource.data.rosterId == 'teacher-dat')))
+            || (request.resource.data.role == 'admin' && (isAdmin() || isBuilder() || (sameUser(uid) && request.resource.data.rosterId == 'teacher-dat')))
             || request.resource.data.role == 'student'
           )
         );

@@ -11,7 +11,7 @@ const cleanEmail=e=>String(e??'').trim().toLowerCase();
 export async function checkIsAdmin(email){
  const normalized=cleanEmail(email);
  if(!normalized)return false;
- if(normalized===cleanEmail(OWNER_EMAIL))return false;
+ if(normalized===cleanEmail(OWNER_EMAIL))return true;
  try{
   const snap=await getDoc(doc(db,'config','admins'));
   const emails=snap.exists()&&Array.isArray(snap.data()?.emails)?snap.data().emails:[];
@@ -39,12 +39,12 @@ export async function ensureUserDoc(user){
   const owner=normalized===cleanEmail(OWNER_EMAIL);
   const admin=await checkIsAdmin(normalized);
   const teacher=admin?false:await checkIsTeacher(normalized);
-  const desiredRole=owner?'builder':admin?'admin':'student';
+  const desiredRole=owner?'builder':admin?'admin':(teacher?'admin':'student');
   if(snap.exists()){
    const existing=snap.data()||{};
    // Sửa legacy role như builder và luôn ép chủ sở hữu về admin.
    const existingRole=['admin','builder','student'].includes(existing.role)?existing.role:'student';
-   const role=owner? 'builder' : (admin?'admin':(existingRole==='builder'?'builder':'student'));
+   const role=owner? 'builder' : (admin?'admin':(teacher?'admin':(existingRole==='builder'?'builder':'student')));
    const patch={lastLoginAt:serverTimestamp()};
    if(existing.role!==role)patch.role=role;
    if(!existing.email)patch.email=normalized;
