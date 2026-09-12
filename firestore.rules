@@ -11,7 +11,7 @@ service cloud.firestore {
       return signedIn() && !isBuilder() && (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails);
     }
     function sameUser(uid) { return signedIn() && request.auth.uid == uid; }
-    function validRole(role) { return role == 'admin' || role == 'teacher' || role == 'student'; }
+    function validRole(role) { return role == 'admin' || role == 'teacher' || role == 'builder' || role == 'student'; }
     function owner() { return signedIn() && email() == 'icloud07072010@gmail.com'; }
     function teacherConfigExists() { return exists(/databases/$(database)/documents/config/teachers); }
     function teacherConfig() { return get(/databases/$(database)/documents/config/teachers); }

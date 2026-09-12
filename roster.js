@@ -29,7 +29,7 @@ async function readRoster(){
   return Array.isArray(students)&&students.length?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER;
 }
 export async function initRosterGate(user,role){
-  if(!user||!user.uid||role==='admin')return true;
+  if(!user||!user.uid||role==='admin'||role==='builder'||role==='teacher')return true;
   try{
     const userSnap=await getDoc(doc(db,'users',user.uid));
     if(!userSnap.exists())throw new Error('Không tìm thấy hồ sơ người dùng.');
