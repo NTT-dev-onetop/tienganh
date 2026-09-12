@@ -3,7 +3,7 @@ import{onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.5/fireba
 import{auth,db}from"./firebase-services.js";
 import{decodeCorrectIndex,makeSignature}from"./security.js";
 
-let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false;
+let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false,stopSets=null;
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=(msg,type='success')=>{let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.className='toast-note';document.body.appendChild(e)}e.className=`toast-note ${type}`;e.textContent=msg;clearTimeout(window.__toast);requestAnimationFrame(()=>e.classList.add('show'));window.__toast=setTimeout(()=>e.classList.remove('show'),2500)};
@@ -27,14 +27,34 @@ function unlockedFor(set,index,passed){
   if(index===0)return true;
   const previous=currentSets[index-1];return previous?passed.has(previous.id):false;
 }
-export async function initDailySet(){onAuthStateChanged(auth,async u=>{currentUser=u;if(!u){currentSets=[];selectedSet=null;renderDailySetPage();return}await loadSets()})}
+function watchSetsRealtime(){
+  if(stopSets)stopSets();
+  if(!currentUser)return;
+  const q=query(collection(db,'sets'),where('published','==',true));
+  stopSets=onSnapshot(q,snap=>{
+    currentSets=[];
+    snap.forEach(d=>{
+      const x={id:d.id,...d.data()};
+      if(Number.isInteger(Number(x.order)))currentSets.push(x);
+    });
+    currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
+    const live=document.getElementById('dailyLiveStatus');
+    if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
+    if(!selectedSet)renderDailySetPage();
+  },e=>{
+    console.error('Realtime Daily Set:',e);
+    const live=document.getElementById('dailyLiveStatus');
+    if(live){live.textContent='🟠 Đang chờ kết nối';live.classList.add('is-offline')}
+  });
+}
+export async function initDailySet(){onAuthStateChanged(auth,async u=>{currentUser=u;if(stopSets){stopSets();stopSets=null}if(!u){currentSets=[];selectedSet=null;renderDailySetPage();return}await loadSets();watchSetsRealtime()})}
 export async function renderDailySetPage(){
   const root=document.getElementById('daily');if(!root)return;
   if(!currentUser){root.innerHTML='<div class="empty"><div>🔒</div><h3>Đăng nhập để làm Daily Set</h3></div>';return}
   const passed=await passedSetIds();
   const allFivePassed=currentSets.length>=5&&currentSets.slice(0,5).every(x=>passed.has(x.id));
   const cards=currentSets.map((s,i)=>{const unlocked=allFivePassed||unlockedFor(s,i,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
-  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>20 câu · đạt từ 15/20 để pass · mỗi set chỉ nộp 1 lần/ngày.</p></div><div class="daily-streak" id="dailyStreak">🔥 …</div></div><div class="daily-progress"><div><b>${Math.min(passed.size,5)}/5</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${Math.min(100,Math.round(Math.min(passed.size,5)/5*100))}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Admin hãy tạo 5 Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
+  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>20 câu · đạt từ 15/20 để pass · mỗi set chỉ nộp 1 lần/ngày.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${Math.min(passed.size,5)}/5</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${Math.min(100,Math.round(Math.min(passed.size,5)/5*100))}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Admin hãy tạo 5 Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
   root.querySelectorAll('[data-set-id]').forEach(b=>b.onclick=()=>openSet(b.dataset.setId));
   try{const snap=await getDoc(doc(db,'users',currentUser.uid));const streak=Number(snap.exists()?snap.data()?.streak||0:0);const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${streak} ngày`;}catch(e){console.error('Không đọc được streak:',e)}
 }

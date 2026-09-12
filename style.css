@@ -413,3 +413,20 @@ main.container-fluid{padding:14px 14px calc(28px + env(safe-area-inset-bottom))!
   .daily-word-import{padding:22px}
   .daily-word-import .form-actions .btn{min-width:190px}
 }
+
+
+/* ===== V18.7 · REALTIME DAILY INTRO + DESKTOP NAV CLEARANCE ===== */
+.daily-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.live-sync-badge{display:inline-flex;align-items:center;min-height:34px;padding:7px 11px;border:1px solid var(--border);border-radius:999px;background:#fff;color:#344054;font-size:12px;font-weight:700;white-space:nowrap}
+.live-sync-badge.is-offline{opacity:.8}
+@media (min-width:767.98px){
+  main.container-fluid{position:relative;z-index:1;min-width:0;overflow-x:clip}
+  main.container-fluid > .page{position:relative;z-index:0;min-width:0;max-width:100%;scroll-margin-top:24px}
+  .head,.panel,.home-grid,.quick-grid,.grammar-board,.pattern-board,.knowledge-board,.teacher-question-board,.teacher-listening-board,.daily-set-grid,.daily-question,.daily-result,.review-area{min-width:0}
+  .filter-row{min-width:0}
+  .daily-head-actions{flex:0 0 auto}
+}
+@media (max-width:767.97px){
+  .daily-head-actions{width:100%;justify-content:space-between}
+  .live-sync-badge{min-height:32px;font-size:11px}
+}
