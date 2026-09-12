@@ -55,3 +55,9 @@ Deploy web bằng GitHub/Vercel như workflow hiện tại.
 - Học sinh chỉ đọc nội dung đã `published`.
 - Quyền admin vẫn dựa trên `config/admins` + tài khoản bootstrap hiện tại.
 - Không cần Cloud Functions/Blaze cho CMS này.
+
+
+## Phase 4+ Profile & Streak Export
+- Student profile page: role, class, current streak, bonus points, passed sets, last completion.
+- Teacher dashboard can export all student streak/progress data to `english-notebook-streak-11T1.csv`.
+- Teacher can still export submissions to `english-notebook-submissions.csv`.
