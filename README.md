@@ -1,9 +1,11 @@
-English Notebook V18.6
+# English Notebook v18.7 — Thầy Đạt + Progress Fixed
 
-- Built on V18.5.
-- Daily Set teacher CMS now has a dedicated Word pool importer.
-- Upload a .docx containing numbered MCQs with A-D answers; the correct answer is the bold option.
-- Supports 20, 50, 100+ valid questions; teacher can randomize 20 and create/publish Set 01-05 in one flow.
-- Includes DAILY_SET_WORD_TEMPLATE.docx.
-- Existing question-bank/manual Daily Set workflow remains available.
-- No Firebase config/Auth/security changes.
+## Progress / Streak architecture
+- `submissions` is the canonical source for Daily Set completion.
+- Student streak is derived from passed submission dates, so reload cannot reset it to 0.
+- `users` keeps denormalized progress fields for fast profile reads.
+- Teacher/Admin progress uses realtime listeners on both `users` and `submissions`, then derives streak/bonus/set-pass from submissions.
+- Firestore rules allow students to update only safe profile/progress fields while preserving role/email integrity.
+
+## Deploy
+Deploy the web files and Firestore rules together. The app uses the Firebase project configured in `firebase-config.js`.

@@ -3,7 +3,7 @@ import{onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.5/fireba
 import{auth,db}from"./firebase-services.js";
 import{decodeCorrectIndex,makeSignature}from"./security.js";
 
-let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false,stopSets=null;
+let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false,stopSets=null,stopProgress=null;
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=(msg,type='success')=>{let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.className='toast-note';document.body.appendChild(e)}e.className=`toast-note ${type}`;e.textContent=msg;clearTimeout(window.__toast);requestAnimationFrame(()=>e.classList.add('show'));window.__toast=setTimeout(()=>e.classList.remove('show'),2500)};
@@ -27,6 +27,32 @@ function unlockedFor(set,index,passed){
   if(index===0)return true;
   const previous=currentSets[index-1];return previous?passed.has(previous.id):false;
 }
+function progressFromSubmissionDocs(docs){
+  const passedDates=new Set();let totalPassed=0,totalBonus=0,lastCompletedDate='';
+  docs.forEach(d=>{const x=d.data?d.data():(d||{});if(x.passed===true){totalPassed++;totalBonus+=Number(x.bonusPoints||0);const date=String(x.date||'');if(date){passedDates.add(date);if(date>lastCompletedDate)lastCompletedDate=date}}});
+  const now=today();const yesterdayDate=(()=>{const d=new Date();d.setDate(d.getDate()-1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})();
+  let streak=0;
+  if(passedDates.has(now)||passedDates.has(yesterdayDate)){
+    let cursor=passedDates.has(now)?new Date(now+'T00:00:00'):new Date(yesterdayDate+'T00:00:00');
+    while(true){const key=`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;if(!passedDates.has(key))break;streak++;cursor.setDate(cursor.getDate()-1)}
+  }
+  return {streak,totalPassed,totalBonus,lastCompletedDate};
+}
+async function getStudentProgress(){
+  if(!currentUser)return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};
+  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));return progressFromSubmissionDocs(snap.docs)}catch(e){console.error('Không đọc được tiến độ Daily Set:',e);return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''}}
+}
+function watchStudentProgress(){
+  if(stopProgress)stopProgress();
+  if(!currentUser)return;
+  const q=query(collection(db,'submissions'),where('uid','==',currentUser.uid));
+  stopProgress=onSnapshot(q,snap=>{
+    const p=progressFromSubmissionDocs(snap.docs);const el=document.getElementById('dailyStreak');
+    if(el)el.textContent=`🔥 ${p.streak} ngày`;
+    const live=document.getElementById('dailyLiveStatus');if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
+    if(!selectedSet)renderDailySetPage();
+  },e=>console.error('Realtime tiến độ Daily Set:',e));
+}
 function watchSetsRealtime(){
   if(stopSets)stopSets();
   if(!currentUser)return;
@@ -47,16 +73,17 @@ function watchSetsRealtime(){
     if(live){live.textContent='🟠 Đang chờ kết nối';live.classList.add('is-offline')}
   });
 }
-export async function initDailySet(){onAuthStateChanged(auth,async u=>{currentUser=u;if(stopSets){stopSets();stopSets=null}if(!u){currentSets=[];selectedSet=null;renderDailySetPage();return}await loadSets();watchSetsRealtime()})}
+export async function initDailySet(){onAuthStateChanged(auth,async u=>{currentUser=u;if(stopSets){stopSets();stopSets=null}if(stopProgress){stopProgress();stopProgress=null}if(!u){currentSets=[];selectedSet=null;renderDailySetPage();return}await loadSets();watchSetsRealtime();watchStudentProgress()})}
 export async function renderDailySetPage(){
   const root=document.getElementById('daily');if(!root)return;
   if(!currentUser){root.innerHTML='<div class="empty"><div>🔒</div><h3>Đăng nhập để làm Daily Set</h3></div>';return}
   const passed=await passedSetIds();
+  const progress=await getStudentProgress();
   const allFivePassed=currentSets.length>=5&&currentSets.slice(0,5).every(x=>passed.has(x.id));
   const cards=currentSets.map((s,i)=>{const unlocked=allFivePassed||unlockedFor(s,i,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
   root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>20 câu · đạt từ 15/20 để pass · mỗi set chỉ nộp 1 lần/ngày.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${Math.min(passed.size,5)}/5</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${Math.min(100,Math.round(Math.min(passed.size,5)/5*100))}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Admin hãy tạo 5 Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
   root.querySelectorAll('[data-set-id]').forEach(b=>b.onclick=()=>openSet(b.dataset.setId));
-  try{const snap=await getDoc(doc(db,'users',currentUser.uid));const streak=Number(snap.exists()?snap.data()?.streak||0:0);const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${streak} ngày`;}catch(e){console.error('Không đọc được streak:',e)}
+  const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
 }
 async function openSet(id){
   const set=currentSets.find(x=>x.id===id);if(!set)return;
@@ -95,8 +122,13 @@ export async function submitSet(){
     const ref=doc(db,'submissions',`${currentUser.uid}_${date}_${selectedSet.id}`);
     const existing=await getDoc(ref);if(existing.exists()){toast('Bạn đã nộp Set này hôm nay.','error');submitting=false;return}
     await setDoc(ref,{uid:currentUser.uid,name:String(profile.name||currentUser.displayName||'Tài khoản'),className:String(profile.className||'11T1'),setId:selectedSet.id,score,total:20,passed,bonusPoints,submittedAt:serverTimestamp(),date,streakAtSubmission:streak,signature:makeSignature(currentUser.uid,selectedSet.id,score,date)});
-    if(passed&&last!==date){await updateDoc(userRef,{lastCompletedDate:date,streak,totalSetsCompleted:Number(profile.totalSetsCompleted||0)+1,totalBonusPoints:Number(profile.totalBonusPoints||0)+bonusPoints})}
-    else if(passed){await updateDoc(userRef,{streak})}
+    // Submission là nguồn dữ liệu chuẩn. Summary trên users chỉ là dữ liệu denormalized để đọc nhanh.
+    if(passed){
+      try{
+        const latest=await getStudentProgress();
+        await setDoc(userRef,{lastCompletedDate:latest.lastCompletedDate,streak:latest.streak,totalSetsCompleted:latest.totalPassed,totalBonusPoints:latest.totalBonus},{merge:true});
+      }catch(summaryError){console.warn('Đã lưu submission nhưng chưa cập nhật summary users:',summaryError)}
+    }
     rootResult(score,passed,streak);
   }catch(e){console.error('Lỗi nộp Daily Set:',e);toast('Không thể nộp bài. Vui lòng thử lại.','error');submitting=false}
 }
