@@ -41,7 +41,7 @@ function renderQuestionAdmin(){const r=document.getElementById('adminQuestions')
   <p class="muted small mt-2 mb-3">Thầy chỉ cần soạn Word theo mẫu: <b>từ vựng</b> → A → B → C → D. Đáp án đúng được <b>in đậm</b>. Web tự nhận đáp án và tạo 20 câu.</p>
   <div class="word-template-box">
     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2"><b>📄 MẪU WORD CHO THẦY</b><button type="button" id="copyWordTemplate" class="btn btn-sm btn-outline-primary">⧉ Copy mẫu</button></div>
-    <div id="wordTemplateText" class="word-template-text" role="textbox" aria-label="Mẫu nội dung Word">1. abandon\nA. tiếp tục\nB. bắt đầu\nC. từ bỏ\nD. giữ lại\n\n2. achieve\nA. thất bại\nB. trì hoãn\nC. đạt được\nD. quên\n\n<strong>Trong Word: bôi đậm đúng đáp án.</strong>\nVí dụ: C. <b>từ bỏ</b> → web tự hiểu C là đáp án đúng.</div>
+    <div id="wordTemplateText" class="word-template-text" role="textbox" aria-label="Mẫu nội dung Word">1. abandon\nA. tiếp tục\nB. bắt đầu\nC. từ bỏ\nD. giữ lại\n\n2. achieve\nA. thất bại\nB. trì hoãn\nC. đạt được\nD. quên\n\nTrong Word: in đậm đúng đáp án.\nVí dụ: C. <b>từ bỏ</b> → web tự hiểu C là đáp án đúng.</div>
   </div>
   <div class="row g-2 mt-3 align-items-end">
     <div class="col-md-4"><label class="fw-bold">Unit</label><select id="wordImportUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option>Unit ${i+1}</option>`).join('')}<option>Review</option></select></div>
@@ -52,7 +52,45 @@ function renderQuestionAdmin(){const r=document.getElementById('adminQuestions')
   <div id="wordImportPreview" class="word-import-preview mt-3"></div>
   <div class="form-actions mt-3"><button id="parseWordBtn" class="btn btn-outline-primary">🔎 Đọc file Word</button><button id="importWordBtn" class="btn btn-primary" disabled>🚀 Thêm 20 câu</button></div>
 </div>
-<button id="newQuestion" class="btn btn-primary mb-3">＋ Thêm câu hỏi</button><div id="questionEditor"></div><div class="cms-list">${questions.map(q=>`<article class="cms-item"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(q.unit||'')}</span><span class="tag">${esc(q.kind||'')}</span><span class="tag ${q.published?'tag-published':'tag-draft'}">${q.published?'Đã xuất bản':'Nháp'}</span></div><h6 class="mt-2 mb-0">${esc(q.prompt||'').slice(0,150)}</h6></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary" data-q-edit="${esc(q.id)}">Sửa</button><button class="btn btn-sm btn-outline-danger" data-q-del="${esc(q.id)}">Xóa</button></div></article>`).join('')||'<div class="muted">Chưa có câu hỏi.</div>'}</div>`;document.getElementById('newQuestion').onclick=()=>openQuestion();r.querySelectorAll('[data-q-edit]').forEach(b=>b.onclick=()=>openQuestion(b.dataset.qEdit));r.querySelectorAll('[data-q-del]').forEach(b=>b.onclick=()=>deleteQuestion(b.dataset.qDel));bindWordImport(r)}
+
+<div class="question-bank-toolbar panel mb-3">
+  <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+    <div>
+      <div class="eyebrow">QUESTION BANK</div>
+      <b>Quản lý hàng loạt</b>
+      <span id="qSelectedCount" class="tag ms-2">0 đã chọn</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button id="qSelectAll" type="button" class="btn btn-sm btn-outline-secondary">☑ Chọn tất cả</button>
+      <button id="qClearSelect" type="button" class="btn btn-sm btn-outline-secondary">Bỏ chọn</button>
+      <button id="qMakeSet01" type="button" class="btn btn-sm btn-primary" disabled>🚀 Tạo Set 01 từ 20 câu</button>
+      <button id="qDeleteSelected" type="button" class="btn btn-sm btn-outline-danger" disabled>🗑 Xóa đã chọn</button>
+      <button id="qDeleteAll" type="button" class="btn btn-sm btn-danger" ${questions.length?'':'disabled'}>🗑 Xóa toàn bộ ngân hàng</button>
+    </div>
+  </div>
+  <div class="small muted mt-2">Muốn đưa 20 câu lên Daily Set: tích đúng 20 câu → <b>Tạo Set 01 từ 20 câu</b>. Không cần sang tab Daily Set.</div>
+</div>
+
+<button id="newQuestion" class="btn btn-primary mb-3">＋ Thêm câu hỏi</button><div id="questionEditor"></div><div class="cms-list">${questions.map(q=>`<article class="cms-item question-bank-item"><div class="d-flex align-items-start gap-3"><input class="form-check-input q-select mt-1" type="checkbox" value="${esc(q.id)}" aria-label="Chọn câu hỏi"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(q.unit||'')}</span><span class="tag">${esc(q.kind||'')}</span><span class="tag ${q.published?'tag-published':'tag-draft'}">${q.published?'Đã xuất bản':'Nháp'}</span></div><h6 class="mt-2 mb-0">${esc(q.prompt||'').slice(0,150)}</h6></div></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary" data-q-edit="${esc(q.id)}">Sửa</button><button class="btn btn-sm btn-outline-danger" data-q-del="${esc(q.id)}">Xóa</button></div></article>`).join('')||'<div class="muted">Chưa có câu hỏi.</div>'}</div>`;
+document.getElementById('newQuestion').onclick=()=>openQuestion();r.querySelectorAll('[data-q-edit]').forEach(b=>b.onclick=()=>openQuestion(b.dataset.qEdit));r.querySelectorAll('[data-q-del]').forEach(b=>b.onclick=()=>deleteQuestion(b.dataset.qDel));bindQuestionBulk(r);bindWordImport(r)}
+
+function bindQuestionBulk(r){
+  const boxes=()=>[...r.querySelectorAll('.q-select')];
+  const selected=()=>boxes().filter(x=>x.checked).map(x=>x.value);
+  const countEl=r.querySelector('#qSelectedCount'),setBtn=r.querySelector('#qMakeSet01'),delBtn=r.querySelector('#qDeleteSelected'),allBtn=r.querySelector('#qDeleteAll');
+  const sync=()=>{const ids=selected(),n=ids.length;if(countEl)countEl.textContent=`${n} đã chọn`;if(setBtn)setBtn.disabled=n!==20;if(delBtn)delBtn.disabled=n===0;const all=boxes();if(r.querySelector('#qSelectAll'))r.querySelector('#qSelectAll').textContent=all.length&&n===all.length?'☐ Bỏ chọn tất cả':'☑ Chọn tất cả'};
+  boxes().forEach(b=>b.addEventListener('change',sync));
+  r.querySelector('#qSelectAll')?.addEventListener('click',()=>{const all=boxes(),should=all.some(x=>!x.checked);all.forEach(x=>x.checked=should);sync()});
+  r.querySelector('#qClearSelect')?.addEventListener('click',()=>{boxes().forEach(x=>x.checked=false);sync()});
+  delBtn?.addEventListener('click',async()=>{const ids=selected();if(!ids.length)return;if(!window.confirm(`Xóa ${ids.length} câu hỏi đã chọn?`))return;await deleteQuestionsBulk(ids)});
+  allBtn?.addEventListener('click',async()=>{if(!questions.length)return;if(!window.confirm(`Xóa TOÀN BỘ ${questions.length} câu hỏi trong ngân hàng?\nHành động này không thể hoàn tác.`))return;await deleteQuestionsBulk(questions.map(q=>q.id))});
+  setBtn?.addEventListener('click',async()=>{const ids=selected();if(ids.length!==20)return;await createDailySetFromQuestionIds(ids,1,true)});
+  sync();
+}
+
+async function deleteQuestionsBulk(ids){if(!staff()||!ids.length)return;try{const batch=writeBatch(db);ids.forEach(id=>batch.delete(doc(db,'questionBank',id)));await batch.commit();toast(`🗑 Đã xóa ${ids.length} câu hỏi.`);await loadQuestions()}catch(e){console.error(e);toast(e.message||'Xóa hàng loạt thất bại.','error')}}
+
+async function createDailySetFromQuestionIds(ids,order=1,published=true){if(!staff()||ids.length!==20)return;try{const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);if(chosen.length!==20)throw new Error('Một số câu hỏi không còn tồn tại. Hãy tải lại danh sách.');const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error(`Câu hỏi "${String(q.prompt||'').slice(0,60)}" sai định dạng.`);const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});const setId=`set${String(order).padStart(2,'0')}`;const ref=doc(db,'sets',setId);const existing=await getDoc(ref);await setDoc(ref,{order,title:`Daily Set ${String(order).padStart(2,'0')}`,questions:qs,published,author:currentUser.email||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(`🚀 Đã đưa 20 câu vào Set ${String(order).padStart(2,'0')} và ${published?'xuất bản':'lưu nháp'}.`);await loadSets();document.querySelector('[data-cms="daily"]')?.click()}catch(e){console.error(e);toast(e.message||'Không thể tạo Daily Set.','error')}}
 
 function bindWordImport(r){
   const copy=r.querySelector('#copyWordTemplate');

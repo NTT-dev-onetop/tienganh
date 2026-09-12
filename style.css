@@ -392,3 +392,13 @@ main.container-fluid{padding:14px 14px calc(28px + env(safe-area-inset-bottom))!
 @media (min-width:1399.98px){
   #review .review-area{max-width:860px}
 }
+
+/* ===== V18.5 · TEACHER QUESTION BULK ACTIONS ===== */
+.question-bank-toolbar{border:1px solid var(--border);background:#fff}
+.question-bank-item{align-items:center}
+.question-bank-item .q-select{width:20px;height:20px;flex:0 0 20px;cursor:pointer}
+.question-bank-toolbar .btn{min-height:40px}
+@media (max-width:767.98px){
+  .question-bank-toolbar .d-flex{width:100%}
+  .question-bank-toolbar .d-flex .btn{flex:1 1 calc(50% - 8px)}
+}
