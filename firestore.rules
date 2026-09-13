@@ -57,10 +57,16 @@ service cloud.firestore {
           && validRole(request.resource.data.role)
         ) || (
           sameUser(uid)
-          && request.resource.data.email == resource.data.email
+          && (
+            request.resource.data.email == resource.data.email
+            || (
+              !("email" in resource.data)
+              && request.resource.data.email == email()
+            )
+          )
           && request.resource.data.role == resource.data.role
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail',
+            'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail','email',
             'streak','lastCompletedDate','totalSetsCompleted','totalBonusPoints'
           ])
           && (
