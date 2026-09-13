@@ -16,16 +16,6 @@ service cloud.firestore {
     function teacherConfig() { return get(/databases/$(database)/documents/config/teachers); }
     function isTeacher() { return signedIn() && !isAdmin() && teacherConfigExists() && teacherConfig().data.emails is list && email() in teacherConfig().data.emails; }
     function isStaff() { return isAdmin() || isTeacher(); }
-    function userEmailCanStayOrBootstrap() {
-      return !(resource.data.email is string)
-        ? request.resource.data.email == email()
-        : request.resource.data.email == resource.data.email;
-    }
-    function userRoleCanStayOrBootstrapStudent() {
-      return !(resource.data.role is string)
-        ? request.resource.data.role == 'student'
-        : request.resource.data.role == resource.data.role;
-    }
 
     match /config/admins {
       // Only admins and listed admins can inspect the admin allowlist.
@@ -67,17 +57,16 @@ service cloud.firestore {
           && validRole(request.resource.data.role)
         ) || (
           sameUser(uid)
-          && userEmailCanStayOrBootstrap()
-          && userRoleCanStayOrBootstrapStudent()
-          && validRole(request.resource.data.role)
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.role == resource.data.role
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'email','lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail',
+            'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail',
             'streak','lastCompletedDate','totalSetsCompleted','totalBonusPoints'
           ])
           && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rosterId','className'])
             || (
-              (!(resource.data.rosterId is string) || resource.data.rosterId == '')
+              !(resource.data.rosterId is string)
               && request.resource.data.rosterId is string
               && exists(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId))
               && get(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId)).data.uid == uid
@@ -88,7 +77,7 @@ service cloud.firestore {
     }
 
     match /users_by_roster/{rosterId} {
-      allow read: if signedIn();
+      allow read: if isAdmin() || resource == null || sameUser(resource.data.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.rosterId == rosterId
