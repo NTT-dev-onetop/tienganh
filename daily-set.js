@@ -1,3 +1,5 @@
+import{log,hardenConsole}from'./logger.js';
+hardenConsole();
 
 function startDailySetCountdown(set) {
   const minutes = getSetDurationMinutes(set);
@@ -45,7 +47,7 @@ function startDailySetCountdown(set) {
 import{collection,doc,getDoc,setDoc,updateDoc,query,where,getDocs,onSnapshot,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import{auth,db}from"./firebase-services.js";
-import{decodeCorrectIndex,makeSignature}from"./security.js";
+import{decodeCorrectIndex}from"./security.js";
 
 let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false,stopSets=null,stopProgress=null;
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -89,14 +91,14 @@ async function loadSets(){
     const snap=await getDocs(query(collection(db,'sets'),where('published','==',true)));
     currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if(Number.isInteger(Number(x.order)))currentSets.push(x)});currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
     await renderDailySetPage();
-  }catch(e){console.error('Không tải được Daily Set:',e);toast('Không tải được bộ đề. Kiểm tra Firestore.','error')}
+  }catch(e){log.error('Không tải được Daily Set:',e);toast('Không tải được bộ đề. Kiểm tra Firestore.','error')}
 }
 async function passedSetIds(){
   if(!currentUser)return new Set();
   try{
     const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));
     const out=new Set();snap.forEach(d=>{const x=d.data()||{};if(x.passed===true&&x.setId)out.add(String(x.setId))});return out;
-  }catch(e){console.error('Không đọc được lịch sử set:',e);return new Set()}
+  }catch(e){log.error('Không đọc được lịch sử set:',e);return new Set()}
 }
 function unlockedFor(set,index,passed){
   if(!set||index<0)return false;
@@ -127,7 +129,7 @@ function progressFromSubmissionDocs(docs){
 }
 async function getStudentProgress(){
   if(!currentUser)return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};
-  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));return progressFromSubmissionDocs(snap.docs)}catch(e){console.error('Không đọc được tiến độ Daily Set:',e);return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''}}
+  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));return progressFromSubmissionDocs(snap.docs)}catch(e){log.error('Không đọc được tiến độ Daily Set:',e);return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''}}
 }
 function watchStudentProgress(){
   if(stopProgress)stopProgress();
@@ -138,7 +140,7 @@ function watchStudentProgress(){
     if(el)el.textContent=`🔥 ${p.streak} ngày`;
     const live=document.getElementById('dailyLiveStatus');if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
     if(!selectedSet)renderDailySetPage();
-  },e=>console.error('Realtime tiến độ Daily Set:',e));
+  },e=>log.error('Realtime tiến độ Daily Set:',e));
 }
 function watchSetsRealtime(){
   if(stopSets)stopSets();
@@ -155,7 +157,7 @@ function watchSetsRealtime(){
     if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
     if(!selectedSet)renderDailySetPage();
   },e=>{
-    console.error('Realtime Daily Set:',e);
+    log.error('Realtime Daily Set:',e);
     const live=document.getElementById('dailyLiveStatus');
     if(live){live.textContent='🟠 Đang chờ kết nối';live.classList.add('is-offline')}
   });
@@ -165,7 +167,7 @@ export async function renderDailySetPage(){
   const root=document.getElementById('daily');if(!root)return;
   if(!currentUser){root.innerHTML='<div class="empty"><div>🔒</div><h3>Đăng nhập để làm Daily Set</h3></div>';return}
   let submissionDocs=[];
-  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e)}
+  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){log.error('Không đọc được lịch sử Daily Set:',e)}
   const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(x.passed===true&&x.setId)passed.add(String(x.setId))});
   const progress=progressFromSubmissionDocs(submissionDocs);
   const allFivePassed=currentSets.length>=5&&currentSets.slice(0,5).every(x=>passed.has(x.id));
@@ -196,7 +198,7 @@ async function openSet(id){
   try{
     const existing=await getDoc(doc(db,'submissions',`${currentUser.uid}_${date}_${id}`));
     if(existing.exists()){toast('Bạn đã nộp Set này hôm nay.','error');return}
-  }catch(e){console.error('Không kiểm tra được submission:',e);toast('Không thể kiểm tra lượt làm.','error');return}
+  }catch(e){log.error('Không kiểm tra được submission:',e);toast('Không thể kiểm tra lượt làm.','error');return}
   selectedSet=set;answers={};submitting=false;renderSetQuestion();
 }
 function normalizeText(s){return String(s??'').trim().toLowerCase().replace(/[.!?]+$/,'').replace(/\s+/g,' ')}
@@ -257,16 +259,16 @@ export async function submitSet(){
     if(passed&&firstPass){streak=last===date?oldStreak:last===y?oldStreak+1:1}
     const ref=doc(db,'submissions',`${currentUser.uid}_${date}_${selectedSet.id}`);
     const existing=await getDoc(ref);if(existing.exists()){toast('Bạn đã nộp Set này hôm nay.','error');submitting=false;return}
-    await setDoc(ref,{uid:currentUser.uid,name:String(profile.name||currentUser.displayName||'Tài khoản'),className:String(profile.className||'11T1'),setId:selectedSet.id,score,total:20,passed,bonusPoints,submittedAt:serverTimestamp(),date,streakAtSubmission:streak,signature:makeSignature(currentUser.uid,selectedSet.id,score,date)});
+    await setDoc(ref,{uid:currentUser.uid,name:String(profile.name||currentUser.displayName||'Tài khoản'),className:String(profile.className||'11T1'),setId:selectedSet.id,score,total:20,passed,bonusPoints,submittedAt:serverTimestamp(),date,streakAtSubmission:streak});
     // Submission là nguồn dữ liệu chuẩn. Summary trên users chỉ là dữ liệu denormalized để đọc nhanh.
     if(passed&&firstPass){
       try{
         const latest=progressFromSubmissionDocs((await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)))).docs);
         await setDoc(userRef,{lastCompletedDate:latest.lastCompletedDate,streak:latest.streak,totalSetsCompleted:latest.totalPassed,totalBonusPoints:latest.totalBonus},{merge:true});
-      }catch(summaryError){console.warn('Đã lưu submission nhưng chưa cập nhật summary users:',summaryError)}
+      }catch(summaryError){log.warn('Đã lưu submission nhưng chưa cập nhật summary users:',summaryError)}
     }
     rootResult(score,passed,streak);
-  }catch(e){console.error('Lỗi nộp Daily Set:',e);toast('Không thể nộp bài. Vui lòng thử lại.','error');submitting=false}
+  }catch(e){log.error('Lỗi nộp Daily Set:',e);toast('Không thể nộp bài. Vui lòng thử lại.','error');submitting=false}
 }
 function rootResult(score,passed,streak){
   const root=document.getElementById('dailyWork');if(!root)return;
