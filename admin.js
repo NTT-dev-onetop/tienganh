@@ -11,7 +11,7 @@ const role=()=>getCurrentRole();
 const admin=()=>!!currentUser&&role()==='admin';
 const staff=()=>!!currentUser&&isStaffRole(role());
 export async function loadAdminForUser(user){if(stopUsersProgress){stopUsersProgress();stopUsersProgress=null}currentUser=user;if(staff())await loadAdmin();else renderDenied()}
-async function loadAdmin(){await Promise.all([loadUsers(),loadTeachers(),loadRoster(),loadKnowledge(),loadQuestions(),loadListenings()]);await loadSets();bindCmsTabs();if(role()!=='admin'){document.querySelector('[data-cms=admins]')?.classList.add('d-none')} }
+async function loadAdmin(){await Promise.all([loadUsers(),loadTeachers(),loadRoster(),loadKnowledge(),loadListenings()]);await loadSets();bindCmsTabs();if(role()!=='admin'){document.querySelector('[data-cms=admins]')?.classList.add('d-none')} }
 function renderDenied(){const r=document.getElementById('adminContent');if(r)r.innerHTML='<div class="empty"><div>🔒</div><h3>Khu vực dành cho giáo viên</h3><p>Tài khoản này chưa được cấp quyền quản trị.</p></div>'}
 function progressFromSubmissionDocs(docs){
   const byUid=new Map();
@@ -364,21 +364,8 @@ function renderDailyAdmin(){
 
   <div id="dailyEditor" class="mt-3"></div>
 
-  <details class="mt-4">
-    <summary class="fw-bold">⚙ Tạo Daily từ ngân hàng câu hỏi thủ công</summary>
-    <div class="cms-form mt-3">
-      <div class="row g-3">
-        <div class="col-md-3"><label>Set số</label><select id="dOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
-        <div class="col-md-7"><label>Tiêu đề</label><input id="dTitle" class="form-control" placeholder="Daily Set"></div>
-        <div class="col-md-2"><label>Điều kiện đạt</label><input id="dPassScore" type="number" min="1" class="form-control" value="1"></div>
-        <div class="col-12"><label>Chọn câu hỏi <span id="dSelectedCount" class="badge text-bg-primary">0 câu</span></label><div class="question-picker">${published.map(q=>`<label class="question-pick"><input type="checkbox" value="${esc(q.id)}"><span><b>${esc(q.unit||'')}</b> · ${esc(q.prompt||'').slice(0,120)}</span></label>`).join('')||'<div class="muted">Chưa có câu hỏi đã xuất bản.</div>'}</div></div>
-        <div class="col-12"><div class="form-check form-switch"><input id="dPublished" class="form-check-input" type="checkbox"><label class="form-check-label">Đã xuất bản</label></div></div>
-      </div>
-      <div class="form-actions"><button id="saveDaily" class="btn btn-primary">💾 Lưu Daily Set thủ công</button></div>
-    </div>
-  </details>`;
+`;
   bindDailyWordImport(r);
-  bindManualDailyEditor(r);
   r.querySelectorAll('[data-d-edit]').forEach(b=>b.onclick=()=>openSetEditor(b.dataset.dEdit));
   r.querySelectorAll('[data-d-del]').forEach(b=>b.onclick=()=>deleteDaily(b.dataset.dDel));
 }
