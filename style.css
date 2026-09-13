@@ -921,6 +921,17 @@ html[data-theme="light"] .cms-tab.active, html:not([data-theme]) .cms-tab.active
   .stat,.home-grid>.panel,.page>.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.daily-set-card,.knowledge-card{opacity:1!important;transform:none!important;transition:none!important;will-change:auto}
 }
 
+/* Mobile motion budget: keep feedback, remove expensive decorative choreography. */
+@media(max-width:991.98px){
+  .page:not(.d-none){animation-duration:300ms}
+  .page:not(.d-none)>*,.page:not(.d-none)>.head,.page:not(.d-none)>.hero,.page:not(.d-none)>.quick-grid,.page:not(.d-none)>.home-grid,.page:not(.d-none)>.panel,.page:not(.d-none)>.capture-tabs,.page:not(.d-none)>.capture-form{animation-duration:320ms!important;animation-delay:0!important}
+  .hero::before,.hero::after,.hero-icon,.navbar-brand .brand-mark,.review-card,.daily-streak,.streak-result{animation:none!important}
+  .stat,.home-grid>.panel,.page>.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.daily-set-card,.knowledge-card{transition-duration:300ms;transform:translate3d(-16px,0,0) scale(.99)}
+  .reveal-from-right{transform:translate3d(16px,0,0) scale(.99)}
+  .is-visible{transform:none!important}
+  .nav-link:hover,.btn:hover:not(:disabled),.home-action:hover,.capture-tab:hover,.exercise-option:hover,.family-option:hover{transform:none}
+}
+
 /* Admin is an operational workspace: prioritize scanning and fast repeated actions. */
 #admin,#admin *{animation:none!important}
 #admin .panel,#admin .cms-pane,#admin .cms-item,#admin .question-picker,#admin .teacher-import-card,#admin .daily-word-import{opacity:1!important;transform:none!important;filter:none!important;transition:none!important;will-change:auto}

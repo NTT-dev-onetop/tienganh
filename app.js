@@ -30,7 +30,8 @@ function page(id){
     requestAnimationFrame(()=>{if(target){const mobileHeader=window.matchMedia('(max-width:991.98px)').matches;const offset=mobileHeader?78:24;const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-offset);window.scrollTo({top:y,behavior:'smooth'})}});
   };
   const currentPage=document.querySelector('.page:not(.d-none)')?.id;
-  const useViewTransition=document.startViewTransition&&id!=='admin'&&currentPage!=='admin';
+  const compactViewport=window.matchMedia('(max-width:991.98px)').matches;
+  const useViewTransition=document.startViewTransition&&!compactViewport&&id!=='admin'&&currentPage!=='admin';
   if(useViewTransition)document.startViewTransition(updatePage);else updatePage();
 }
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false')});
