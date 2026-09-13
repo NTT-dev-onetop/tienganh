@@ -175,6 +175,7 @@ export async function renderDailySetPage(){
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
 }
 async function openSet(id){
+  const set=currentSets.find(x=>x.id===id);if(!set)return;
   // Schedule gate: start/end times are authoritative for the student UI.
   // The final submit is checked again below, so an expired attempt cannot be submitted.
   const schedule = getSetScheduleState(set);
@@ -190,7 +191,6 @@ async function openSet(id){
   window._dailySetDurationMinutes = getSetDurationMinutes(set);
   startDailySetCountdown(set);
 
-  const set=currentSets.find(x=>x.id===id);if(!set)return;
   const questions=Array.isArray(set.questions)?set.questions:[];if(questions.length!==20){toast('Set này chưa đủ 20 câu. Admin cần sửa lại.','error');return}
   const date=today();
   try{
@@ -218,7 +218,7 @@ export async function submitSet(){
   // Re-check the schedule immediately before writing the submission.
   // This prevents submissions after End Time even if the page stayed open.
   try {
-    const scheduleSnap = await getDoc(doc(db, 'sets', id));
+    const scheduleSnap = await getDoc(doc(db, 'sets', selectedSet.id));
     if (!scheduleSnap.exists()) {
       throw new Error('Bài tập không còn tồn tại.');
     }
