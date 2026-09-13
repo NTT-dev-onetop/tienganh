@@ -165,25 +165,21 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
 
   /* Teacher export feedback: one focused animation for a high-value action. */
   #exportStreak{align-items:center;display:inline-flex;gap:8px;justify-content:center;min-width:142px;overflow:hidden;position:relative}
-  #exportStreak.exporting{background:var(--primary-soft);border-color:var(--primary);color:var(--primary);cursor:wait}
+  #exportStreak.exporting{background:#087f5b;border-color:#087f5b;color:#fff;cursor:wait}
   #exportStreak.export-done{background:var(--success-soft);border-color:#12b76a;color:#087f5b}
-  #exportStreak::before{background:currentColor;border-radius:50% 50% 50% 0;content:"";height:9px;left:50%;opacity:0;position:absolute;top:-12px;transform:translateX(-50%) rotate(-45deg) scale(.7);width:9px;z-index:0}
-  #exportStreak:hover::before{animation:waterDrop 900ms var(--ease-spring) both}
-  #exportStreak.exporting::before{animation:waterDrop 900ms var(--ease-spring) infinite}
-  #exportStreak.export-done::before{animation:waterDrop 520ms var(--ease-spring) both;background:#12b76a}
+  #exportStreak::before{background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.08) 28%,rgba(255,255,255,.48) 50%,rgba(255,255,255,.08) 72%,transparent 100%);content:"";height:180%;left:-110%;opacity:0;position:absolute;top:-40%;transform:skewX(-14deg);width:90%;z-index:0}
+  #exportStreak.exporting::before{animation:exportWave 900ms cubic-bezier(.45,0,.55,1) infinite;opacity:1}
   #exportStreak>*{position:relative;z-index:1}
   .export-spinner{animation:exportSpin 700ms linear infinite;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;height:15px;width:15px}
   .export-check{animation:exportCheck 420ms var(--ease-spring) both;font-size:18px;font-weight:900;line-height:1}
   @keyframes exportSpin{to{transform:rotate(360deg)}}
   @keyframes exportCheck{from{opacity:0;transform:scale(.5) rotate(-18deg)}to{opacity:1;transform:scale(1) rotate(0)}}
-  @keyframes waterDrop{0%{opacity:0;transform:translate(-50%,-14px) rotate(-45deg) scale(.65)}18%{opacity:1}62%{opacity:1;transform:translate(-50%,25px) rotate(-45deg) scale(1)}78%{opacity:.7;transform:translate(-50%,34px) rotate(-45deg) scale(1.45,.45)}100%{opacity:0;transform:translate(-50%,43px) rotate(-45deg) scale(1.9,.25)}}
+  @keyframes exportWave{0%{left:-110%;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:120%;opacity:0}}
   @media(prefers-reduced-motion:reduce){.export-spinner,.export-check{animation:none!important}}
   /* The admin calm mode has one intentional exception for export feedback. */
   #admin #exportStreak.exporting .export-spinner{animation:exportSpin 700ms linear infinite!important}
   #admin #exportStreak.export-done .export-check{animation:exportCheck 420ms var(--ease-spring) both!important}
-  #admin #exportStreak:hover::before{animation:waterDrop 900ms var(--ease-spring) both!important}
-  #admin #exportStreak.exporting::before{animation:waterDrop 900ms var(--ease-spring) infinite!important}
-  #admin #exportStreak.export-done::before{animation:waterDrop 520ms var(--ease-spring) both!important}
+  #admin #exportStreak.exporting::before{animation:exportWave 900ms cubic-bezier(.45,0,.55,1) infinite!important}
 
 /* More sheet must be completely absent until the user opens it. */
 .more-sheet:not(.is-open){
