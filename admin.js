@@ -139,7 +139,7 @@ function bindQuestionBulk(r){
 
 async function deleteQuestionsBulk(ids){if(!staff()||!ids.length)return;try{const batch=writeBatch(db);ids.forEach(id=>batch.delete(doc(db,'questionBank',id)));await batch.commit();toast(`🗑 Đã xóa ${ids.length} câu hỏi.`);await loadQuestions()}catch(e){console.error(e);toast(e.message||'Xóa hàng loạt thất bại.','error')}}
 
-async function createDailySetFromQuestionIds(ids,order=1,published=true){if(!staff()||ids.length<1)return;try{const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);if(chosen.length!==ids.length)throw new Error('Một số câu hỏi không còn tồn tại. Hãy tải lại danh sách.');const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error(`Câu hỏi "${String(q.prompt||'').slice(0,60)}" sai định dạng.`);const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});const setUnit=chosen.map(q=>String(q.unit||'').trim()).filter(Boolean)[0]||'Unit 1';const setId=`${setUnit.replace(/\s+/g,'').toLowerCase()}_set${String(order).padStart(3,'0')}`;const ref=doc(db,'sets',setId);const existing=await getDoc(ref);await setDoc(ref,{order,unit:setUnit,title:`Daily ${setUnit} · ${String(order).padStart(2,'0')}`,questions:qs,totalQuestions:qs.length,passScore:Math.max(1,Math.min(qs.length,Math.ceil(qs.length*0.75))),passTotal:qs.length,published,author:currentUser.email||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(`🚀 Đã đưa ${qs.length} câu vào Set ${String(order).padStart(2,'0')} và ${published?'xuất bản':'lưu nháp'}.`);await loadSets();document.querySelector('[data-cms="questions"]')?.click()}catch(e){console.error(e);toast(e.message||'Không thể tạo Daily Set.','error')}}
+async function createDailySetFromQuestionIds(ids,order=1,published=true){if(!staff()||ids.length<1)return;try{const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);if(chosen.length!==ids.length)throw new Error('Một số câu hỏi không còn tồn tại. Hãy tải lại danh sách.');const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error(`Câu hỏi "${String(q.prompt||'').slice(0,60)}" sai định dạng.`);const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});const setId=`set${String(order).padStart(2,'0')}`;const ref=doc(db,'sets',setId);const existing=await getDoc(ref);await setDoc(ref,{order,title:`Daily Set ${String(order).padStart(2,'0')}`,questions:qs,totalQuestions:qs.length,passScore:Math.max(1,Math.min(qs.length,Math.ceil(qs.length*0.75))),passTotal:qs.length,published,author:currentUser.email||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(`🚀 Đã đưa ${qs.length} câu vào Set ${String(order).padStart(2,'0')} và ${published?'xuất bản':'lưu nháp'}.`);await loadSets();document.querySelector('[data-cms="questions"]')?.click()}catch(e){console.error(e);toast(e.message||'Không thể tạo Daily Set.','error')}}
 
 async function parseDocxVocabulary(file){const buf=await file.arrayBuffer(),bytes=new Uint8Array(buf);const cd=findCentralDirectory(bytes);let xmlBytes=null,off=cd.offset,end=off+cd.size;while(off<end){if(readU32(bytes,off)!==0x02014b50)break;const method=readU16(bytes,off+10),csize=readU32(bytes,off+20),nlen=readU16(bytes,off+28),elen=readU16(bytes,off+30),clen=readU16(bytes,off+32),local=readU32(bytes,off+42);const name=new TextDecoder('utf-8').decode(bytes.slice(off+46,off+46+nlen));if(name==='word/document.xml'){const lf=local;if(readU32(bytes,lf)!==0x04034b50)throw new Error('DOCX local header không hợp lệ.');const ln=readU16(bytes,lf+26),le=readU16(bytes,lf+28),data=bytes.slice(lf+30+ln+le,lf+30+ln+le+csize);xmlBytes=method===0?data:await inflateRaw(data)}off+=46+nlen+elen+clen}if(!xmlBytes)throw new Error('Không tìm thấy word/document.xml trong file.');return parseWordXml(new TextDecoder('utf-8').decode(xmlBytes))}
 function findCentralDirectory(bytes){for(let i=bytes.length-22;i>=Math.max(0,bytes.length-66000);i--){if(readU32(bytes,i)===0x06054b50)return{offset:readU32(bytes,i+16),size:readU32(bytes,i+12)} }throw new Error('File .docx không phải ZIP hợp lệ.')}
@@ -281,7 +281,7 @@ function bindDailyWordImport(r){
       const out=Math.max(1,Math.min(pool.length,Number(count?.value)||pool.length));
       const passScore=Math.max(1,Math.min(out,Number(pass?.value)||setDefaultPass(out)));
       const selected=chooseSetQuestions(pool,out,!!random?.checked);
-      const setUnit=chosen.map(q=>String(q.unit||'').trim()).filter(Boolean)[0]||'Unit 1';const setId=`${setUnit.replace(/\s+/g,'').toLowerCase()}_set${String(order).padStart(3,'0')}`;
+      const setId=`set${String(order).padStart(2,'0')}`;
       const ref=doc(db,'sets',setId),existing=await getDoc(ref);
       const qs=selected.map(sourceToSetQuestion);
       const fullPool=pool.map(sourceToSetQuestion);
@@ -323,7 +323,7 @@ function renderDailyAdmin(){
     </div>
     <div class="cms-help mb-3"><b>Luồng dùng:</b> upload 1 file Word → web đọc toàn bộ câu → chọn <b>bao nhiêu câu muốn đưa ra</b> → đặt <b>tên Set</b> → đặt <b>điều kiện đạt</b> → tạo Daily. Ví dụ file 20 câu có thể tạo Daily 10/20, sau đó cập nhật thành 15/20 mà không cần upload lại.</div>
     <div class="row g-2 align-items-end">
-      <div class="col-md-2"><label class="fw-bold">Set số</label><select id="dwOrder" class="form-select"></select></div>
+      <div class="col-md-2"><label class="fw-bold">Set số</label><select id="dwOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
       <div class="col-md-4"><label class="fw-bold">Tên Daily Set</label><input id="dwTitle" class="form-control" placeholder="VD: Unit 3 · Music"></div>
       <div class="col-md-2"><label class="fw-bold">Số câu đưa ra</label><input id="dwCount" type="number" min="1" class="form-control" value="1"></div>
       <div class="col-md-2"><label class="fw-bold">Điều kiện đạt</label><input id="dwPass" type="number" min="1" class="form-control" value="1"></div>
@@ -368,8 +368,8 @@ function renderDailyAdmin(){
     <summary class="fw-bold">⚙ Tạo Daily từ ngân hàng câu hỏi thủ công</summary>
     <div class="cms-form mt-3">
       <div class="row g-3">
-        <div class="col-md-3"><label>Set số</label><input id="dOrder" type="number" min="1" step="1" value="1" class="form-control"></div>
-        <div class="col-md-3"><label>Unit</label><select id="dUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option>Unit ${i+1}</option>`).join('')}<option>Review</option></select></div><div class="col-md-4"><label>Tiêu đề</label><input id="dTitle" class="form-control" placeholder="Daily Set"></div>
+        <div class="col-md-3"><label>Set số</label><select id="dOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
+        <div class="col-md-7"><label>Tiêu đề</label><input id="dTitle" class="form-control" placeholder="Daily Set"></div>
         <div class="col-md-2"><label>Điều kiện đạt</label><input id="dPassScore" type="number" min="1" class="form-control" value="1"></div>
         <div class="col-12"><label>Chọn câu hỏi <span id="dSelectedCount" class="badge text-bg-primary">0 câu</span></label><div class="question-picker">${published.map(q=>`<label class="question-pick"><input type="checkbox" value="${esc(q.id)}"><span><b>${esc(q.unit||'')}</b> · ${esc(q.prompt||'').slice(0,120)}</span></label>`).join('')||'<div class="muted">Chưa có câu hỏi đã xuất bản.</div>'}</div></div>
         <div class="col-12"><div class="form-check form-switch"><input id="dPublished" class="form-check-input" type="checkbox"><label class="form-check-label">Đã xuất bản</label></div></div>
@@ -396,14 +396,14 @@ function bindManualDailyEditor(r){
     if(!staff())return;
     try{
       const order=Number(r.querySelector('#dOrder').value)||1;
-      const unit=r.querySelector('#dUnit')?.value||'Unit 1';const title=r.querySelector('#dTitle').value.trim()||`Daily ${unit} · ${String(order).padStart(2,'0')}`;
+      const title=r.querySelector('#dTitle').value.trim()||`Daily Set ${String(order).padStart(2,'0')}`;
       const ids=[...r.querySelectorAll('.question-pick input:checked')].map(x=>x.value);
       if(!ids.length)throw new Error('Hãy chọn ít nhất 1 câu.');
       const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);
       const qs=chosen.map(sourceToSetQuestion);
       const pass=Math.max(1,Math.min(qs.length,Number(r.querySelector('#dPassScore').value)||setDefaultPass(qs.length)));
-      await setDoc(doc(db,'sets',`${unit.replace(/\s+/g,'').toLowerCase()}_set${String(order).padStart(3,'0')}`),{
-        order,unit,title,questions:qs,sourceQuestions:qs,totalQuestions:qs.length,sourceQuestionCount:qs.length,
+      await setDoc(doc(db,'sets',`set${String(order).padStart(2,'0')}`),{
+        order,title,questions:qs,sourceQuestions:qs,totalQuestions:qs.length,sourceQuestionCount:qs.length,
         passScore:pass,passTotal:qs.length,published:r.querySelector('#dPublished').checked,isDaily:true,
         author:currentUser.email||'',updatedAt:serverTimestamp(),createdAt:serverTimestamp()
       },{merge:true});
@@ -423,7 +423,7 @@ function openSetEditor(id){
   root.innerHTML=`<div class="cms-form panel">
     <div class="panel-title"><div><div class="eyebrow">✏️ CẬP NHẬT DAILY SET</div><h5>${esc(s.title||`Daily ${String(order).padStart(2,'0')}`)}</h5></div><span class="tag">${total}/${sourceCount} câu</span></div>
     <div class="row g-3 mt-1">
-      <div class="col-md-2"><label>Set số</label><select id="eOrder" class="form-select"></select></div>
+      <div class="col-md-2"><label>Set số</label><select id="eOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===order?'selected':''}>Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
       <div class="col-md-5"><label>Tên Set</label><input id="eTitle" class="form-control" value="${esc(s.title||'')}"></div>
       <div class="col-md-2"><label>Số câu đưa ra</label><input id="eCount" type="number" min="1" max="${Math.max(1,sourceCount)}" class="form-control" value="${Math.max(1,total)}"></div>
       <div class="col-md-3"><label>Điều kiện đạt</label><input id="ePass" type="number" min="1" max="${Math.max(1,total)}" class="form-control" value="${pass}"></div>

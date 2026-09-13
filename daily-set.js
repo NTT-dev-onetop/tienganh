@@ -86,8 +86,8 @@ function formatScheduleDate(d) {
 async function loadSets(){
   if(!currentUser)return;
   try{
-    const snap=await getDocs(collection(db,'sets'));
-    currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if((x.published===true||x.published===1||['true','published','public'].includes(String(x.published??'').toLowerCase())) && Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x)});currentSets.sort((a,b)=>{const ua=String(a.unit||''),ub=String(b.unit||'');const na=Number((ua.match(/\d+/)||['999'])[0]),nb=Number((ub.match(/\d+/)||['999'])[0]);return na-nb||ua.localeCompare(ub,'vi')||Number(a.order)-Number(b.order)});
+    const snap=await getDocs(query(collection(db,'sets'),where('published','==',true)));
+    currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x)});currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
     await renderDailySetPage();
   }catch(e){console.error('Không tải được Daily Set:',e);toast('Không tải được bộ đề. Kiểm tra Firestore.','error')}
 }
@@ -100,11 +100,8 @@ async function passedSetIds(){
 }
 function unlockedFor(set,index,passed){
   if(!set||index<0)return false;
-  const unit=String(set.unit||'Chưa phân Unit');
-  const sameUnit=currentSets.filter(x=>String(x.unit||'Chưa phân Unit')===unit);
-  const pos=sameUnit.findIndex(x=>x.id===set.id);
-  if(pos<=0)return true;
-  return passed.has(sameUnit[pos-1].id);
+  if(index===0)return true;
+  const previous=currentSets[index-1];return previous?passed.has(previous.id):false;
 }
 function progressFromSubmissionDocs(docs){
   const bySet=new Map();
@@ -146,14 +143,14 @@ function watchStudentProgress(){
 function watchSetsRealtime(){
   if(stopSets)stopSets();
   if(!currentUser)return;
-  const q=query(collection(db,'sets'));
+  const q=query(collection(db,'sets'),where('published','==',true));
   stopSets=onSnapshot(q,snap=>{
     currentSets=[];
     snap.forEach(d=>{
       const x={id:d.id,...d.data()};
-      if((x.published===true||x.published===1||['true','published','public'].includes(String(x.published??'').toLowerCase())) && Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x);
+      if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x);
     });
-    currentSets.sort((a,b)=>{const ua=String(a.unit||''),ub=String(b.unit||'');const na=Number((ua.match(/\d+/)||['999'])[0]),nb=Number((ub.match(/\d+/)||['999'])[0]);return na-nb||ua.localeCompare(ub,'vi')||Number(a.order)-Number(b.order)});
+    currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
     const live=document.getElementById('dailyLiveStatus');
     if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
     if(!selectedSet)renderDailySetPage();
@@ -171,8 +168,9 @@ export async function renderDailySetPage(){
   try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e)}
   const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(x.passed===true&&x.setId)passed.add(String(x.setId))});
   const progress=progressFromSubmissionDocs(submissionDocs);
-  const cards=currentSets.map((s,i)=>{const unlocked=unlockedFor(s,i,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
-  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Mỗi Set có số câu riêng · đạt theo điều kiện của Set · không giới hạn số Set · tiến độ được phân theo Unit.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${${passed.size}/${currentSets.length}</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${currentSets.length?Math.min(100,Math.round(passed.size/currentSets.length*100)):0}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Giáo viên có thể tạo không giới hạn Daily Set và phân theo Unit.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
+  const allFivePassed=currentSets.length>=5&&currentSets.slice(0,5).every(x=>passed.has(x.id));
+  const cards=currentSets.map((s,i)=>{const unlocked=allFivePassed||unlockedFor(s,i,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
+  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Mỗi Set có số câu riêng · đạt theo điều kiện của Set · mỗi ngày chỉ nộp 1 Set.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${Math.min(passed.size,5)}/5</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${Math.min(100,Math.round(Math.min(passed.size,5)/5*100))}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Admin hãy tạo 5 Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
   root.querySelectorAll('[data-set-id]').forEach(b=>b.onclick=()=>openSet(b.dataset.setId));
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
 }
