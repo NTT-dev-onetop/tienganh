@@ -163,6 +163,19 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
 
   .theme-toggle-mobile{border:1px solid var(--border)!important;background:var(--surface-2)!important;color:var(--ink)!important;text-align:left!important}
 
+  /* Teacher export feedback: one focused animation for a high-value action. */
+  #exportStreak{align-items:center;display:inline-flex;gap:8px;justify-content:center;min-width:142px;overflow:hidden;position:relative}
+  #exportStreak.exporting{background:var(--primary-soft);border-color:var(--primary);color:var(--primary);cursor:wait}
+  #exportStreak.export-done{background:var(--success-soft);border-color:#12b76a;color:#087f5b}
+  .export-spinner{animation:exportSpin 700ms linear infinite;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;height:15px;width:15px}
+  .export-check{animation:exportCheck 420ms var(--ease-spring) both;font-size:18px;font-weight:900;line-height:1}
+  @keyframes exportSpin{to{transform:rotate(360deg)}}
+  @keyframes exportCheck{from{opacity:0;transform:scale(.5) rotate(-18deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+  @media(prefers-reduced-motion:reduce){.export-spinner,.export-check{animation:none!important}}
+  /* The admin calm mode has one intentional exception for export feedback. */
+  #admin #exportStreak.exporting .export-spinner{animation:exportSpin 700ms linear infinite!important}
+  #admin #exportStreak.export-done .export-check{animation:exportCheck 420ms var(--ease-spring) both!important}
+
 /* More sheet must be completely absent until the user opens it. */
 .more-sheet:not(.is-open){
   opacity:0!important;

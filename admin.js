@@ -248,7 +248,7 @@ function wRow(a,b,c,header=false){return `<w:tr>${wCell(a,900,header,'center')}$
 function downloadDOCX(filename,rows){const table=wRow('STT','Học sinh','🔥 Streak',true)+rows.map(r=>wRow(String(r[0]),String(r[1]),String(r[2]),false)).join('');const documentXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr>${wRun('DANH SÁCH HỌC SINH 11T1',true,30)}</w:p><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr>${wRun('Theo dõi Daily Set · Cập nhật Streak',false,20)}</w:p><w:tbl><w:tblPr><w:tblW w:w="8600" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="6" w:color="7A8699"/><w:left w:val="single" w:sz="6" w:color="7A8699"/><w:bottom w:val="single" w:sz="6" w:color="7A8699"/><w:right w:val="single" w:sz="6" w:color="7A8699"/><w:insideH w:val="single" w:sz="4" w:color="B7C0CE"/><w:insideV w:val="single" w:sz="4" w:color="B7C0CE"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="900"/><w:gridCol w:w="6500"/><w:gridCol w:w="1200"/></w:tblGrid>${table}</w:tbl><w:p><w:pPr><w:spacing w:before="240"/></w:pPr>${wRun(`Tổng số: ${rows.length} học sinh`,true,20)}</w:p><w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/></w:sectPr></w:body></w:document>`;const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;const wordRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;const files=[{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rels},{name:'word/document.xml',data:documentXml},{name:'word/_rels/document.xml.rels',data:wordRels}];const bytes=zipStore(files);const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
 async function exportStudentsStreak(){
-  if(!staff())return;
+  if(!staff())return false;
   try{
     const [userSnap,subSnap,rosterSnap]=await Promise.all([
       getDocs(collection(db,'users')),
@@ -275,6 +275,17 @@ async function exportStudentsStreak(){
     });
     downloadDOCX('english-notebook-danh-sach-streak.docx',ordered);
     toast(`Đã xuất Word: ${ordered.length} học sinh.`);
-  }catch(e){console.error('Export streak Word:',e);toast('Không thể xuất Word.','error')}
+    return true;
+  }catch(e){console.error('Export streak Word:',e);toast('Không thể xuất Word.','error');return false}
 }
-document.addEventListener('click',e=>{if(e.target?.id==='exportStreak')exportStudentsStreak()});
+async function handleExportStreak(button){
+  if(!button||button.dataset.exporting==='1')return;
+  button.dataset.exporting='1';button.disabled=true;button.setAttribute('aria-busy','true');button.classList.remove('export-done');button.classList.add('exporting');
+  const original=button.innerHTML;button.innerHTML='<span class="export-spinner" aria-hidden="true"></span><span>Đang tạo Word…</span>';
+  try{
+    const ok=await exportStudentsStreak();
+    if(ok){button.classList.remove('exporting');button.classList.add('export-done');button.innerHTML='<span class="export-check" aria-hidden="true">✓</span><span>Đã tải Word</span>';setTimeout(()=>{button.classList.remove('export-done');button.innerHTML=original;button.disabled=false;button.removeAttribute('aria-busy');delete button.dataset.exporting},1800)}
+    else{button.classList.remove('exporting');button.innerHTML=original;button.disabled=false;button.removeAttribute('aria-busy');delete button.dataset.exporting}
+  }catch(error){button.classList.remove('exporting');button.innerHTML=original;button.disabled=false;button.removeAttribute('aria-busy');delete button.dataset.exporting;throw error}
+}
+document.addEventListener('click',e=>{const button=e.target?.closest?.('#exportStreak');if(button)handleExportStreak(button)});
