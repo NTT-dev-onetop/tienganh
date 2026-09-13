@@ -3,15 +3,14 @@ import{db}from"./firebase-services.js";
 
 // Chủ sở hữu hệ thống: chỉ email này được bootstrap thành ADMIN cao nhất.
 export const OWNER_EMAIL="icloud07072010@gmail.com";
-export const DEFAULT_ADMIN_EMAIL="datnguyen.171201@gmail.com";
-export const ADMIN_EMAILS=[OWNER_EMAIL,DEFAULT_ADMIN_EMAIL];
+export const ADMIN_EMAILS=[OWNER_EMAIL];
 let currentRole=null;
 const cleanEmail=e=>String(e??'').trim().toLowerCase();
 
 export async function checkIsAdmin(email){
  const normalized=cleanEmail(email);
  if(!normalized)return false;
-if(ADMIN_EMAILS.some(x=>normalized===cleanEmail(x)))return true;
+ if(normalized===cleanEmail(OWNER_EMAIL))return true;
  try{
   const snap=await getDoc(doc(db,'config','admins'));
   const emails=snap.exists()&&Array.isArray(snap.data()?.emails)?snap.data().emails:[];

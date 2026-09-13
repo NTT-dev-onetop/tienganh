@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function email() { return signedIn() && request.auth.token.email != null ? request.auth.token.email.lower() : ''; }
-    function bootstrapAdmin() { return signedIn() && (email() == 'icloud07072010@gmail.com' || email() == 'datnguyen.171201@gmail.com'); }
+    function bootstrapAdmin() { return signedIn() && email() == 'icloud07072010@gmail.com'; }
     function adminConfigExists() { return exists(/databases/$(database)/documents/config/admins); }
     function adminConfig() { return get(/databases/$(database)/documents/config/admins); }
     function isAdmin() {
@@ -11,6 +11,7 @@ service cloud.firestore {
     }
     function sameUser(uid) { return signedIn() && request.auth.uid == uid; }
     function validRole(role) { return role == 'admin' || role == 'teacher' || role == 'student'; }
+    function owner() { return signedIn() && email() == 'icloud07072010@gmail.com'; }
     function teacherConfigExists() { return exists(/databases/$(database)/documents/config/teachers); }
     function teacherConfig() { return get(/databases/$(database)/documents/config/teachers); }
     function isTeacher() { return signedIn() && !isAdmin() && teacherConfigExists() && teacherConfig().data.emails is list && email() in teacherConfig().data.emails; }
@@ -18,10 +19,10 @@ service cloud.firestore {
 
     match /config/admins {
       // Only admins and listed admins can inspect the admin allowlist.
-      allow read: if bootstrapAdmin() || (signedIn() && resource.data.emails is list && email() in resource.data.emails);
-      allow create, update: if isAdmin() && request.resource.data.emails is list;
+      allow read: if owner() || (signedIn() && resource.data.emails is list && email() in resource.data.emails);
+      allow create, update: if owner() && request.resource.data.emails is list;
 
-      allow delete: if isAdmin();
+      allow delete: if owner();
     }
 
     match /config/teachers {
