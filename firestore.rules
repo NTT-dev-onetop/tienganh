@@ -158,17 +158,29 @@ service cloud.firestore {
         );
 
 
-      // Tạo submission của chính mình
-
+      // Tạo submission của chính mình. Total/passScore phải khớp Set.
       allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.setId is string
+        && request.resource.data.date is string
+        && request.resource.data.score is int
+        && request.resource.data.total is int
+        && request.resource.data.passScore is int
+        && request.resource.data.score >= 0
+        && request.resource.data.total > 0
+        && request.resource.data.score <= request.resource.data.total
+        && request.resource.data.total == get(
+          /databases/$(database)/documents/sets/$(request.resource.data.setId)
+        ).data.questions.size()
+        && request.resource.data.passScore == get(
+          /databases/$(database)/documents/sets/$(request.resource.data.setId)
+        ).data.passScore
+        && request.resource.data.passed == (
+          request.resource.data.score >= request.resource.data.passScore
+        );
 
-
-      // Cập nhật submission của chính mình
-
-      allow update: if isSignedIn()
-        && resource.data.uid == request.auth.uid
-        && request.resource.data.uid == request.auth.uid;
+      // Submission là bất biến: không được sửa điểm sau khi nộp.
+      allow update: if false;
 
 
       // Chỉ admin được xóa
