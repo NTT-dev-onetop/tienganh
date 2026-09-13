@@ -88,7 +88,7 @@ service cloud.firestore {
     }
 
     match /users_by_roster/{rosterId} {
-      allow read: if isAdmin() || resource == null || sameUser(resource.data.uid);
+      allow read: if signedIn();
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.rosterId == rosterId
