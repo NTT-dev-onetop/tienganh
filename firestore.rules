@@ -1,4 +1,5 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -10,182 +11,235 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    function isOwnerEmail() {
-      return isSignedIn()
-        && request.auth.token.email == 'icloud07072010@gmail.com';
-    }
-
-    function isAdmin() {
-      return isOwnerEmail()
-        || (
-          isSignedIn()
-          && request.auth.token.email in
-            get(/databases/$(database)/documents/config/admins).data.emails
-        );
-    }
-
-    function isTeacher() {
-      return !isAdmin()
-        && isSignedIn()
-        && request.auth.token.email in
-          get(/databases/$(database)/documents/config/teachers).data.emails;
-    }
-
     function isStaff() {
-      return isAdmin() || isTeacher();
+      return request.auth != null
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role in ['admin', 'teacher'];
     }
 
+    // ---------------------------------------------------------
+    // USERS
+    // ---------------------------------------------------------
     match /users/{uid} {
-      // Hồ sơ: chính chủ hoặc staff.
+
+      // Chính chủ hoặc admin/teacher
       allow read: if isOwner(uid) || isStaff();
 
-      // User chỉ được tự tạo hồ sơ của chính mình.
-      // Không thể tự tạo role admin/teacher trừ OWNER/admin hợp lệ.
-      allow create: if isOwner(uid)
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.role in ['student', 'teacher', 'admin']
-        && (
-          request.resource.data.role == 'student'
-          || isStaff()
+      // User tự tạo hồ sơ của chính mình
+      allow create: if isOwner(uid);
+
+      // Student chỉ được sửa các field cho phép.
+      // role bắt buộc giữ nguyên.
+      allow update: if isStaff()
+        || (
+          isOwner(uid)
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name',
+            'className',
+            'rosterId',
+            'email',
+            'lastLoginAt',
+            'streak',
+            'lastCompletedDate',
+            'totalSetsCompleted',
+            'totalBonusPoints'
+          ])
         );
 
-      // Chính chủ chỉ được cập nhật đúng các field cho phép,
-      // không được đổi role và email chỉ được bổ sung khi hồ sơ chưa có email.
-      allow update: if isOwner(uid)
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'name',
-          'className',
-          'streak',
-          'lastCompletedDate',
-          'totalSetsCompleted',
-          'totalBonusPoints',
-          'lastLoginAt',
-          'rosterId',
-          'email'
-        ])
-        && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
-          || (
-            !('email' in resource.data)
-            && request.resource.data.email == request.auth.token.email
-          )
-        )
-        && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rosterId'])
-          || (
-            !('rosterId' in resource.data)
-            && request.resource.data.rosterId is string
-            && exists(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId))
-            && get(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId)).data.uid == uid
-          )
-        )
-        || isStaff();
-
-      allow delete: if isAdmin();
+      // Chỉ admin được xoá user
+      allow delete: if isSignedIn()
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
     }
 
+
+    // ---------------------------------------------------------
+    // PERSONAL ENGLISH NOTES
+    // ---------------------------------------------------------
     match /users/{uid}/english_notes/{noteId} {
+
+      // Chỉ chính chủ
       allow read, create, update, delete: if isOwner(uid);
     }
 
+
+    // ---------------------------------------------------------
+    // USERS BY ROSTER
+    // ---------------------------------------------------------
     match /users_by_roster/{rosterId} {
-      // Roster mapping phải đọc được bởi mọi user đã đăng nhập.
+
+      // Tất cả user đăng nhập được đọc mapping
       allow read: if isSignedIn();
 
-      // Lần đầu gắn tên: uid phải chính là tài khoản đang đăng nhập.
+      // Cho phép:
+      // 1. UID hiện tại tạo mapping của chính mình
+      // 2. rosterId chưa tồn tại
       allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid;
+        && (
+          request.auth.uid == request.resource.data.uid
+          || !exists(
+            /databases/$(database)/documents/users_by_roster/$(rosterId)
+          )
+        );
 
-      // Chủ mapping hoặc staff được sửa.
+      // Chính chủ hoặc staff được update
       allow update: if isStaff()
         || (
           isSignedIn()
-          && resource.data.uid == request.auth.uid
-          && request.resource.data.uid == resource.data.uid
+          && request.auth.uid == request.resource.data.uid
         );
 
-      allow delete: if isAdmin();
+      // Chỉ admin xoá mapping
+      allow delete: if isSignedIn()
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
     }
+
+
+    // ---------------------------------------------------------
+    // CONFIG
+    // ---------------------------------------------------------
 
     match /config/admins {
-      // Roles.js cần đọc allowlist để xác định admin.
+
+      // roles.js cần đọc khi login
       allow read: if isSignedIn();
 
-      // Chỉ OWNER hoặc email đã có trong chính allowlist hiện tại.
-      allow create: if isOwnerEmail();
-      allow update: if isOwnerEmail()
-        || (
-          isSignedIn()
-          && request.auth.token.email in resource.data.emails
-        );
-      allow delete: if isOwnerEmail();
+      // Chỉ admin sửa danh sách admin
+      allow create, update, delete: if isStaff();
     }
+
 
     match /config/teachers {
-      // Roles.js cần đọc allowlist để xác định teacher.
+
+      // roles.js cần đọc khi login
       allow read: if isSignedIn();
 
-      // Chỉ OWNER hoặc email đã có trong chính allowlist hiện tại.
-      allow create: if isOwnerEmail();
-      allow update: if isOwnerEmail()
-        || (
-          isSignedIn()
-          && request.auth.token.email in resource.data.emails
-        );
-      allow delete: if isOwnerEmail();
+      // Chỉ admin/teacher sửa danh sách teacher
+      allow create, update, delete: if isStaff();
     }
+
 
     match /config/roster {
+
+      // roster gate cần đọc
       allow read: if isSignedIn();
+
+      // Staff quản lý roster
       allow create, update, delete: if isStaff();
     }
 
-    match /submissions/{submissionId} {
-      // Chính chủ hoặc staff.
+
+    // ---------------------------------------------------------
+    // DAILY SET SUBMISSIONS
+    // ---------------------------------------------------------
+    match /submissions/{docId} {
+
+      // Chính chủ hoặc staff được đọc
       allow read: if isSignedIn()
-        && (resource.data.uid == request.auth.uid || isStaff());
+        && (
+          request.auth.uid == resource.data.uid
+          || isStaff()
+        );
 
-      // Chỉ chính chủ tạo submission của chính mình.
+      // Student tạo submission của chính mình
+      // Staff cũng được tạo nếu uid trong document là chính họ.
       allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid
-        && submissionId == request.auth.uid + '_' + request.resource.data.date + '_' + request.resource.data.setId;
+        && request.auth.uid == request.resource.data.uid;
 
-      // Không cho HS sửa/xóa submission sau khi tạo.
-      allow update: if false;
-      allow delete: if isAdmin();
+      // Student được update submission của chính mình
+      allow update: if isSignedIn()
+        && request.auth.uid == request.resource.data.uid;
+
+      // Chỉ admin xoá
+      allow delete: if isSignedIn()
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
     }
 
-    match /knowledge/{id} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isStaff();
-    }
 
-    match /questionBank/{id} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isStaff();
-    }
-
-    match /listeningContent/{id} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isStaff();
-    }
-
+    // ---------------------------------------------------------
+    // DAILY SETS
+    // ---------------------------------------------------------
     match /sets/{setId} {
-      allow read: if isSignedIn();
+
+      // Student + teacher + admin đều đọc được
+      // nhưng chỉ set đã publish.
+      allow read: if isSignedIn()
+        && resource.data.published == true;
+
+      // Chỉ staff ghi/xoá
       allow create, update, delete: if isStaff();
     }
 
-    // Giữ các collection hiện có của project, không mở rộng quyền.
+
+    // ---------------------------------------------------------
+    // KNOWLEDGE
+    // ---------------------------------------------------------
+    match /knowledge/{id} {
+
+      // User đăng nhập đọc nội dung đã publish
+      allow read: if isSignedIn()
+        && resource.data.published == true;
+
+      // Staff quản lý
+      allow create, update, delete: if isStaff();
+    }
+
+
+    // ---------------------------------------------------------
+    // QUESTION BANK
+    // ---------------------------------------------------------
+    match /questionBank/{id} {
+
+      // User đăng nhập đọc câu hỏi đã publish
+      allow read: if isSignedIn()
+        && resource.data.published == true;
+
+      // Staff quản lý
+      allow create, update, delete: if isStaff();
+    }
+
+
+    // ---------------------------------------------------------
+    // LISTENING CONTENT
+    // ---------------------------------------------------------
+    match /listeningContent/{id} {
+
+      // User đăng nhập đọc nội dung đã publish
+      allow read: if isSignedIn()
+        && resource.data.published == true;
+
+      // Staff quản lý
+      allow create, update, delete: if isStaff();
+    }
+
+
+    // ---------------------------------------------------------
+    // AUDIT
+    // ---------------------------------------------------------
     match /audit/{auditId} {
-      allow read: if isAdmin();
+
+      allow read: if isStaff();
+
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAdmin();
+
+      allow update, delete: if isStaff();
     }
 
+
+    // ---------------------------------------------------------
+    // RATE LIMITS
+    // ---------------------------------------------------------
     match /rate_limits/{id} {
-      allow read, create, update, delete: if isAdmin();
+
+      allow read, create, update, delete: if isStaff();
     }
   }
 }
