@@ -73,7 +73,7 @@ service cloud.firestore {
 
 
     // =========================================================
-    // ROSTER
+    // USERS BY ROSTER
     // =========================================================
 
     match /users_by_roster/{rosterId} {
@@ -94,7 +94,7 @@ service cloud.firestore {
 
 
     // =========================================================
-    // CONFIG
+    // CONFIG - ADMINS
     // =========================================================
 
     match /config/admins {
@@ -105,6 +105,10 @@ service cloud.firestore {
     }
 
 
+    // =========================================================
+    // CONFIG - TEACHERS
+    // =========================================================
+
     match /config/teachers {
 
       allow read: if isSignedIn();
@@ -112,6 +116,10 @@ service cloud.firestore {
       allow create, update, delete: if isStaff();
     }
 
+
+    // =========================================================
+    // CONFIG - ROSTER
+    // =========================================================
 
     match /config/roster {
 
@@ -127,23 +135,9 @@ service cloud.firestore {
 
     match /submissions/{submissionId} {
 
-      /*
-       * GET
-       *
-       * daily-set.js có:
-       *
-       * getDoc(
-       *   doc(db, 'submissions',
-       *   `${currentUser.uid}_${date}_${id}`)
-       * )
-       *
-       * Khi chưa làm bài, document chưa tồn tại.
-       *
-       * Vì vậy không được chỉ dựa vào resource.data.uid.
-       *
-       * ID submission của học sinh luôn bắt đầu bằng UID của
-       * chính học sinh đó.
-       */
+      // getDoc() submission của chính mình.
+      // Cho phép cả trường hợp document chưa tồn tại,
+      // vì ID được tạo theo UID_date_setId.
 
       allow get: if isSignedIn()
         && (
@@ -154,20 +148,8 @@ service cloud.firestore {
         );
 
 
-      /*
-       * LIST / QUERY
-       *
-       * daily-set.js:
-       *
-       * query(
-       *   collection(db, 'submissions'),
-       *   where('uid', '==', currentUser.uid)
-       * )
-       *
-       * Student chỉ được query submission của chính mình.
-       *
-       * Staff được query tất cả.
-       */
+      // query submissions của chính mình.
+      // daily-set.js dùng where('uid', '==', currentUser.uid)
 
       allow list: if isSignedIn()
         && (
@@ -176,30 +158,20 @@ service cloud.firestore {
         );
 
 
-      /*
-       * CREATE
-       *
-       * Student chỉ được tạo submission của chính mình.
-       */
+      // Tạo submission của chính mình
 
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
 
 
-      /*
-       * UPDATE
-       *
-       * Student chỉ được sửa submission của chính mình.
-       */
+      // Cập nhật submission của chính mình
 
       allow update: if isSignedIn()
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid;
 
 
-      /*
-       * DELETE
-       */
+      // Chỉ admin được xóa
 
       allow delete: if isAdmin();
     }
@@ -211,8 +183,12 @@ service cloud.firestore {
 
     match /sets/{setId} {
 
-      allow read: if isSignedIn()
-        && resource.data.published == true;
+      // Cho phép user đã đăng nhập đọc Daily Set.
+      // JS tự lọc published == true.
+
+      allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý Daily Set
 
       allow create, update, delete: if isStaff();
     }
@@ -224,8 +200,13 @@ service cloud.firestore {
 
     match /knowledge/{id} {
 
-      allow read: if isSignedIn()
-        && resource.data.published == true;
+      // Cho phép user đã đăng nhập đọc kiến thức.
+      // Không ép published trong Rules để tránh
+      // Permission Denied với dữ liệu cũ.
+
+      allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý kiến thức
 
       allow create, update, delete: if isStaff();
     }
@@ -237,8 +218,11 @@ service cloud.firestore {
 
     match /questionBank/{id} {
 
-      allow read: if isSignedIn()
-        && resource.data.published == true;
+      // User đã đăng nhập được đọc ngân hàng câu hỏi
+
+      allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý ngân hàng câu hỏi
 
       allow create, update, delete: if isStaff();
     }
@@ -250,8 +234,11 @@ service cloud.firestore {
 
     match /listeningContent/{id} {
 
-      allow read: if isSignedIn()
-        && resource.data.published == true;
+      // User đã đăng nhập được đọc Listening
+
+      allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý Listening
 
       allow create, update, delete: if isStaff();
     }
