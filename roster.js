@@ -1,4 +1,4 @@
-import{doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import{doc,getDoc,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
 
 const escLocal=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -64,8 +64,12 @@ export async function initRosterGate(user,role){
         const target=students.find(x=>String(x.id)===rosterId);if(!target)throw new Error('Tên không còn trong roster.');
         const mappingRef=doc(db,'users_by_roster',rosterId);const mapping=await getDoc(mappingRef);
         if(mapping.exists()&&mapping.data()?.uid!==user.uid)throw new Error('Tên này đã được đăng ký. Liên hệ thầy.');
-        await setDoc(mappingRef,{uid:user.uid,email:String(user.email||'').toLowerCase(),name:String(target.name),rosterId});
-        await setDoc(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1',email:String(user.email||'').trim().toLowerCase()},{merge:true});
+        const normalizedEmail=String(user.email||'').trim().toLowerCase();
+        if(!normalizedEmail)throw new Error('Tài khoản Google không có email hợp lệ.');
+        const batch=writeBatch(db);
+        batch.set(mappingRef,{uid:user.uid,email:normalizedEmail,name:String(target.name),rosterId},{merge:false});
+        batch.set(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1'},{merge:true});
+        await batch.commit();
         bs.hide();resolve();
       }catch(e){console.error('Lỗi gắn roster:',e);err.textContent=e.message||'Không thể lưu tên.';err.classList.remove('d-none');save.disabled=false}
     }});

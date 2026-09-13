@@ -57,16 +57,10 @@ service cloud.firestore {
           && validRole(request.resource.data.role)
         ) || (
           sameUser(uid)
-          && (
-            request.resource.data.email == resource.data.email
-            || (
-              !("email" in resource.data)
-              && request.resource.data.email == email()
-            )
-          )
+          && request.resource.data.email == resource.data.email
           && request.resource.data.role == resource.data.role
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail','email',
+            'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail',
             'streak','lastCompletedDate','totalSetsCompleted','totalBonusPoints'
           ])
           && (
@@ -74,8 +68,7 @@ service cloud.firestore {
             || (
               !(resource.data.rosterId is string)
               && request.resource.data.rosterId is string
-              && exists(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId))
-              && get(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId)).data.uid == uid
+              && getAfter(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId)).data.uid == uid
             )
           )
         );
