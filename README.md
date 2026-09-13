@@ -15,3 +15,8 @@ Deploy the web files and Firestore rules together. The app uses the Firebase pro
 - `security.js` only obfuscates answer indexes and produces a client-side signature. It is **not** a secret or a server-side anti-cheat mechanism.
 - Firestore rules are shipped in this repository. Student accounts cannot self-promote to `admin`/`teacher`; admin membership is controlled by `config/admins`.
 - True answer secrecy / authoritative scoring requires a trusted backend such as Cloud Functions.
+
+## Knowledge publish fix
+- Teacher-published knowledge is reloaded whenever the Knowledge page is opened.
+- Student view reads the knowledge collection and filters published values client-side, tolerating legacy boolean/string/number values.
+- Sorting is numeric by Firestore timestamp instead of string comparison.
