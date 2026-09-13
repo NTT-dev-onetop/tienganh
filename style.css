@@ -43,6 +43,20 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
 
 /* ===== Vocabulary / Word Family expansion ===== */
 [data-vocab-view]{min-height:42px}
+@media(min-width:1024px){
+  .nav .navbar-brand{
+    align-self:flex-start;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-left:0!important;
+    margin-right:0!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    width:100%;
+  }
+  .nav .navbar-brand .brand-mark{margin-right:0!important}
+}
 [data-vocab-view].active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .family-card,.family-quiz-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;height:100%;box-shadow:0 4px 16px rgba(16,24,40,.04)}
 .family-root{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-top:12px}
@@ -53,6 +67,95 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
 .family-quiz-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .family-option{min-height:52px;text-align:left;border:1px solid var(--border);background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;transition:.18s}
 .family-option:hover{border-color:var(--primary);background:var(--primary-soft)}
+
+/* ===== FINAL UI MOTION + NAVBAR POLISH ===== */
+:root{
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;
+  --motion-fast:150ms;--motion-base:240ms;--motion-slow:520ms;
+  --ease-emphasized:cubic-bezier(.22,1,.36,1);
+  --lift-shadow:0 8px 0 rgba(49,94,251,.08),0 18px 32px rgba(16,24,40,.12);
+}
+
+/* Consistent vertical rhythm between major blocks. */
+.page > * + *{margin-top:var(--space-5)}
+.home-grid,.quick-grid,.profile-grid,.profile-stats,.home-action-grid,.form-grid,.filter-row,.form-actions,.exercise-nav,.result-actions,.listening-actions,.review-actions{gap:var(--space-4)}
+.stack,.knowledge-board,.grammar-board,.pattern-board,.teacher-listening-board,.teacher-question-board{display:grid;gap:var(--space-4)}
+.row.g-3{--bs-gutter-x:1.25rem;--bs-gutter-y:1.25rem}
+.panel + .panel,.panel + .section-label,.section-label + .panel{margin-top:var(--space-5)}
+
+/* Navbar: clear hierarchy, stable hit targets, and a single active signal. */
+.nav{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
+.navbar-brand{align-items:center;display:flex;gap:10px;margin-bottom:12px}
+.navbar-brand .brand-mark{flex:none;transition:transform var(--motion-base) var(--ease-emphasized),box-shadow var(--motion-base) ease}
+.navbar-brand:hover .brand-mark{box-shadow:0 5px 12px rgba(49,94,251,.18);transform:rotate(-7deg) scale(1.05)}
+.nav-section{margin-top:var(--space-2)}
+.nav-link{min-height:46px;position:relative;transition:background-color var(--motion-fast) ease,color var(--motion-fast) ease,transform var(--motion-fast) var(--ease-emphasized)}
+.nav-link:hover{transform:translateX(3px)}
+.nav-link.active{animation:navItemIn var(--motion-base) var(--ease-emphasized) both}
+.nav-link.active::before{background:var(--primary);border-radius:0 5px 5px 0;content:"";height:22px;left:-14px;position:absolute;top:12px;width:4px}
+.nav-badge{margin-left:auto}
+.user-block{margin-top:var(--space-4);padding-top:var(--space-4)}
+.avatar{transition:transform var(--motion-base) var(--ease-emphasized),box-shadow var(--motion-base) ease}
+.user-block:hover .avatar{box-shadow:0 5px 14px rgba(49,94,251,.16);transform:scale(1.06)}
+
+/* Depth and tactile interaction for learning surfaces. */
+.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.review-card,.listening-card,.daily-question,.family-card,.family-quiz-card{border-radius:18px;transition:box-shadow var(--motion-base) var(--ease-emphasized),border-color var(--motion-base) ease,transform var(--motion-base) var(--ease-emphasized)}
+.panel:hover,.vocab-card:hover,.grammar-card:hover,.mistake-card:hover,.family-card:hover,.family-quiz-card:hover{border-color:#c4d0f5;box-shadow:var(--lift-shadow);transform:translateY(-3px)}
+.stat{transition:box-shadow var(--motion-base) var(--ease-emphasized),transform var(--motion-base) var(--ease-emphasized)}
+.stat:hover{box-shadow:var(--lift-shadow);transform:translateY(-4px)}
+.stat span{transition:transform var(--motion-base) var(--ease-emphasized)}
+.stat:hover span{transform:rotate(-8deg) scale(1.08)}
+.home-action{transition:background var(--motion-fast) ease,border-color var(--motion-fast) ease,box-shadow var(--motion-fast) var(--ease-emphasized),transform var(--motion-fast) var(--ease-emphasized)}
+.home-action:hover{box-shadow:0 8px 20px rgba(16,24,40,.09);transform:translateY(-3px)}
+.btn,.capture-tab,.exercise-option,.family-option,.more-grid button{transition:background var(--motion-fast) ease,border-color var(--motion-fast) ease,box-shadow var(--motion-fast) var(--ease-emphasized),color var(--motion-fast) ease,transform var(--motion-fast) var(--ease-emphasized)}
+.btn:hover:not(:disabled),.capture-tab:hover,.exercise-option:hover,.family-option:hover,.more-grid button:hover{transform:translateY(-2px)}
+.btn:active:not(:disabled),.capture-tab:active,.exercise-option:active,.family-option:active{transform:translateY(1px);transition-duration:80ms}
+
+/* Page transitions and controlled stagger: motion explains state change. */
+.page:not(.d-none){animation:pageEnter var(--motion-slow) var(--ease-emphasized) both}
+.page:not(.d-none) > *{animation:contentRise var(--motion-slow) var(--ease-emphasized) both}
+.page:not(.d-none) > *:nth-child(2){animation-delay:50ms}
+.page:not(.d-none) > *:nth-child(3){animation-delay:100ms}
+.page:not(.d-none) > *:nth-child(4){animation-delay:150ms}
+.page:not(.d-none) .stat:nth-child(2){animation-delay:50ms}
+.page:not(.d-none) .stat:nth-child(3){animation-delay:100ms}
+.page:not(.d-none) .stat:nth-child(4){animation-delay:150ms}
+.auth-card{animation:cardPop 620ms var(--ease-emphasized) both}
+.loading-skeleton{animation:shimmer 1.3s ease-in-out infinite}
+@keyframes pageEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes contentRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardPop{0%{opacity:0;transform:translateY(18px) scale(.96)}70%{opacity:1;transform:translateY(-2px) scale(1.01)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes navItemIn{from{opacity:.55;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
+@keyframes shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+@media(max-width:991.98px){
+  .mobile-topbar{padding:12px 16px;box-shadow:0 4px 18px rgba(16,24,40,.08)}
+  .mobile-menu{animation:menuDrop var(--motion-base) var(--ease-emphasized) both;transform-origin:top center}
+  .mobile-menu button{min-height:44px}
+  .mobile-bottom{gap:6px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgba(16,24,40,.12)}
+  .mobile-bottom button{min-height:52px;transition:background var(--motion-fast) ease,color var(--motion-fast) ease,transform var(--motion-fast) var(--ease-emphasized)}
+  .mobile-bottom button:active{transform:scale(.94)}
+}
+@keyframes menuDrop{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+@media(prefers-reduced-motion:reduce){
+  .page:not(.d-none),.page:not(.d-none)>*,.page:not(.d-none) .stat,.auth-card,.mobile-menu{animation:none!important}
+  .panel,.vocab-card,.grammar-card,.mistake-card,.family-card,.family-quiz-card,.stat,.btn,.home-action,.nav-link{transition:none!important}
+}
+
+/* Keep the labelled sidebar on usable desktop widths; icon-only mode is tablet-only. */
+@media(min-width:1024px){
+  :root{--sidebar:248px}
+  .nav{display:flex!important;width:248px!important;padding:20px 14px}
+  main.container-fluid{margin-left:248px!important;width:calc(100% - 248px)!important;padding-left:32px!important;padding-right:32px!important}
+  .nav .navbar-brand{font-size:18px;text-align:left;padding:6px 10px 20px}
+  .nav-link{font-size:15px;gap:10px;justify-content:flex-start;padding:10px 11px}
+  .nav-icon{font-size:16px;width:22px}
+  .nav-section{font-size:11px;padding:18px 10px 6px}
+  .nav-section::before{display:none}
+  .user-block{justify-content:flex-start}
+  .user-meta,#logout{display:block}
+}
 .family-option.is-correct{border-color:#16a34a;background:#ecfdf3}
 .family-option.is-wrong{border-color:#dc2626;background:#fef2f2}
 .family-feedback{margin-top:14px;padding:14px;border-radius:12px;line-height:1.6}
@@ -699,7 +802,146 @@ html[data-theme="light"] .cms-tab.active, html:not([data-theme]) .cms-tab.active
 .daily-answer-review summary{cursor:pointer;color:var(--ink)}
 .daily-review-list{display:grid;gap:8px}
 .daily-review-row{display:grid;grid-template-columns:70px 1fr 1fr;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card-bg,#fff);font-size:14px}
+
+/* Review page safe area: fixed mobile chrome must never cover the study card or actions. */
+#review{min-height:calc(100vh - 32px);scroll-margin-top:96px!important;padding-top:16px!important}
+#review .head{margin-top:0!important}
+#review .review-area{margin:32px auto 0;scroll-margin-top:96px}
+#review .review-actions{padding-bottom:16px}
+@media(max-width:991.98px){
+  #review{min-height:calc(100vh - 120px);padding-bottom:calc(150px + env(safe-area-inset-bottom))!important}
+  #review .review-area{margin-top:24px;padding-bottom:32px}
+  #review .review-card{min-height:280px}
+}
+
+/* ===== DEEP MOTION LAYER ===== */
+:root{
+  --motion-fast:150ms;
+  --motion-base:280ms;
+  --motion-slow:680ms;
+  --ease-spring:cubic-bezier(.16,1,.3,1);
+  --ease-soft:cubic-bezier(.22,.61,.36,1);
+}
+
+/* Page choreography: the interface arrives in a readable sequence. */
+.page:not(.d-none){animation:pageReveal var(--motion-slow) var(--ease-spring) both}
+.page:not(.d-none)>.head{animation:riseIn 560ms var(--ease-spring) 40ms both}
+.page:not(.d-none)>.hero{animation:heroReveal 720ms var(--ease-spring) both}
+.page:not(.d-none)>.quick-grid{animation:riseIn 620ms var(--ease-spring) 100ms both}
+.page:not(.d-none)>.home-grid{animation:riseIn 620ms var(--ease-spring) 160ms both}
+.page:not(.d-none)>.panel{animation:riseIn 620ms var(--ease-spring) 220ms both}
+.page:not(.d-none)>.capture-tabs{animation:riseIn 540ms var(--ease-spring) 80ms both}
+.page:not(.d-none)>.capture-form{animation:formReveal 700ms var(--ease-spring) 140ms both}
+.page:not(.d-none)>.daily-set-grid,.page:not(.d-none)>.grammar-board,.page:not(.d-none)>.pattern-board,.page:not(.d-none)>.knowledge-board{animation:riseIn 620ms var(--ease-spring) 120ms both}
+
+/* Hero depth: slow ambient movement, never competing with the task. */
+.hero{isolation:isolate}
+.hero::before{background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 50%,transparent 65%);content:"";inset:0;opacity:.5;position:absolute;transform:translateX(-120%);animation:heroSheen 7s var(--ease-soft) 1s infinite}
+.hero::after{animation:orbFloat 8s ease-in-out infinite;transform-origin:center}
+.hero-copy,.hero-icon{animation:heroContent 760ms var(--ease-spring) both}
+.hero-icon{animation-delay:150ms}
+
+/* Tactile surfaces: hover has anticipation, press has weight. */
+.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.review-card,.listening-card,.family-card,.family-quiz-card{will-change:transform;transition:transform var(--motion-base) var(--ease-spring),box-shadow var(--motion-base) var(--ease-spring),border-color var(--motion-base) ease}
+.panel:hover,.vocab-card:hover,.grammar-card:hover,.mistake-card:hover,.exercise-card:hover,.listening-card:hover,.family-card:hover,.family-quiz-card:hover{transform:translateY(-5px) scale(1.003);box-shadow:0 12px 0 rgba(49,94,251,.07),0 24px 40px rgba(16,24,40,.13)}
+.btn,.home-action,.capture-tab,.exercise-option,.family-option{will-change:transform}
+.btn:hover:not(:disabled),.home-action:hover,.capture-tab:hover,.exercise-option:hover,.family-option:hover{transform:translateY(-3px)}
+.btn:active:not(:disabled),.home-action:active,.capture-tab:active,.exercise-option:active,.family-option:active{transform:translateY(2px) scale(.98);transition-duration:90ms}
+.btn-primary:hover:not(:disabled){box-shadow:0 6px 0 rgba(36,72,207,.22),0 14px 24px rgba(49,94,251,.2)}
+
+/* Navigation choreography and icon feedback. */
+.nav-link{overflow:hidden}
+.nav-link::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);content:"";height:100%;left:-120%;position:absolute;top:0;transform:skewX(-18deg);transition:left 520ms var(--ease-soft);width:70%}
+.nav-link:hover::after{left:130%}
+.nav-link.active .nav-icon{animation:iconPop 420ms var(--ease-spring) both}
+.mobile-bottom button.active .mb-icon{animation:iconPop 420ms var(--ease-spring) both}
+.navbar-brand .brand-mark{animation:brandFloat 4s ease-in-out 1.2s infinite}
+
+/* Learning feedback: correct/wrong states get a clear, short signal. */
+.exercise-feedback.correct,.listening-feedback.correct,.daily-review-row.is-correct{animation:feedbackIn 420ms var(--ease-spring) both}
+.exercise-feedback.wrong,.listening-feedback.wrong,.daily-review-row.is-wrong{animation:shakeError 420ms var(--ease-spring) both}
+.exercise-progress span,.listening-progress span,.progress-bar{transition:width 620ms var(--ease-spring);transform-origin:left center}
+.daily-streak,.streak-result{animation:streakPulse 900ms var(--ease-spring) both}
+.review-card{animation:reviewFloat 5s ease-in-out infinite}
+
+/* Focus is animated but remains visible for keyboard users. */
+.form-control,.form-select{transition:border-color var(--motion-fast) ease,box-shadow var(--motion-base) var(--ease-spring),transform var(--motion-fast) var(--ease-spring)}
+.form-control:focus,.form-select:focus{transform:translateY(-1px)}
+
+@keyframes pageReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes formReveal{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes heroReveal{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes heroContent{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes heroSheen{0%,55%{transform:translateX(-120%)}75%,100%{transform:translateX(120%)}}
+@keyframes orbFloat{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-18px,14px,0) scale(1.06)}}
+@keyframes iconPop{0%{transform:scale(.7) rotate(-8deg)}65%{transform:scale(1.16) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes brandFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-3deg)}}
+@keyframes feedbackIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes shakeError{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+@keyframes streakPulse{0%{opacity:0;transform:scale(.8)}65%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes reviewFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+@media(prefers-reduced-motion:reduce){
+  .page:not(.d-none),.page:not(.d-none)>*,.hero::before,.hero::after,.hero-copy,.hero-icon,.nav-link.active .nav-icon,.mobile-bottom button.active .mb-icon,.navbar-brand .brand-mark,.review-card,.daily-streak,.streak-result{animation:none!important}
+  .panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.btn,.home-action,.capture-tab,.exercise-option,.family-option,.form-control,.form-select{transition:none!important;transform:none!important}
+}
+
+/* ===== SCROLL-DRIVEN HORIZONTAL REVEAL ===== */
+.stat,.home-grid>.panel,.page>.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.daily-set-card,.knowledge-card{
+  opacity:0;
+  transform:translate3d(-30px,0,0) scale(.985);
+  transition:opacity 620ms var(--ease-spring),transform 720ms var(--ease-spring),box-shadow var(--motion-base) var(--ease-spring),border-color var(--motion-base) ease;
+  will-change:opacity,transform;
+}
+.reveal-from-right{transform:translate3d(30px,0,0) scale(.985)}
+.is-visible{opacity:1!important;transform:translate3d(0,0,0) scale(1)!important}
+.quick-grid .stat:nth-child(2),.home-action-grid>*:nth-child(2),.daily-set-grid>*:nth-child(2){transition-delay:50ms}
+.quick-grid .stat:nth-child(3),.home-action-grid>*:nth-child(3),.daily-set-grid>*:nth-child(3){transition-delay:100ms}
+.quick-grid .stat:nth-child(4),.home-action-grid>*:nth-child(4),.daily-set-grid>*:nth-child(4){transition-delay:150ms}
+
+@media(prefers-reduced-motion:reduce){
+  .stat,.home-grid>.panel,.page>.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.daily-set-card,.knowledge-card{opacity:1!important;transform:none!important;transition:none!important;will-change:auto}
+}
+
+/* ===== APPLE-LIKE TAB TRANSITIONS ===== */
+@supports (view-transition-name: none){
+  .page:not(.d-none){view-transition-name:active-page}
+  ::view-transition-group(active-page){animation-duration:320ms;animation-timing-function:cubic-bezier(.22,1,.36,1)}
+  ::view-transition-old(active-page){animation:tabOld 180ms ease-out both}
+  ::view-transition-new(active-page){animation:tabNew 320ms cubic-bezier(.16,1,.3,1) both}
+}
+@keyframes tabOld{to{opacity:0;transform:translateX(-10px)}}
+@keyframes tabNew{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  ::view-transition-old(active-page),::view-transition-new(active-page),::view-transition-group(active-page){animation:none!important}
+}
+
+/* Final cascade override: readable labelled sidebar on desktop from 1024px. */
+@media(min-width:1024px){
+  :root{--sidebar:248px}
+  .nav{display:flex!important;width:248px!important;padding:20px 14px!important}
+  main.container-fluid{margin-left:248px!important;width:calc(100% - 248px)!important;padding-left:32px!important;padding-right:32px!important}
+  .nav .navbar-brand{font-size:18px!important;text-align:left;padding:6px 10px 20px}
+  .nav-link{font-size:15px!important;gap:10px;justify-content:flex-start;padding:10px 11px}
+  .nav-icon{font-size:16px;width:22px}
+  .nav-section{font-size:11px;padding:18px 10px 6px}
+  .nav-section::before{display:none}
+  .user-block{justify-content:flex-start}
+  .user-meta,#logout{display:block}
+}
 .daily-review-row.is-wrong{border-left:4px solid #dc3545}.daily-review-row.is-correct{border-left:4px solid #198754}
 @media(max-width:650px){.daily-review-row{grid-template-columns:1fr;gap:4px}}
 html[data-theme="dark"] .daily-answer-review{background:var(--surface-2);color:var(--ink)}
 html[data-theme="dark"] .daily-review-row{background:var(--card-bg);color:var(--ink);border-color:var(--border)}
+
+/* Last cascade layer for the review safe area. */
+#review{min-height:calc(100vh - 32px);scroll-margin-top:96px!important;padding-top:16px!important;padding-bottom:48px!important}
+#review .head{margin-top:0!important}
+#review .review-area{margin:32px auto 0;scroll-margin-top:96px}
+#review .review-actions{padding-bottom:16px}
+@media(max-width:991.98px){
+  #review{min-height:calc(100vh - 120px);padding-bottom:calc(150px + env(safe-area-inset-bottom))!important}
+  #review .review-area{margin-top:24px;padding-bottom:32px}
+  #review .review-card{min-height:280px}
+}

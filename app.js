@@ -9,9 +9,28 @@ import{auth,db}from"./firebase-services.js";
 import{normalizeExerciseItem}from"./exercises.js";
 const provider=new GoogleAuthProvider();
 const $=id=>document.getElementById(id);let user=null,unsub=null,data={vocab:[],grammar:[],mistakes:[]},reviewQueue=[],reviewIndex=0;
+const appMain=document.querySelector('main.container-fluid');
+const reviewPage=$('review');
+if(appMain&&reviewPage&&reviewPage.parentElement!==appMain)appMain.appendChild(reviewPage);
+const revealSelector='.stat,.home-grid>.panel,.page>.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.daily-set-card,.knowledge-card';
+const revealObserver=!window.matchMedia('(prefers-reduced-motion: reduce)').matches&&'IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');revealObserver.unobserve(entry.target)}}),{threshold:.12,rootMargin:'0px 0px -8%'}):null;
+const observeReveal=(root=document)=>{if(!revealObserver)return;root.querySelectorAll(revealSelector).forEach((el,index)=>{if(el.dataset.revealBound)return;el.dataset.revealBound='1';if(index%2)el.classList.add('reveal-from-right');revealObserver.observe(el)})};
+observeReveal();
+if(!revealObserver)document.querySelectorAll(revealSelector).forEach(el=>el.classList.add('is-visible'));
+new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)observeReveal(node)}))).observe(document.body,{childList:true,subtree:true});
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-function page(id){if(id==='admin'&&!isStaffRole(getCurrentRole())){id='home'}document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));const target=$(id);target?.classList.remove('d-none');document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='profile')renderProfile();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();requestAnimationFrame(()=>{if(target){const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-78);window.scrollTo({top:y,behavior:'smooth'})}})}
+function page(id){
+  if(id==='admin'&&!isStaffRole(getCurrentRole()))id='home';
+  const updatePage=()=>{
+    document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));
+    const target=$(id);target?.classList.remove('d-none');
+    document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));
+    if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='profile')renderProfile();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();
+    requestAnimationFrame(()=>{if(target){const mobileHeader=window.matchMedia('(max-width:991.98px)').matches;const offset=mobileHeader?78:24;const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-offset);window.scrollTo({top:y,behavior:'smooth'})}});
+  };
+  if(document.startViewTransition)document.startViewTransition(updatePage);else updatePage();
+}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false')});
 const mobileMenuToggle=document.getElementById('mobileMenuToggle');mobileMenuToggle?.setAttribute('aria-label','Mở menu');
 mobileMenuToggle?.addEventListener('click',()=>{const menu=document.getElementById('mobileMenu');const open=menu?.classList.toggle('open');mobileMenuToggle.setAttribute('aria-expanded',open?'true':'false');mobileMenuToggle.setAttribute('aria-label',open?'Đóng menu':'Mở menu')});

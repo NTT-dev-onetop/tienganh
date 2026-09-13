@@ -18,14 +18,16 @@ service cloud.firestore {
     function isStaff() { return isAdmin() || isTeacher(); }
 
     match /config/admins {
-      allow read: if signedIn();
+      // Only admins and listed admins can inspect the admin allowlist.
+      allow read: if owner() || (signedIn() && resource.data.emails is list && email() in resource.data.emails);
       allow create, update: if owner() && request.resource.data.emails is list;
 
       allow delete: if owner();
     }
 
     match /config/teachers {
-      allow read: if signedIn();
+      // A teacher can verify their own membership; students cannot enumerate staff emails.
+      allow read: if isAdmin() || (signedIn() && resource.data.emails is list && email() in resource.data.emails);
       allow create, update, delete: if isAdmin();
     }
 
@@ -41,6 +43,9 @@ service cloud.firestore {
       // hoặc bằng email đã có trong config/admins.
       allow create: if sameUser(uid)
         && validRole(request.resource.data.role)
+        && request.resource.data.email == email()
+        && request.resource.data.name is string
+        && request.resource.data.className is string
         && (
           request.resource.data.role == 'student'
           || (request.resource.data.role == 'admin' && isAdmin())
@@ -58,17 +63,34 @@ service cloud.firestore {
             'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail',
             'streak','lastCompletedDate','totalSetsCompleted','totalBonusPoints'
           ])
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rosterId','className'])
+            || (
+              !(resource.data.rosterId is string)
+              && request.resource.data.rosterId is string
+              && exists(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId))
+              && get(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId)).data.uid == uid
+            )
+          )
         );
       allow delete: if isAdmin();
     }
 
     match /users_by_roster/{rosterId} {
-      allow read: if sameUser(resource.data.uid) || isAdmin();
+      allow read: if isAdmin() || resource == null || sameUser(resource.data.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.rosterId == rosterId
+        && request.resource.data.email == email()
+        && request.resource.data.name is string
         && !exists(/databases/$(database)/documents/users_by_roster/$(rosterId));
-      allow update: if isAdmin() || (sameUser(resource.data.uid) && request.resource.data.uid == resource.data.uid);
+      allow update: if isAdmin() || (
+        sameUser(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.rosterId == resource.data.rosterId
+        && request.resource.data.email == email()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email','name'])
+      );
       allow delete: if isAdmin();
     }
 
@@ -94,9 +116,12 @@ service cloud.firestore {
     }
 
     match /submissions/{submissionId} {
-      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isStaff());
+      allow read: if signedIn() && (resource == null || resource.data.uid == request.auth.uid || isStaff());
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
+        && request.resource.data.setId is string
+        && request.resource.data.setId.size() > 0
+        && submissionId == request.auth.uid + '_' + request.resource.data.date + '_' + request.resource.data.setId
         && request.resource.data.total == 20
         && request.resource.data.score is int
         && request.resource.data.score >= 0

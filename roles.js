@@ -15,7 +15,7 @@ export async function checkIsAdmin(email){
   const snap=await getDoc(doc(db,'config','admins'));
   const emails=snap.exists()&&Array.isArray(snap.data()?.emails)?snap.data().emails:[];
   return emails.some(x=>cleanEmail(x)===normalized);
- }catch(error){console.error('Không đọc được config/admins:',error);return false}
+ }catch(error){return false}
 }
 
 export async function checkIsTeacher(email){
@@ -26,7 +26,7 @@ export async function checkIsTeacher(email){
   const snap=await getDoc(doc(db,'config','teachers'));
   const emails=snap.exists()&&Array.isArray(snap.data()?.emails)?snap.data().emails:[];
   return emails.some(x=>cleanEmail(x)===normalized);
- }catch(error){console.error('Không đọc được config/teachers:',error);return false}
+ }catch(error){return false}
 }
 
 export async function ensureUserDoc(user){

@@ -1,4 +1,4 @@
-import{collection,doc,getDoc,setDoc,updateDoc,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import{collection,doc,getDoc,setDoc,updateDoc,query,where,getDocs,onSnapshot,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import{auth,db}from"./firebase-services.js";
 import{decodeCorrectIndex,makeSignature}from"./security.js";
