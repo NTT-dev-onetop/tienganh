@@ -289,3 +289,50 @@ async function handleExportStreak(button){
   }catch(error){button.classList.remove('exporting');button.innerHTML=original;button.disabled=false;button.removeAttribute('aria-busy');delete button.dataset.exporting;throw error}
 }
 document.addEventListener('click',e=>{const button=e.target?.closest?.('#exportStreak');if(button)handleExportStreak(button)});
+
+
+/*
+ * Daily Set Schedule Controls
+ * Adds optional Start Time, End Time and Duration fields without changing
+ * existing collection/field names.
+ */
+function buildSetScheduleFields(container) {
+  if (!container || document.getElementById('daily-set-schedule-controls')) return;
+
+  const wrap = document.createElement('div');
+  wrap.id = 'daily-set-schedule-controls';
+  wrap.style.cssText =
+    'margin-top:16px;padding:14px;border:1px solid #ddd;border-radius:12px;';
+
+  wrap.innerHTML = `
+    <div style="font-weight:700;margin-bottom:10px">⏰ Thời gian & hạn chót</div>
+    <div style="display:grid;gap:10px">
+      <label>
+        <div style="font-size:.9rem;margin-bottom:4px">Thời gian mở đề</div>
+        <input id="set-start-at" type="datetime-local" class="form-control">
+      </label>
+      <label>
+        <div style="font-size:.9rem;margin-bottom:4px">Thời gian đóng đề</div>
+        <input id="set-end-at" type="datetime-local" class="form-control">
+      </label>
+      <label>
+        <div style="font-size:.9rem;margin-bottom:4px">Thời gian làm bài (phút)</div>
+        <input id="set-duration-minutes" type="number" min="1" step="1"
+               class="form-control" placeholder="VD: 45">
+      </label>
+    </div>
+  `;
+  container.appendChild(wrap);
+}
+
+function getSetSchedulePayload() {
+  const start = document.getElementById('set-start-at')?.value || '';
+  const end = document.getElementById('set-end-at')?.value || '';
+  const duration = Number(document.getElementById('set-duration-minutes')?.value || 0);
+
+  const payload = {};
+  if (start) payload.startAt = new Date(start).toISOString();
+  if (end) payload.endAt = new Date(end).toISOString();
+  payload.durationMinutes = Number.isFinite(duration) && duration > 0 ? duration : 0;
+  return payload;
+}

@@ -1,3 +1,47 @@
+
+function startDailySetCountdown(set) {
+  const minutes = getSetDurationMinutes(set);
+  if (!minutes) return;
+
+  const endMs = Date.now() + minutes * 60 * 1000;
+  window._dailySetTimerEnd = endMs;
+
+  if (window._dailySetTimerInterval) clearInterval(window._dailySetTimerInterval);
+
+  const render = () => {
+    const remaining = Math.max(0, window._dailySetTimerEnd - Date.now());
+    const totalSec = Math.ceil(remaining / 1000);
+    const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+    const ss = String(totalSec % 60).padStart(2, '0');
+
+    let el = document.getElementById('daily-set-countdown');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'daily-set-countdown';
+      el.style.cssText =
+        'position:fixed;top:12px;right:12px;z-index:9999;' +
+        'padding:8px 12px;border-radius:10px;' +
+        'background:#111;color:#fff;font-weight:700;font-variant-numeric:tabular-nums;';
+      document.body.appendChild(el);
+    }
+    el.textContent = `⏱ ${mm}:${ss}`;
+
+    if (remaining <= 0) {
+      clearInterval(window._dailySetTimerInterval);
+      window._dailySetTimerInterval = null;
+      el.textContent = '⏱ 00:00';
+      el.setAttribute('data-expired', 'true');
+
+      // Do not silently discard answers. The existing submit button can still
+      // invoke submitSet(), which performs the final expiry check.
+      alert('Đã hết thời gian làm bài. Hệ thống sẽ khóa lượt nộp.');
+    }
+  };
+
+  render();
+  window._dailySetTimerInterval = setInterval(render, 500);
+}
+
 import{collection,doc,getDoc,setDoc,updateDoc,query,where,getDocs,onSnapshot,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import{auth,db}from"./firebase-services.js";
@@ -7,6 +51,38 @@ let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=(msg,type='success')=>window.appToast?window.appToast(msg,type):undefined;
+
+function _scheduleDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  if (value instanceof Date) return value;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function getSetScheduleState(set) {
+  const now = new Date();
+  const start = _scheduleDate(set?.startAt);
+  const end = _scheduleDate(set?.endAt);
+
+  if (start && now < start) return { state: 'upcoming', start, end };
+  if (end && now >= end) return { state: 'closed', start, end };
+  return { state: 'open', start, end };
+}
+
+function getSetDurationMinutes(set) {
+  const n = Number(set?.durationMinutes);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function formatScheduleDate(d) {
+  if (!d) return '';
+  return d.toLocaleString('vi-VN', {
+    dateStyle: 'short',
+    timeStyle: 'short'
+  });
+}
+
 async function loadSets(){
   if(!currentUser)return;
   try{
@@ -99,6 +175,21 @@ export async function renderDailySetPage(){
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
 }
 async function openSet(id){
+  // Schedule gate: start/end times are authoritative for the student UI.
+  // The final submit is checked again below, so an expired attempt cannot be submitted.
+  const schedule = getSetScheduleState(set);
+  if (schedule.state === 'upcoming') {
+    alert(`Bài chưa mở. Bắt đầu: ${formatScheduleDate(schedule.start)}`);
+    return;
+  }
+  if (schedule.state === 'closed') {
+    alert(`Bài đã đóng. Hạn chót: ${formatScheduleDate(schedule.end)}`);
+    return;
+  }
+  window._dailySetStartedAt = Date.now();
+  window._dailySetDurationMinutes = getSetDurationMinutes(set);
+  startDailySetCountdown(set);
+
   const set=currentSets.find(x=>x.id===id);if(!set)return;
   const questions=Array.isArray(set.questions)?set.questions:[];if(questions.length!==20){toast('Set này chưa đủ 20 câu. Admin cần sửa lại.','error');return}
   const date=today();
@@ -124,6 +215,32 @@ function saveCurrentAnswer(){
   const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];const idx=Object.keys(answers).length;if(idx<0||idx>=qs.length)return;const q=qs[idx];let val='';if(q.kind==='form'||q.kind==='rewrite')val=document.getElementById('dailyText')?.value||'';else val=document.querySelector('input[name="dailyAnswer"]:checked')?.value||'';if(!String(val).trim()){if(btn)btn.disabled=false;toast('Hãy trả lời câu này trước.','error');return}answers[idx]=val;if(idx===19)submitSet();else renderSetQuestion();
 }
 export async function submitSet(){
+  // Re-check the schedule immediately before writing the submission.
+  // This prevents submissions after End Time even if the page stayed open.
+  try {
+    const scheduleSnap = await getDoc(doc(db, 'sets', id));
+    if (!scheduleSnap.exists()) {
+      throw new Error('Bài tập không còn tồn tại.');
+    }
+    const currentSet = scheduleSnap.data();
+    const schedule = getSetScheduleState(currentSet);
+    if (schedule.state === 'upcoming') {
+      throw new Error(`Bài chưa mở. Bắt đầu: ${formatScheduleDate(schedule.start)}`);
+    }
+    if (schedule.state === 'closed') {
+      throw new Error(`Đã hết hạn nộp bài (${formatScheduleDate(schedule.end)}).`);
+    }
+    const duration = getSetDurationMinutes(currentSet);
+    if (duration > 0 && window._dailySetStartedAt) {
+      const elapsed = (Date.now() - window._dailySetStartedAt) / 60000;
+      if (elapsed >= duration) {
+        throw new Error('Đã hết thời gian làm bài.');
+      }
+    }
+  } catch (scheduleError) {
+    throw scheduleError;
+  }
+
   if(submitting||!currentUser||!selectedSet)return;submitting=true;
   const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];let score=0;
   qs.forEach((q,i)=>{const val=answers[i];const ci=decodeCorrectIndex(String(q?.correctCode||''));if(q?.kind==='form'||q?.kind==='rewrite'){if(normalizeText(val)===normalizeText(q?.answer||''))score++;}else if(Number(val)===ci)score++});

@@ -37,14 +37,10 @@ service cloud.firestore {
 
     match /users/{uid} {
 
-      // User đọc chính mình, staff đọc user
       allow read: if isOwner(uid) || isStaff();
 
-      // User tạo tài khoản của chính mình
       allow create: if isOwner(uid);
 
-      // Staff được cập nhật
-      // User chỉ được cập nhật các field được phép
       allow update: if isStaff()
         || (
           isOwner(uid)
@@ -62,7 +58,6 @@ service cloud.firestore {
           ])
         );
 
-      // Chỉ admin xóa user
       allow delete: if isAdmin();
     }
 
@@ -78,59 +73,45 @@ service cloud.firestore {
 
 
     // =========================================================
-    // USERS BY ROSTER
+    // ROSTER
     // =========================================================
 
     match /users_by_roster/{rosterId} {
 
-      // User đăng nhập được đọc
       allow read: if isSignedIn();
 
-      // User tạo mapping của chính mình
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
 
-      // Staff hoặc chính chủ được cập nhật
       allow update: if isStaff()
         || (
           isSignedIn()
           && request.resource.data.uid == request.auth.uid
         );
 
-      // Chỉ admin xóa
       allow delete: if isAdmin();
     }
 
 
     // =========================================================
-    // CONFIG - ADMINS
+    // CONFIG
     // =========================================================
 
     match /config/admins {
 
-      // roles.js cần đọc khi đăng nhập
       allow read: if isSignedIn();
 
       allow create, update, delete: if isStaff();
     }
 
-
-    // =========================================================
-    // CONFIG - TEACHERS
-    // =========================================================
 
     match /config/teachers {
 
-      // roles.js cần đọc khi đăng nhập
       allow read: if isSignedIn();
 
       allow create, update, delete: if isStaff();
     }
 
-
-    // =========================================================
-    // CONFIG - ROSTER
-    // =========================================================
 
     match /config/roster {
 
@@ -149,19 +130,19 @@ service cloud.firestore {
       /*
        * GET
        *
-       * daily-set.js dùng:
+       * daily-set.js có:
        *
        * getDoc(
-       *   doc(
-       *     db,
-       *     'submissions',
-       *     `${currentUser.uid}_${date}_${id}`
-       *   )
+       *   doc(db, 'submissions',
+       *   `${currentUser.uid}_${date}_${id}`)
        * )
        *
-       * Nếu học sinh chưa làm bài thì document chưa tồn tại.
+       * Khi chưa làm bài, document chưa tồn tại.
        *
-       * Vì vậy get không thể chỉ dựa vào resource.data.uid.
+       * Vì vậy không được chỉ dựa vào resource.data.uid.
+       *
+       * ID submission của học sinh luôn bắt đầu bằng UID của
+       * chính học sinh đó.
        */
 
       allow get: if isSignedIn()
@@ -174,18 +155,18 @@ service cloud.firestore {
 
 
       /*
-       * LIST
+       * LIST / QUERY
        *
-       * daily-set.js dùng:
+       * daily-set.js:
        *
        * query(
        *   collection(db, 'submissions'),
        *   where('uid', '==', currentUser.uid)
        * )
        *
-       * Student chỉ được đọc submission của chính mình.
+       * Student chỉ được query submission của chính mình.
        *
-       * Staff được đọc.
+       * Staff được query tất cả.
        */
 
       allow list: if isSignedIn()
@@ -198,7 +179,7 @@ service cloud.firestore {
       /*
        * CREATE
        *
-       * Student chỉ tạo submission của chính mình.
+       * Student chỉ được tạo submission của chính mình.
        */
 
       allow create: if isSignedIn()
@@ -208,7 +189,7 @@ service cloud.firestore {
       /*
        * UPDATE
        *
-       * Student chỉ sửa submission của chính mình.
+       * Student chỉ được sửa submission của chính mình.
        */
 
       allow update: if isSignedIn()
@@ -218,8 +199,6 @@ service cloud.firestore {
 
       /*
        * DELETE
-       *
-       * Chỉ admin.
        */
 
       allow delete: if isAdmin();
@@ -232,20 +211,9 @@ service cloud.firestore {
 
     match /sets/{setId} {
 
-      /*
-       * Student/admin/teacher đều được đọc Daily Set.
-       *
-       * Không kiểm tra published ở Rules vì code hiện tại
-       * của app đã lọc published == true khi query.
-       *
-       * Điều này tránh lỗi:
-       * "Không tải được Daily Set"
-       * khi document cũ thiếu field published.
-       */
+      allow read: if isSignedIn()
+        && resource.data.published == true;
 
-      allow read: if isSignedIn();
-
-      // Chỉ admin/teacher được ghi
       allow create, update, delete: if isStaff();
     }
 
@@ -256,16 +224,9 @@ service cloud.firestore {
 
     match /knowledge/{id} {
 
-      /*
-       * Cho phép user đã đăng nhập đọc kiến thức.
-       *
-       * Không ép published == true ở Rules để tránh query
-       * bị Permission Denied với dữ liệu cũ.
-       */
+      allow read: if isSignedIn()
+        && resource.data.published == true;
 
-      allow read: if isSignedIn();
-
-      // Chỉ admin/teacher được ghi
       allow create, update, delete: if isStaff();
     }
 
@@ -276,13 +237,9 @@ service cloud.firestore {
 
     match /questionBank/{id} {
 
-      /*
-       * Cho phép user đã đăng nhập đọc ngân hàng câu hỏi.
-       */
+      allow read: if isSignedIn()
+        && resource.data.published == true;
 
-      allow read: if isSignedIn();
-
-      // Chỉ admin/teacher được ghi
       allow create, update, delete: if isStaff();
     }
 
@@ -293,13 +250,9 @@ service cloud.firestore {
 
     match /listeningContent/{id} {
 
-      /*
-       * Cho phép user đã đăng nhập đọc Listening.
-       */
+      allow read: if isSignedIn()
+        && resource.data.published == true;
 
-      allow read: if isSignedIn();
-
-      // Chỉ admin/teacher được ghi
       allow create, update, delete: if isStaff();
     }
 
@@ -310,14 +263,11 @@ service cloud.firestore {
 
     match /audit/{auditId} {
 
-      // Chỉ admin đọc audit
       allow read: if isAdmin();
 
-      // User chỉ tạo audit của chính mình
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
 
-      // Chỉ admin sửa/xóa
       allow update, delete: if isAdmin();
     }
 
@@ -328,7 +278,6 @@ service cloud.firestore {
 
     match /rate_limits/{id} {
 
-      // Chỉ admin
       allow read, create, update, delete: if isAdmin();
     }
   }
