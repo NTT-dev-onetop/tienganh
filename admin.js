@@ -100,22 +100,7 @@ const kinds=[['mcq','4 lựa chọn'],['two','2 lựa chọn'],['form','Điền 
 async function loadQuestions(){const r=document.getElementById('adminQuestions');if(!r)return;try{const snap=await getDocs(collection(db,'questionBank'));questions=[];snap.forEach(d=>questions.push({id:d.id,...d.data()}));questions.sort((a,b)=>String(a.unit||'').localeCompare(String(b.unit||''))||Number(b.updatedAt?.seconds||b.createdAt?.seconds||0)-Number(a.updatedAt?.seconds||a.createdAt?.seconds||0));renderQuestionAdmin()}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được ngân hàng câu hỏi.</div>'}}
 function questionForm(q=null){const x=q||{};const opts=Array.isArray(x.options)?x.options:[];return `<div class="cms-form"><div class="row g-3"><div class="col-md-3"><label>Unit</label><select id="qUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option ${x.unit===`Unit ${i+1}`?'selected':''}>Unit ${i+1}</option>`).join('')}<option ${x.unit==='Review'?'selected':''}>Review</option></select></div><div class="col-md-3"><label>Dạng câu</label><select id="qKind" class="form-select">${kinds.map(k=>`<option value="${k[0]}" ${x.kind===k[0]?'selected':''}>${k[1]}</option>`).join('')}</select></div><div class="col-md-6"><label>Trạng thái</label><div class="form-check form-switch mt-2"><input id="qPublished" class="form-check-input" type="checkbox" ${x.published?'checked':''}><label class="form-check-label">Đã xuất bản</label></div></div><div class="col-12"><label>Câu hỏi *</label><textarea id="qPrompt" class="form-control" rows="3" placeholder="Chọn đáp án đúng...">${esc(x.prompt||'')}</textarea></div><div class="col-md-8"><label>Các lựa chọn (mỗi dòng một đáp án)</label><textarea id="qOptions" class="form-control" rows="5" placeholder="A\nB\nC\nD">${esc(opts.join('\n'))}</textarea></div><div class="col-md-4"><label>Đáp án đúng</label><select id="qCorrect" class="form-select">${[0,1,2,3].map(i=>`<option value="${i}" ${Number(x.correctIndex)===i?'selected':''}>${String.fromCharCode(65+i)}</option>`).join('')}</select><label class="mt-3">Đáp án chữ (form/rewrite)</label><input id="qAnswer" class="form-control" value="${esc(x.answer||'')}" placeholder="went / who..."><label class="mt-3">Giải thích</label><textarea id="qExplain" class="form-control" rows="3">${esc(x.explain||'')}</textarea></div></div><div class="form-actions"><button id="saveQuestion" class="btn btn-primary btn-lg">💾 ${q?'Cập nhật':'Thêm câu hỏi'}</button><button id="cancelQuestion" class="btn btn-outline-secondary">Hủy</button></div></div>`}
 function renderQuestionAdmin(){const r=document.getElementById('adminQuestions');if(!r)return;r.innerHTML=`
-<div class="teacher-import-card panel mb-3" id="teacherWordImport">
-  <div class="panel-title"><div><div class="eyebrow">⚡ NHẬP NHANH TỪ WORD</div><h5>1 file Word → 1 Set</h5></div><span class="tag">.DOCX</span></div>
-  <p class="muted small mt-2 mb-3">Thầy chỉ cần soạn một file Word theo mẫu: <b>câu hỏi</b> → A → B → C → D. Đáp án đúng được <b>in đậm</b>. Web tự đọc toàn bộ file và giữ nguyên số câu: 8, 15, 20, 37… đều được.</p>
-  <div class="word-template-box">
-    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2"><b>📄 MẪU WORD CHO THẦY</b><button type="button" id="copyWordTemplate" class="btn btn-sm btn-outline-primary">⧉ Copy mẫu</button></div>
-    <div id="wordTemplateText" class="word-template-text" aria-label="Mẫu nội dung Word">1. abandon\nA. tiếp tục\nB. bắt đầu\nC. từ bỏ\nD. giữ lại\n\n2. achieve\nA. thất bại\nB. trì hoãn\nC. đạt được\nD. quên\n\nTrong Word: in đậm đúng đáp án.\nVí dụ: C. <b>từ bỏ</b> → web tự hiểu C là đáp án đúng.</div>
-  </div>
-  <div class="row g-2 mt-3 align-items-end">
-    <div class="col-md-4"><label class="fw-bold">Unit</label><select id="wordImportUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option>Unit ${i+1}</option>`).join('')}<option>Review</option></select></div>
-    <div class="col-md-4"><label class="fw-bold">Trạng thái</label><select id="wordImportPublished" class="form-select"><option value="true">Đã xuất bản</option><option value="false">Lưu nháp</option></select></div>
-    <div class="col-md-4"><label class="fw-bold">File Word</label><input id="wordImportFile" class="form-control" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
-  </div>
-  <div id="wordImportStatus" class="small muted mt-3">Chưa chọn file.</div>
-  <div id="wordImportPreview" class="word-import-preview mt-3"></div>
-  <div class="form-actions mt-3"><button id="parseWordBtn" class="btn btn-outline-primary">🔎 Đọc file Word</button><button id="importWordBtn" class="btn btn-primary" disabled>🚀 Tạo 1 Set từ file</button></div>
-</div>
+
 
 <div class="question-bank-toolbar panel mb-3">
   <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
@@ -136,7 +121,7 @@ function renderQuestionAdmin(){const r=document.getElementById('adminQuestions')
 </div>
 
 <button id="newQuestion" class="btn btn-primary mb-3">＋ Thêm câu hỏi</button><div id="questionEditor"></div><div class="cms-list">${questions.map(q=>`<article class="cms-item question-bank-item"><div class="d-flex align-items-start gap-3"><input class="form-check-input q-select mt-1" type="checkbox" value="${esc(q.id)}" aria-label="Chọn câu hỏi"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(q.unit||'')}</span><span class="tag">${esc(q.kind||'')}</span><span class="tag ${q.published?'tag-published':'tag-draft'}">${q.published?'Đã xuất bản':'Nháp'}</span></div><h6 class="mt-2 mb-0">${esc(q.prompt||'').slice(0,150)}</h6></div></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary" data-q-edit="${esc(q.id)}">Sửa</button><button class="btn btn-sm btn-outline-danger" data-q-del="${esc(q.id)}">Xóa</button></div></article>`).join('')||'<div class="muted">Chưa có câu hỏi.</div>'}</div>`;
-document.getElementById('newQuestion').onclick=()=>openQuestion();r.querySelectorAll('[data-q-edit]').forEach(b=>b.onclick=()=>openQuestion(b.dataset.qEdit));r.querySelectorAll('[data-q-del]').forEach(b=>b.onclick=()=>deleteQuestion(b.dataset.qDel));bindQuestionBulk(r);bindWordImport(r)}
+document.getElementById('newQuestion').onclick=()=>openQuestion();r.querySelectorAll('[data-q-edit]').forEach(b=>b.onclick=()=>openQuestion(b.dataset.qEdit));r.querySelectorAll('[data-q-del]').forEach(b=>b.onclick=()=>deleteQuestion(b.dataset.qDel));bindQuestionBulk(r)}
 
 function bindQuestionBulk(r){
   const boxes=()=>[...r.querySelectorAll('.q-select')];
@@ -155,18 +140,6 @@ function bindQuestionBulk(r){
 async function deleteQuestionsBulk(ids){if(!staff()||!ids.length)return;try{const batch=writeBatch(db);ids.forEach(id=>batch.delete(doc(db,'questionBank',id)));await batch.commit();toast(`🗑 Đã xóa ${ids.length} câu hỏi.`);await loadQuestions()}catch(e){console.error(e);toast(e.message||'Xóa hàng loạt thất bại.','error')}}
 
 async function createDailySetFromQuestionIds(ids,order=1,published=true){if(!staff()||ids.length<1)return;try{const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);if(chosen.length!==ids.length)throw new Error('Một số câu hỏi không còn tồn tại. Hãy tải lại danh sách.');const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error(`Câu hỏi "${String(q.prompt||'').slice(0,60)}" sai định dạng.`);const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});const setId=`set${String(order).padStart(2,'0')}`;const ref=doc(db,'sets',setId);const existing=await getDoc(ref);await setDoc(ref,{order,title:`Daily Set ${String(order).padStart(2,'0')}`,questions:qs,totalQuestions:qs.length,passScore:Math.max(1,Math.min(qs.length,Math.ceil(qs.length*0.75))),passTotal:qs.length,published,author:currentUser.email||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(`🚀 Đã đưa ${qs.length} câu vào Set ${String(order).padStart(2,'0')} và ${published?'xuất bản':'lưu nháp'}.`);await loadSets();document.querySelector('[data-cms="questions"]')?.click()}catch(e){console.error(e);toast(e.message||'Không thể tạo Daily Set.','error')}}
-
-function bindWordImport(r){
-  const copy=r.querySelector('#copyWordTemplate');
-  copy?.addEventListener('click',async()=>{const text=`1. abandon\nA. tiếp tục\nB. bắt đầu\nC. từ bỏ\nD. giữ lại\n\n2. achieve\nA. thất bại\nB. trì hoãn\nC. đạt được\nD. quên\n\nTrong Word: in đậm đúng đáp án.\nVí dụ: C. từ bỏ`;try{await navigator.clipboard.writeText(text);toast('Đã copy mẫu Word.')}catch{toast('Không copy tự động được. Hãy bôi chọn mẫu rồi copy.','error')}});
-  const file=r.querySelector('#wordImportFile'),parse=r.querySelector('#parseWordBtn'),go=r.querySelector('#importWordBtn'),status=r.querySelector('#wordImportStatus'),preview=r.querySelector('#wordImportPreview');let parsed=[];
-  parse?.addEventListener('click',async()=>{parsed=[];go.disabled=true;const f=file?.files?.[0];if(!f){status.textContent='⚠ Chưa chọn file .docx.';return}if(!/\.docx$/i.test(f.name)){status.textContent='⚠ Chỉ nhận file .docx.';return}try{status.textContent='⏳ Đang đọc toàn bộ Word…';parsed=await parseDocxVocabulary(f);renderWordPreview(preview,parsed);if(parsed.length){status.textContent=`✅ Đã đọc ${parsed.length} câu. Đây sẽ là 1 Set duy nhất từ file “${f.name}”.`;go.disabled=false}}catch(e){console.error(e);status.textContent=`❌ ${e.message||'Không đọc được file Word.'}`}});
-  go?.addEventListener('click',async()=>{if(!parsed.length||!staff())return;go.disabled=true;try{const batch=writeBatch(db),unit=r.querySelector('#wordImportUnit').value,published=r.querySelector('#wordImportPublished').value==='true',sourceFile=friendlyFileName(file?.files?.[0]?.name||'Word Set'),setId='word_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);parsed.forEach((q,i)=>batch.set(doc(collection(db,'questionBank')),{unit,kind:'mcq',prompt:q.prompt,options:q.options,correctIndex:q.correctIndex,answer:'',explain:'',published,author:currentUser.email||'',source:'word-import',sourceFile,setId,setTitle:sourceFile.replace(/\.docx$/i,''),setQuestionNo:i+1,setQuestionCount:parsed.length,createdAt:serverTimestamp(),updatedAt:serverTimestamp()}));await batch.commit();
-    const setRef=doc(db,'sets',setId),passScore=Math.max(1,Math.min(parsed.length,Math.ceil(parsed.length*0.75))),setQuestions=parsed.map((q)=>({source:'word-import',kind:'mcq',prompt:q.prompt,options:q.options,correctCode:encodeCorrectIndex(q.correctIndex),explain:''}));
-    await setDoc(setRef,{order:Date.now(),title:sourceFile.replace(/\.docx$/i,''),questions:setQuestions,totalQuestions:setQuestions.length,passScore,passTotal:setQuestions.length,published,author:currentUser.email||'',source:'word-import',sourceFile,updatedAt:serverTimestamp(),createdAt:serverTimestamp()},{merge:true});
-    toast(`🚀 Đã tạo 1 Set “${sourceFile}” gồm ${parsed.length} câu · đạt ${passScore}/${parsed.length}.`);parsed=[];preview.innerHTML='';status.textContent='Đã tạo Set xong. Bạn có thể chọn file khác.';await loadQuestions();await loadSets()}catch(e){console.error(e);toast(e.message||'Nhập Word thất bại.','error');go.disabled=false}})
-
-}
 
 async function parseDocxVocabulary(file){const buf=await file.arrayBuffer(),bytes=new Uint8Array(buf);const cd=findCentralDirectory(bytes);let xmlBytes=null,off=cd.offset,end=off+cd.size;while(off<end){if(readU32(bytes,off)!==0x02014b50)break;const method=readU16(bytes,off+10),csize=readU32(bytes,off+20),nlen=readU16(bytes,off+28),elen=readU16(bytes,off+30),clen=readU16(bytes,off+32),local=readU32(bytes,off+42);const name=new TextDecoder('utf-8').decode(bytes.slice(off+46,off+46+nlen));if(name==='word/document.xml'){const lf=local;if(readU32(bytes,lf)!==0x04034b50)throw new Error('DOCX local header không hợp lệ.');const ln=readU16(bytes,lf+26),le=readU16(bytes,lf+28),data=bytes.slice(lf+30+ln+le,lf+30+ln+le+csize);xmlBytes=method===0?data:await inflateRaw(data)}off+=46+nlen+elen+clen}if(!xmlBytes)throw new Error('Không tìm thấy word/document.xml trong file.');return parseWordXml(new TextDecoder('utf-8').decode(xmlBytes))}
 function findCentralDirectory(bytes){for(let i=bytes.length-22;i>=Math.max(0,bytes.length-66000);i--){if(readU32(bytes,i)===0x06054b50)return{offset:readU32(bytes,i+16),size:readU32(bytes,i+12)} }throw new Error('File .docx không phải ZIP hợp lệ.')}
@@ -189,56 +162,339 @@ async function saveListening(id){if(!staff())return;try{const title=document.get
 async function deleteListening(id){if(!staff())return;if(!window.confirm('Xóa bài Listening này?'))return;try{await deleteDoc(doc(db,'listeningContent',id));toast('Đã xóa Listening.');await loadListenings()}catch(e){toast('Xóa thất bại.','error')}}
 
 // ===== DAILY SET BUILDER =====
-async function loadSets(){const r=document.getElementById('adminSetManager');if(!r)return;try{const snap=await getDocs(collection(db,'sets'));sets=[];snap.forEach(d=>sets.push({id:d.id,...d.data()}));sets.sort((a,b)=>Number(a.order||0)-Number(b.order||0));renderDailyAdmin()}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được Daily Set.</div>'}}
-function bindDailyWordImport(r){
-  const file=r.querySelector('#dailyWordFile'),parse=r.querySelector('#parseDailyWord'),randomBtn=r.querySelector('#randomDaily20'),createBtn=r.querySelector('#createDailyFromWord'),status=r.querySelector('#dailyWordStatus'),preview=r.querySelector('#dailyWordPreview'),order=r.querySelector('#dwOrder');
-  let pool=[];
-  const defaultPass=()=>Math.max(1,Math.min(pool.length,Math.ceil(pool.length*0.75)));
-  const renderPool=()=>{if(!preview)return;if(!pool.length){preview.innerHTML='';return}const items=pool.slice(0,30);preview.innerHTML=`<div class="word-preview-head"><b>📄 Preview Set</b><span class="tag">${pool.length} câu trong file</span></div><div class="word-preview-list">${items.map((q,i)=>`<article><b>${i+1}. ${esc(q.prompt)}</b><div class="small mt-1">${q.options.map((o,j)=>`<span class="word-opt ${j===q.correctIndex?'is-correct':''}">${String.fromCharCode(65+j)}. ${esc(o)}${j===q.correctIndex?' ✓':''}</span>`).join('')}</div></article>`).join('')}</div>${pool.length>30?`<div class="small muted mt-2">Hiển thị 30/${pool.length} câu đầu để xem trước. Set vẫn chứa đủ ${pool.length} câu.</div>`:''}`};
-  parse?.addEventListener('click',async()=>{pool=[];if(randomBtn)randomBtn.disabled=true;if(createBtn)createBtn.disabled=true;const f=file?.files?.[0];if(!f){status.textContent='⚠ Chưa chọn file .docx.';return}if(!/\.docx$/i.test(f.name)){status.textContent='⚠ Chỉ nhận file .docx.';return}try{status.textContent='⏳ Đang đọc Word…';pool=await parseDocxVocabulary(f);renderPool();if(pool.length<1)status.textContent='❌ File không có câu hợp lệ.';else{createBtn.disabled=false;status.textContent=`✅ Đã nhận ${pool.length} câu. File này sẽ tạo đúng 1 Set với ${pool.length} câu.`}}catch(e){console.error(e);status.textContent=`❌ ${e.message||'Không đọc được file Word.'}`}});
-  createBtn?.addEventListener('click',async()=>{if(!pool.length||!staff())return;createBtn.disabled=true;try{const n=Number(order.value),passScore=defaultPass(),qs=pool.map(q=>({source:'daily-word-import',kind:'mcq',prompt:q.prompt,options:q.options,correctCode:encodeCorrectIndex(q.correctIndex),explain:''})),setId=`set${String(n).padStart(2,'0')}`,ref=doc(db,'sets',setId),existing=await getDoc(ref);await setDoc(ref,{order:n,title:friendlyFileName(file?.files?.[0]?.name||`Daily Set ${String(n).padStart(2,'0')}`).replace(/\.docx$/i,''),questions:qs,totalQuestions:qs.length,passScore,passTotal:qs.length,published:true,author:currentUser.email||'',source:'word-import',sourceFile:file?.files?.[0]?.name||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(`🚀 Đã tạo 1 Set gồm ${qs.length} câu · điều kiện đạt ${passScore}/${qs.length}.`);status.textContent=`✅ Đã tạo Set ${String(n).padStart(2,'0')} · ${qs.length} câu · đạt ${passScore}/${qs.length}.`;await loadSets()}catch(e){console.error(e);toast(e.message||'Không thể tạo Daily Set từ Word.','error');createBtn.disabled=false}});
+// Một file Word tạo đúng 1 Daily Set. sourceQuestions giữ toàn bộ câu gốc để
+// giáo viên có thể đổi 20 -> 10 -> 15... về sau mà không cần upload lại file.
+async function loadSets(){
+  const r=document.getElementById('adminSetManager');
+  if(!r)return;
+  try{
+    const snap=await getDocs(collection(db,'sets'));
+    sets=[]; snap.forEach(d=>sets.push({id:d.id,...d.data()}));
+    sets.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+    renderDailyAdmin();
+  }catch(e){
+    console.error(e);
+    r.innerHTML='<div class="alert alert-danger">Không tải được danh sách Daily Set.</div>';
+  }
 }
 
+function toSetQuestion(q){
+  const kind=String(q?.kind||'mcq');
+  const x={
+    kind,
+    prompt:String(q?.prompt||''),
+    options:Array.isArray(q?.options)?q.options:[],
+    correctCode: q?.correctCode ?? encodeCorrectIndex(Number(q?.correctIndex)||0),
+    explain:String(q?.explain||'')
+  };
+  if(kind==='form'||kind==='rewrite')x.answer=String(q?.answer||'');
+  if(q?.sourceQuestionId)x.sourceQuestionId=q.sourceQuestionId;
+  return x;
+}
+function sourceToSetQuestion(q){
+  const x=toSetQuestion(q);
+  if(q?.correctIndex!==undefined)x.correctCode=encodeCorrectIndex(Number(q.correctIndex));
+  return x;
+}
+function setPool(s){
+  const src=Array.isArray(s?.sourceQuestions)&&s.sourceQuestions.length?s.sourceQuestions:s?.questions;
+  return Array.isArray(src)?src.map(toSetQuestion):[];
+}
+function chooseSetQuestions(pool,count,randomize){
+  const arr=pool.slice();
+  if(randomize){
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+  }
+  return arr.slice(0,Math.max(1,Math.min(count,arr.length)));
+}
+function setDefaultPass(n){return Math.max(1,Math.ceil(Math.max(1,n)*0.75));}
 
-function renderDailyAdmin(){const r=document.getElementById('adminSetManager');if(!r)return;const published=questions.filter(q=>q.published);r.innerHTML=`
-<div class="daily-word-import panel mb-3" id="dailyWordImport">
-  <div class="panel-title"><div><div class="eyebrow">⚡ DAILY SET · WORD POOL</div><h5>Upload Word → 1 file = 1 Set</h5></div><span class="tag">.DOCX</span></div>
-  <div class="cms-help mb-3"><b>Luồng nhanh cho thầy:</b> soạn một file Word → 4 đáp án A/B/C/D → <b>in đậm đáp án đúng</b> → upload → web đọc toàn bộ → <b>1 file = 1 Set</b>.</div>
-  <div class="word-template-box mb-3">
-    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2"><b>📄 MẪU WORD DAILY SET</b><a class="btn btn-sm btn-outline-primary" href="DAILY_SET_WORD_TEMPLATE.docx" download>⇩ Tải mẫu Word</a></div>
-    <div class="word-template-text">1. vocabulary question here
-A. answer A
-B. answer B
-C. answer C
-D. <b>answer D</b>
+function bindDailyWordImport(r){
+  const file=r.querySelector('#dailyWordFile'),
+    parse=r.querySelector('#parseDailyWord'),
+    createBtn=r.querySelector('#createDailyFromWord'),
+    status=r.querySelector('#dailyWordStatus'),
+    preview=r.querySelector('#dailyWordPreview'),
+    count=r.querySelector('#dwCount'),
+    pass=r.querySelector('#dwPass'),
+    title=r.querySelector('#dwTitle'),
+    random=r.querySelector('#dwRandom');
+  let pool=[];
 
-2. next vocabulary question
-A. <b>answer A</b>
-B. answer B
-C. answer C
-D. answer D
+  const sync=()=>{
+    const n=pool.length;
+    if(count){
+      count.max=String(Math.max(1,n));
+      if(n && (!Number(count.value)||Number(count.value)>n))count.value=String(n);
+      if(Number(count.value)<1)count.value='1';
+    }
+    const out=n?Math.max(1,Math.min(n,Number(count?.value)||n)):0;
+    if(pass){
+      pass.max=String(Math.max(1,out));
+      if(out && (!Number(pass.value)||Number(pass.value)>out))pass.value=String(setDefaultPass(out));
+    }
+    const ps=out?Math.max(1,Math.min(out,Number(pass?.value)||setDefaultPass(out))):0;
+    const label=r.querySelector('#dwCountDisplay');
+    if(label)label.textContent=n?`Chọn ${out}/${n} câu · đạt ${ps}/${out}`:'Chưa đọc file';
+    if(createBtn)createBtn.disabled=!n;
+  };
 
-... tiếp tục bao nhiêu câu tùy nội dung bài.
+  const renderPool=()=>{
+    if(!preview)return;
+    if(!pool.length){preview.innerHTML='';return}
+    preview.innerHTML=`<div class="word-preview-head">
+      <b>📄 ${esc(title?.value.trim()||'Daily Set')}</b>
+      <span class="tag">${pool.length} câu gốc</span>
+    </div>
+    <div class="word-preview-list">${pool.slice(0,30).map((q,i)=>`<article>
+      <b>${i+1}. ${esc(q.prompt)}</b>
+      <div class="small mt-1">${(q.options||[]).map((o,j)=>`<span class="word-opt ${j===q.correctIndex?'is-correct':''}">${String.fromCharCode(65+j)}. ${esc(o)}${j===q.correctIndex?' ✓':''}</span>`).join('')}</div>
+    </article>`).join('')}</div>
+    ${pool.length>30?`<div class="small muted mt-2">Hiển thị 30/${pool.length} câu đầu. Khi tạo Set, web vẫn giữ toàn bộ ${pool.length} câu gốc.</div>`:''}`;
+  };
 
-<b>Quy tắc:</b> mỗi câu có 1 dòng câu hỏi + đúng 4 đáp án A–D; chỉ <b>in đậm 1 đáp án đúng</b>.</div>
+  parse?.addEventListener('click',async()=>{
+    pool=[]; if(createBtn)createBtn.disabled=true;
+    const f=file?.files?.[0];
+    if(!f){status.textContent='⚠ Chưa chọn file .docx.';return}
+    if(!/\.docx$/i.test(f.name)){status.textContent='⚠ Chỉ nhận file .docx.';return}
+    try{
+      status.textContent='⏳ Đang đọc toàn bộ Word…';
+      pool=await parseDocxVocabulary(f);
+      if(title && !title.value.trim())title.value=friendlyFileName(f.name).replace(/\.docx$/i,'');
+      renderPool(); sync();
+      status.textContent=pool.length
+        ? `✅ File có ${pool.length} câu hợp lệ. Bạn có thể chọn số câu Daily và điều kiện đạt.`
+        : '❌ File không có câu hợp lệ.';
+    }catch(e){
+      console.error(e);status.textContent=`❌ ${e.message||'Không đọc được file Word.'}`;
+    }
+  });
+  [count,pass,title,random].forEach(el=>el?.addEventListener('input',sync));
+  createBtn?.addEventListener('click',async()=>{
+    if(!pool.length||!staff())return;
+    createBtn.disabled=true;
+    try{
+      const order=Number(r.querySelector('#dwOrder').value)||1;
+      const out=Math.max(1,Math.min(pool.length,Number(count?.value)||pool.length));
+      const passScore=Math.max(1,Math.min(out,Number(pass?.value)||setDefaultPass(out)));
+      const selected=chooseSetQuestions(pool,out,!!random?.checked);
+      const setId=`set${String(order).padStart(2,'0')}`;
+      const ref=doc(db,'sets',setId),existing=await getDoc(ref);
+      const qs=selected.map(sourceToSetQuestion);
+      const fullPool=pool.map(sourceToSetQuestion);
+      await setDoc(ref,{
+        order,
+        title:title?.value.trim()||`Daily Set ${String(order).padStart(2,'0')}`,
+        sourceQuestions:fullPool,
+        questions:qs,
+        totalQuestions:qs.length,
+        sourceQuestionCount:fullPool.length,
+        passScore,
+        passTotal:qs.length,
+        published:true,
+        isDaily:true,
+        source:'word-import',
+        sourceFile:file?.files?.[0]?.name||'',
+        author:currentUser.email||'',
+        updatedAt:serverTimestamp(),
+        ...(existing.exists()?{}:{createdAt:serverTimestamp()})
+      },{merge:true});
+      toast(`🚀 Đã tạo ${String(order).padStart(2,'0')} · ${qs.length}/${fullPool.length} câu · đạt ${passScore}/${qs.length}.`);
+      status.textContent=`✅ Đã lưu Daily Set ${String(order).padStart(2,'0')}. Có thể bấm “Cập nhật” ở danh sách để đổi tên, số câu hoặc điều kiện.`;
+      await loadSets();
+    }catch(e){
+      console.error(e);toast(e.message||'Không thể tạo Daily Set từ Word.','error');createBtn.disabled=false;
+    }
+  });
+  sync();
+}
+
+function renderDailyAdmin(){
+  const r=document.getElementById('adminSetManager');if(!r)return;
+  const published=questions.filter(q=>q.published);
+  r.innerHTML=`
+  <div class="daily-word-import panel mb-3" id="dailyWordImport">
+    <div class="panel-title">
+      <div><div class="eyebrow">🎯 DAILY SET · ƯU TIÊN HÀNG ĐẦU</div><h5>Upload Word → 1 file = 1 Daily Set</h5></div>
+      <span class="tag">.DOCX</span>
+    </div>
+    <div class="cms-help mb-3"><b>Luồng dùng:</b> upload 1 file Word → web đọc toàn bộ câu → chọn <b>bao nhiêu câu muốn đưa ra</b> → đặt <b>tên Set</b> → đặt <b>điều kiện đạt</b> → tạo Daily. Ví dụ file 20 câu có thể tạo Daily 10/20, sau đó cập nhật thành 15/20 mà không cần upload lại.</div>
+    <div class="row g-2 align-items-end">
+      <div class="col-md-2"><label class="fw-bold">Set số</label><select id="dwOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
+      <div class="col-md-4"><label class="fw-bold">Tên Daily Set</label><input id="dwTitle" class="form-control" placeholder="VD: Unit 3 · Music"></div>
+      <div class="col-md-2"><label class="fw-bold">Số câu đưa ra</label><input id="dwCount" type="number" min="1" class="form-control" value="1"></div>
+      <div class="col-md-2"><label class="fw-bold">Điều kiện đạt</label><input id="dwPass" type="number" min="1" class="form-control" value="1"></div>
+      <div class="col-md-2"><label class="fw-bold">File Word</label><input id="dailyWordFile" class="form-control" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
+      <div class="col-12 d-flex flex-wrap gap-3 align-items-center mt-2">
+        <label class="form-check"><input id="dwRandom" class="form-check-input me-2" type="checkbox"> Chọn ngẫu nhiên khi lấy câu</label>
+        <span id="dwCountDisplay" class="tag">Chưa đọc file</span>
+        <button id="parseDailyWord" class="btn btn-outline-primary">🔎 Đọc Word</button>
+        <button id="createDailyFromWord" class="btn btn-primary" disabled>🚀 Tạo Daily Set</button>
+      </div>
+    </div>
+    <div id="dailyWordStatus" class="small muted mt-3">File có bao nhiêu câu hợp lệ cũng được. Không còn ép 20 câu.</div>
+    <div id="dailyWordPreview" class="word-import-preview mt-3"></div>
   </div>
-  <div class="row g-2 align-items-end">
-    <div class="col-md-4"><label class="fw-bold">Set sẽ tạo</label><select id="dwOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily Set ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
-    <div class="col-md-4"><label class="fw-bold">File Word</label><input id="dailyWordFile" class="form-control" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
-    <div class="col-md-4 d-grid"><button id="parseDailyWord" class="btn btn-outline-primary">🔎 Đọc Word</button></div>
+
+  <div class="cms-help mb-3"><b>📌 Danh sách Daily Set đã tạo:</b> mỗi dòng là 1 Set. Bấm <b>✏️ Cập nhật</b> để đổi tên, số câu, câu được chọn hoặc điều kiện đạt. Dữ liệu gốc từ Word được giữ lại.</div>
+  <div class="cms-list">
+    ${sets.filter(s=>s.isDaily!==false).map(s=>{
+      const total=Array.isArray(s.questions)?s.questions.length:0;
+      const sourceCount=Array.isArray(s.sourceQuestions)?s.sourceQuestions.length:total;
+      const pass=Math.max(1,Math.min(total,Number(s.passScore)||setDefaultPass(total||1)));
+      return `<article class="cms-item">
+        <div>
+          <div class="d-flex gap-2 flex-wrap">
+            <span class="tag">DAILY ${String(Number(s.order||0)).padStart(2,'0')}</span>
+            <span class="tag ${s.published?'tag-published':'tag-draft'}">${s.published?'Đã xuất bản':'Nháp'}</span>
+          </div>
+          <h6 class="mt-2 mb-0">${esc(s.title||'Không có tên')}</h6>
+          <small class="muted">${total}/${sourceCount} câu · đạt ${pass}/${total||0}</small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-sm btn-primary" data-d-edit="${esc(s.id)}">✏️ Cập nhật</button>
+          <button class="btn btn-sm btn-outline-danger" data-d-del="${esc(s.id)}">Xóa</button>
+        </div>
+      </article>`;
+    }).join('')||'<div class="muted">Chưa có Daily Set. Upload file Word ở trên để tạo Set đầu tiên.</div>'}
   </div>
-  <div id="dailyWordStatus" class="small muted mt-3">Chưa chọn file. File có bao nhiêu câu hợp lệ thì Set có bấy nhiêu câu.</div>
-  <div id="dailyWordPreview" class="word-import-preview mt-3"></div>
-  <div class="form-actions mt-3"><button id="randomDaily20" class="btn btn-outline-dark" disabled style="display:none">🎲 Random</button><button id="createDailyFromWord" class="btn btn-primary" disabled>🚀 Tạo Daily Set từ file</button></div>
-</div>
-<div class="cms-help mb-3"><b>💡 Cách dùng:</b> 1 file Word = 1 Set. Số câu giữ nguyên theo file. Không cần đủ 20 câu.</div>
-<div class="cms-form"><div class="row g-3"><div class="col-md-3"><label>Set số</label><select id="dOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Set ${String(n).padStart(2,'0')}</option>`).join('')}</select></div><div class="col-md-7"><label>Tiêu đề</label><input id="dTitle" class="form-control" placeholder="Daily Set 01"></div><div class="col-md-2"><label>Điều kiện đạt</label><input id="dPassScore" type="number" min="1" class="form-control" value="15" title="Số câu đúng tối thiểu để được tính pass, điểm và streak"></div><div class="col-md-3"><label>Hiện tại</label><div id="dPassDisplay" class="form-control bg-body-secondary">15 / 0 câu</div></div><div class="col-12"><label>Chọn câu hỏi <span id="dSelectedCount" class="badge text-bg-primary">0 câu</span></label><div class="question-picker">${published.map(q=>`<label class="question-pick"><input type="checkbox" value="${esc(q.id)}"><span><b>${esc(q.unit||'')}</b> · ${esc(q.prompt||'').slice(0,120)}</span></label>`).join('')||'<div class="muted">Chưa có câu hỏi đã xuất bản.</div>'}</div></div><div class="col-12"><div class="form-check form-switch"><input id="dPublished" class="form-check-input" type="checkbox"><label class="form-check-label">Đã xuất bản</label></div></div></div><div class="form-actions"><button id="saveDaily" class="btn btn-primary btn-lg">💾 Lưu Daily Set</button></div></div><hr class="my-4"><div class="cms-list">${sets.map(s=>`<article class="cms-item"><div><span class="tag">SET ${String(Number(s.order||0)).padStart(2,'0')}</span> <span class="tag ${s.published?'tag-published':'tag-draft'}">${s.published?'Đã xuất bản':'Nháp'}</span><h6 class="mt-2 mb-0">${esc(s.title||'')}</h6><small class="muted">${Array.isArray(s.questions)?s.questions.length:0} câu · đạt ${Number(s.passScore)||Math.ceil(((Array.isArray(s.questions)?s.questions.length:0)||1)*0.75)}/${Array.isArray(s.questions)?s.questions.length:0}</small></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary" data-d-edit="${esc(s.id)}">Nạp Set</button><button class="btn btn-sm btn-outline-danger" data-d-del="${esc(s.id)}">Xóa</button></div></article>`).join('')||'<div class="muted">Chưa có Daily Set.</div>'}</div>`;
+
+  <div id="dailyEditor" class="mt-3"></div>
+
+  <details class="mt-4">
+    <summary class="fw-bold">⚙ Tạo Daily từ ngân hàng câu hỏi thủ công</summary>
+    <div class="cms-form mt-3">
+      <div class="row g-3">
+        <div class="col-md-3"><label>Set số</label><select id="dOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
+        <div class="col-md-7"><label>Tiêu đề</label><input id="dTitle" class="form-control" placeholder="Daily Set"></div>
+        <div class="col-md-2"><label>Điều kiện đạt</label><input id="dPassScore" type="number" min="1" class="form-control" value="1"></div>
+        <div class="col-12"><label>Chọn câu hỏi <span id="dSelectedCount" class="badge text-bg-primary">0 câu</span></label><div class="question-picker">${published.map(q=>`<label class="question-pick"><input type="checkbox" value="${esc(q.id)}"><span><b>${esc(q.unit||'')}</b> · ${esc(q.prompt||'').slice(0,120)}</span></label>`).join('')||'<div class="muted">Chưa có câu hỏi đã xuất bản.</div>'}</div></div>
+        <div class="col-12"><div class="form-check form-switch"><input id="dPublished" class="form-check-input" type="checkbox"><label class="form-check-label">Đã xuất bản</label></div></div>
+      </div>
+      <div class="form-actions"><button id="saveDaily" class="btn btn-primary">💾 Lưu Daily Set thủ công</button></div>
+    </div>
+  </details>`;
   bindDailyWordImport(r);
+  bindManualDailyEditor(r);
+  r.querySelectorAll('[data-d-edit]').forEach(b=>b.onclick=()=>openSetEditor(b.dataset.dEdit));
+  r.querySelectorAll('[data-d-del]').forEach(b=>b.onclick=()=>deleteDaily(b.dataset.dDel));
+}
 
-  const updateCount=()=>{const n=r.querySelectorAll('.question-pick input:checked').length;document.getElementById('dSelectedCount').textContent=`${n} câu`;const pass=document.getElementById('dPassScore');const display=document.getElementById('dPassDisplay');if(pass){const v=Math.max(1,Math.min(n,Number(pass.value)||1));pass.max=String(Math.max(1,n));if(n&&Number(pass.value)>n)pass.value=String(v);if(display)display.textContent=`${v} / ${n} câu`;}r.querySelectorAll('.question-pick').forEach(x=>x.classList.toggle('selected',x.querySelector('input').checked))};r.querySelectorAll('.question-pick input').forEach(c=>c.onchange=updateCount);document.getElementById('dPassScore')?.addEventListener('input',updateCount);document.getElementById('saveDaily').onclick=saveDaily; r.querySelectorAll('[data-d-edit]').forEach(b=>b.onclick=()=>loadDailyIntoForm(b.dataset.dEdit));r.querySelectorAll('[data-d-del]').forEach(b=>b.onclick=()=>deleteDaily(b.dataset.dDel));}
-function loadDailyIntoForm(id){const s=sets.find(x=>x.id===id);if(!s)return;const r=document.getElementById('adminSetManager');r.querySelector('#dOrder').value=String(s.order||1);r.querySelector('#dTitle').value=s.title||'';r.querySelector('#dPublished').checked=!!s.published;r.querySelector('#dPassScore').value=String(Math.max(1,Math.min((Array.isArray(s.questions)?s.questions.length:0)||1,Number(s.passScore)||Math.ceil(((Array.isArray(s.questions)?s.questions.length:0)||1)*0.75))));const ids=new Set((Array.isArray(s.questions)?s.questions:[]).map(q=>q.sourceQuestionId).filter(Boolean));if(!ids.size){const prompts=new Set((Array.isArray(s.questions)?s.questions:[]).map(q=>String(q.prompt||'').trim()));r.querySelectorAll('.question-pick input').forEach(c=>{const q=questions.find(x=>x.id===c.value);c.checked=!!q&&prompts.has(String(q.prompt||'').trim())})}else r.querySelectorAll('.question-pick input').forEach(c=>c.checked=ids.has(c.value));r.querySelectorAll('.question-pick input').forEach(c=>c.dispatchEvent(new Event('change')));r.dataset.editSet=id;r.querySelector('#saveDaily').textContent='💾 Cập nhật Daily Set'}
-async function saveDaily(){if(!staff())return;try{const r=document.getElementById('adminSetManager'),order=Number(r.querySelector('#dOrder').value),title=r.querySelector('#dTitle').value.trim()||`Daily Set ${String(order).padStart(2,'0')}`,ids=[...r.querySelectorAll('.question-pick input:checked')].map(x=>x.value);if(ids.length<1)throw new Error('Hãy chọn ít nhất 1 câu.');const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error('Có câu hỏi sai schema.');const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});if(!qs.length)throw new Error('Không có câu hợp lệ.');const rawPass=Number(r.querySelector('#dPassScore')?.value||0),passScore=Math.max(1,Math.min(qs.length,Number.isFinite(rawPass)&&rawPass>0?Math.floor(rawPass):Math.ceil(qs.length*0.75)));const payload={order,title,questions:qs,totalQuestions:qs.length,passScore,passTotal:qs.length,published:r.querySelector('#dPublished').checked,updatedAt:serverTimestamp()};const editId=r.dataset.editSet;if(editId)await updateDoc(doc(db,'sets',editId),payload);else await setDoc(doc(db,'sets',`set${String(order).padStart(2,'0')}`),{...payload,createdAt:serverTimestamp()},{merge:true});toast(`Đã lưu Daily Set · ${qs.length} câu · đạt ${passScore}/${qs.length}.`);delete r.dataset.editSet;await loadSets()}catch(e){console.error(e);toast(e.message||'Không thể lưu Daily Set.','error')}}
-async function deleteDaily(id){if(!staff())return;if(!window.confirm('Xóa Daily Set này?'))return;try{await deleteDoc(doc(db,'sets',id));toast('Đã xóa Daily Set.');await loadSets()}catch(e){toast('Xóa thất bại.','error')}}
+function bindManualDailyEditor(r){
+  const update=()=>{
+    const n=r.querySelectorAll('.question-pick input:checked').length;
+    const el=r.querySelector('#dSelectedCount');if(el)el.textContent=`${n} câu`;
+    const pass=r.querySelector('#dPassScore');
+    if(pass){pass.max=String(Math.max(1,n));if(n&&(!Number(pass.value)||Number(pass.value)>n))pass.value=String(setDefaultPass(n));}
+  };
+  r.querySelectorAll('.question-pick input').forEach(c=>c.onchange=update);
+  r.querySelector('#dPassScore')?.addEventListener('input',update);
+  r.querySelector('#saveDaily')?.addEventListener('click',async()=>{
+    if(!staff())return;
+    try{
+      const order=Number(r.querySelector('#dOrder').value)||1;
+      const title=r.querySelector('#dTitle').value.trim()||`Daily Set ${String(order).padStart(2,'0')}`;
+      const ids=[...r.querySelectorAll('.question-pick input:checked')].map(x=>x.value);
+      if(!ids.length)throw new Error('Hãy chọn ít nhất 1 câu.');
+      const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);
+      const qs=chosen.map(sourceToSetQuestion);
+      const pass=Math.max(1,Math.min(qs.length,Number(r.querySelector('#dPassScore').value)||setDefaultPass(qs.length)));
+      await setDoc(doc(db,'sets',`set${String(order).padStart(2,'0')}`),{
+        order,title,questions:qs,sourceQuestions:qs,totalQuestions:qs.length,sourceQuestionCount:qs.length,
+        passScore:pass,passTotal:qs.length,published:r.querySelector('#dPublished').checked,isDaily:true,
+        author:currentUser.email||'',updatedAt:serverTimestamp(),createdAt:serverTimestamp()
+      },{merge:true});
+      toast(`Đã lưu Daily Set · ${qs.length} câu · đạt ${pass}/${qs.length}.`);
+      await loadSets();
+    }catch(e){console.error(e);toast(e.message||'Không thể lưu Daily Set.','error')}
+  });
+}
+
+function openSetEditor(id){
+  const s=sets.find(x=>x.id===id);if(!s)return;
+  const root=document.getElementById('dailyEditor');if(!root)return;
+  const pool=setPool(s);const current=Array.isArray(s.questions)?s.questions:[];
+  const currentKeys=new Set(current.map(q=>String(q.prompt||'').trim()));
+  const order=Number(s.order)||1,total=current.length,sourceCount=pool.length;
+  const pass=Math.max(1,Math.min(total||1,Number(s.passScore)||setDefaultPass(total||1)));
+  root.innerHTML=`<div class="cms-form panel">
+    <div class="panel-title"><div><div class="eyebrow">✏️ CẬP NHẬT DAILY SET</div><h5>${esc(s.title||`Daily ${String(order).padStart(2,'0')}`)}</h5></div><span class="tag">${total}/${sourceCount} câu</span></div>
+    <div class="row g-3 mt-1">
+      <div class="col-md-2"><label>Set số</label><select id="eOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===order?'selected':''}>Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
+      <div class="col-md-5"><label>Tên Set</label><input id="eTitle" class="form-control" value="${esc(s.title||'')}"></div>
+      <div class="col-md-2"><label>Số câu đưa ra</label><input id="eCount" type="number" min="1" max="${Math.max(1,sourceCount)}" class="form-control" value="${Math.max(1,total)}"></div>
+      <div class="col-md-3"><label>Điều kiện đạt</label><input id="ePass" type="number" min="1" max="${Math.max(1,total)}" class="form-control" value="${pass}"></div>
+      <div class="col-12"><label>Chọn câu từ file gốc <span id="eSelectedCount" class="badge text-bg-primary">${total}/${sourceCount}</span></label>
+        <div class="question-picker" id="eSourcePicker">${pool.map((q,i)=>{
+          const checked=currentKeys.has(String(q.prompt||'').trim());
+          return `<label class="question-pick ${checked?'selected':''}"><input type="checkbox" data-source-index="${i}" ${checked?'checked':''}><span><b>Câu ${i+1}</b> · ${esc(q.prompt||'').slice(0,160)}</span></label>`;
+        }).join('')||'<div class="muted">Set cũ không có dữ liệu nguồn để chỉnh số câu.</div>'}</div>
+      </div>
+      <div class="col-12"><div class="form-check form-switch"><input id="ePublished" class="form-check-input" type="checkbox" ${s.published!==false?'checked':''}><label class="form-check-label">Đã xuất bản</label></div></div>
+    </div>
+    <div class="form-actions">
+      <button id="saveSetUpdate" class="btn btn-primary btn-lg">💾 Cập nhật Set</button>
+      <button id="cancelSetUpdate" class="btn btn-outline-secondary">Hủy</button>
+    </div>
+  </div>`;
+  const sync=()=>{
+    const checked=[...root.querySelectorAll('#eSourcePicker input:checked')];
+    const n=checked.length;
+    root.querySelector('#eSelectedCount').textContent=`${n}/${sourceCount}`;
+    const c=root.querySelector('#eCount');if(c){c.max=String(Math.max(1,sourceCount));if(Number(c.value)>n&&n)c.value=String(n);if(Number(c.value)<1)c.value='1';}
+    const out=Math.max(1,Math.min(sourceCount,Number(c?.value)||n||1));
+    const p=root.querySelector('#ePass');if(p){p.max=String(out);if(Number(p.value)>out||!Number(p.value))p.value=String(setDefaultPass(out));}
+    root.querySelectorAll('.question-pick').forEach(x=>x.classList.toggle('selected',x.querySelector('input').checked));
+  };
+  root.querySelectorAll('#eSourcePicker input').forEach(c=>c.addEventListener('change',sync));
+  root.querySelector('#eCount')?.addEventListener('input',sync);
+  root.querySelector('#ePass')?.addEventListener('input',sync);
+  root.querySelector('#cancelSetUpdate').onclick=()=>{root.innerHTML='';window.scrollTo({top:0,behavior:'smooth'})};
+  root.querySelector('#saveSetUpdate').onclick=async()=>{
+    if(!staff())return;
+    try{
+      const checked=[...root.querySelectorAll('#eSourcePicker input:checked')].map(x=>Number(x.dataset.sourceIndex));
+      const wanted=Math.max(1,Math.min(sourceCount,Number(root.querySelector('#eCount').value)||checked.length));
+      let selected=checked.map(i=>pool[i]).filter(Boolean);
+      if(selected.length>wanted)selected=selected.slice(0,wanted);
+      if(selected.length<wanted){
+        const remaining=pool.filter((_,i)=>!checked.includes(i));
+        selected=selected.concat(remaining.slice(0,wanted-selected.length));
+      }
+      if(!selected.length)throw new Error('Hãy chọn ít nhất 1 câu.');
+      const pass=Math.max(1,Math.min(selected.length,Number(root.querySelector('#ePass').value)||setDefaultPass(selected.length)));
+      const newOrder=Number(root.querySelector('#eOrder').value)||order;
+      const newId=`set${String(newOrder).padStart(2,'0')}`;
+      const payload={
+        order:newOrder,title:root.querySelector('#eTitle').value.trim()||`Daily Set ${String(newOrder).padStart(2,'0')}`,
+        questions:selected.map(toSetQuestion),totalQuestions:selected.length,passScore:pass,passTotal:selected.length,
+        published:root.querySelector('#ePublished').checked,isDaily:true,sourceQuestions:pool.map(toSetQuestion),
+        sourceQuestionCount:pool.length,updatedAt:serverTimestamp()
+      };
+      if(newId!==id){
+        const existing=await getDoc(doc(db,'sets',newId));
+        if(existing.exists())throw new Error(`Daily Set ${String(newOrder).padStart(2,'0')} đã tồn tại.`);
+        await setDoc(doc(db,'sets',newId),{...payload,createdAt:serverTimestamp()});
+        await deleteDoc(doc(db,'sets',id));
+      }else{
+        await updateDoc(doc(db,'sets',id),payload);
+      }
+      toast(`✅ Đã cập nhật ${payload.title} · ${selected.length}/${pool.length} câu · đạt ${pass}/${selected.length}.`);
+      root.innerHTML='';await loadSets();
+    }catch(e){console.error(e);toast(e.message||'Cập nhật Set thất bại.','error')}
+  };
+  sync();
+  root.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function deleteDaily(id){
+  if(!staff()||!window.confirm('Xóa Daily Set này?'))return;
+  try{await deleteDoc(doc(db,'sets',id));toast('Đã xóa Daily Set.');await loadSets();}
+  catch(e){toast('Xóa thất bại.','error')}
+}
 
 // Một nút export duy nhất: xuất đúng danh sách roster 45 HS + streak hiện tại dưới dạng Word.
 const xmlEsc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');

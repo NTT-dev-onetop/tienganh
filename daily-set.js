@@ -87,7 +87,7 @@ async function loadSets(){
   if(!currentUser)return;
   try{
     const snap=await getDocs(query(collection(db,'sets'),where('published','==',true)));
-    currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if(Number.isInteger(Number(x.order)))currentSets.push(x)});currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
+    currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x)});currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
     await renderDailySetPage();
   }catch(e){console.error('Không tải được Daily Set:',e);toast('Không tải được bộ đề. Kiểm tra Firestore.','error')}
 }
@@ -148,7 +148,7 @@ function watchSetsRealtime(){
     currentSets=[];
     snap.forEach(d=>{
       const x={id:d.id,...d.data()};
-      if(Number.isInteger(Number(x.order)))currentSets.push(x);
+      if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x);
     });
     currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
     const live=document.getElementById('dailyLiveStatus');
