@@ -1,3 +1,4 @@
+async function saveAdmins(){if(!admin())return;try{const lines=String(document.getElementById('adminEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error('Có email admin không hợp lệ.');const defaultAdmins=['icloud07072010@gmail.com','datnguyen.171201@gmail.com'];const emails=[...new Set([...defaultAdmins,...lines])];await setDoc(doc(db,'config/admins'),{emails,updatedAt:serverTimestamp()},{merge:true});toast('Đã lưu danh sách admin.');await loadTeachers()}catch(e){console.error(e);toast(e.message||'Không thể lưu admin.','error')}}
 import{collection,doc,getDoc,setDoc,updateDoc,deleteDoc,getDocs,query,where,onSnapshot,serverTimestamp,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
 import{encodeCorrectIndex,decodeCorrectIndex}from"./security.js";
