@@ -18,19 +18,24 @@ service cloud.firestore {
         ).data.role in ['admin', 'teacher'];
     }
 
-    // ---------------------------------------------------------
+    function isAdmin() {
+      return isSignedIn()
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
+    }
+
+
+    // =========================================================
     // USERS
-    // ---------------------------------------------------------
+    // =========================================================
+
     match /users/{uid} {
 
-      // Chính chủ hoặc admin/teacher
       allow read: if isOwner(uid) || isStaff();
 
-      // User tự tạo hồ sơ của chính mình
       allow create: if isOwner(uid);
 
-      // Student chỉ được sửa các field cho phép.
-      // role bắt buộc giữ nguyên.
       allow update: if isStaff()
         || (
           isOwner(uid)
@@ -48,35 +53,27 @@ service cloud.firestore {
           ])
         );
 
-      // Chỉ admin được xoá user
-      allow delete: if isSignedIn()
-        && get(
-          /databases/$(database)/documents/users/$(request.auth.uid)
-        ).data.role == 'admin';
+      allow delete: if isAdmin();
     }
 
 
-    // ---------------------------------------------------------
-    // PERSONAL ENGLISH NOTES
-    // ---------------------------------------------------------
-    match /users/{uid}/english_notes/{noteId} {
+    // =========================================================
+    // PERSONAL NOTES
+    // =========================================================
 
-      // Chỉ chính chủ
+    match /users/{uid}/english_notes/{noteId} {
       allow read, create, update, delete: if isOwner(uid);
     }
 
 
-    // ---------------------------------------------------------
-    // USERS BY ROSTER
-    // ---------------------------------------------------------
+    // =========================================================
+    // ROSTER MAPPING
+    // =========================================================
+
     match /users_by_roster/{rosterId} {
 
-      // Tất cả user đăng nhập được đọc mapping
       allow read: if isSignedIn();
 
-      // Cho phép:
-      // 1. UID hiện tại tạo mapping của chính mình
-      // 2. rosterId chưa tồn tại
       allow create: if isSignedIn()
         && (
           request.auth.uid == request.resource.data.uid
@@ -85,161 +82,183 @@ service cloud.firestore {
           )
         );
 
-      // Chính chủ hoặc staff được update
-      allow update: if isStaff()
-        || (
-          isSignedIn()
-          && request.auth.uid == request.resource.data.uid
+      allow update: if isSignedIn()
+        && (
+          request.auth.uid == request.resource.data.uid
+          || isStaff()
         );
 
-      // Chỉ admin xoá mapping
-      allow delete: if isSignedIn()
-        && get(
-          /databases/$(database)/documents/users/$(request.auth.uid)
-        ).data.role == 'admin';
+      allow delete: if isAdmin();
     }
 
 
-    // ---------------------------------------------------------
+    // =========================================================
     // CONFIG
-    // ---------------------------------------------------------
+    // =========================================================
 
     match /config/admins {
 
-      // roles.js cần đọc khi login
+      // roles.js đọc khi mọi user login
       allow read: if isSignedIn();
 
-      // Chỉ admin sửa danh sách admin
       allow create, update, delete: if isStaff();
     }
 
 
     match /config/teachers {
 
-      // roles.js cần đọc khi login
+      // roles.js đọc khi mọi user login
       allow read: if isSignedIn();
 
-      // Chỉ admin/teacher sửa danh sách teacher
       allow create, update, delete: if isStaff();
     }
 
 
     match /config/roster {
 
-      // roster gate cần đọc
       allow read: if isSignedIn();
 
-      // Staff quản lý roster
       allow create, update, delete: if isStaff();
     }
 
 
-    // ---------------------------------------------------------
-    // DAILY SET SUBMISSIONS
-    // ---------------------------------------------------------
-    match /submissions/{docId} {
+    // =========================================================
+    // SUBMISSIONS
+    // =========================================================
 
-      // Chính chủ hoặc staff được đọc
+    match /submissions/{submissionId} {
+
+      /*
+       * QUAN TRỌNG:
+       *
+       * openSet() dùng getDoc() để kiểm tra:
+       *
+       *   uid_date_setId
+       *
+       * Nếu học sinh CHƯA làm set:
+       *   document chưa tồn tại.
+       *
+       * Khi đó resource.data không tồn tại, nên không thể
+       * chỉ dùng resource.data.uid để cấp quyền.
+       *
+       * Cho phép đọc "document không tồn tại" chỉ khi ID
+       * thuộc về chính UID đang đăng nhập.
+       */
+
       allow read: if isSignedIn()
         && (
-          request.auth.uid == resource.data.uid
-          || isStaff()
+          isStaff()
+
+          || (
+            !exists(
+              /databases/$(database)/documents/submissions/$(submissionId)
+            )
+            && submissionId.matches(
+              '^' + request.auth.uid + '_.*'
+            )
+          )
+
+          || (
+            exists(
+              /databases/$(database)/documents/submissions/$(submissionId)
+            )
+            && resource.data.uid == request.auth.uid
+          )
         );
 
-      // Student tạo submission của chính mình
-      // Staff cũng được tạo nếu uid trong document là chính họ.
+
+      // Tạo submission của chính mình
       allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.uid;
+        && request.resource.data.uid == request.auth.uid;
 
-      // Student được update submission của chính mình
+
+      // Update submission của chính mình
       allow update: if isSignedIn()
-        && request.auth.uid == request.resource.data.uid;
+        && request.resource.data.uid == request.auth.uid
+        && resource.data.uid == request.auth.uid;
 
-      // Chỉ admin xoá
-      allow delete: if isSignedIn()
-        && get(
-          /databases/$(database)/documents/users/$(request.auth.uid)
-        ).data.role == 'admin';
+
+      // Chỉ admin được xóa
+      allow delete: if isAdmin();
     }
 
 
-    // ---------------------------------------------------------
-    // DAILY SETS
-    // ---------------------------------------------------------
+    // =========================================================
+    // DAILY SET
+    // =========================================================
+
     match /sets/{setId} {
 
-      // Student + teacher + admin đều đọc được
-      // nhưng chỉ set đã publish.
+      // Student/admin/teacher đều đọc set đã publish
       allow read: if isSignedIn()
         && resource.data.published == true;
 
-      // Chỉ staff ghi/xoá
+      // Chỉ staff ghi
       allow create, update, delete: if isStaff();
     }
 
 
-    // ---------------------------------------------------------
+    // =========================================================
     // KNOWLEDGE
-    // ---------------------------------------------------------
+    // =========================================================
+
     match /knowledge/{id} {
 
-      // User đăng nhập đọc nội dung đã publish
       allow read: if isSignedIn()
         && resource.data.published == true;
 
-      // Staff quản lý
       allow create, update, delete: if isStaff();
     }
 
 
-    // ---------------------------------------------------------
+    // =========================================================
     // QUESTION BANK
-    // ---------------------------------------------------------
+    // =========================================================
+
     match /questionBank/{id} {
 
-      // User đăng nhập đọc câu hỏi đã publish
       allow read: if isSignedIn()
         && resource.data.published == true;
 
-      // Staff quản lý
       allow create, update, delete: if isStaff();
     }
 
 
-    // ---------------------------------------------------------
+    // =========================================================
     // LISTENING CONTENT
-    // ---------------------------------------------------------
+    // =========================================================
+
     match /listeningContent/{id} {
 
-      // User đăng nhập đọc nội dung đã publish
       allow read: if isSignedIn()
         && resource.data.published == true;
 
-      // Staff quản lý
       allow create, update, delete: if isStaff();
     }
 
 
-    // ---------------------------------------------------------
+    // =========================================================
     // AUDIT
-    // ---------------------------------------------------------
+    // =========================================================
+
     match /audit/{auditId} {
 
-      allow read: if isStaff();
+      allow read: if isAdmin();
 
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
 
-      allow update, delete: if isStaff();
+      allow update, delete: if isAdmin();
     }
 
 
-    // ---------------------------------------------------------
+    // =========================================================
     // RATE LIMITS
-    // ---------------------------------------------------------
+    // =========================================================
+
     match /rate_limits/{id} {
 
-      allow read, create, update, delete: if isStaff();
+      allow read, create, update, delete: if isAdmin();
     }
   }
 }
