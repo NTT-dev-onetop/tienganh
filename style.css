@@ -904,6 +904,11 @@ html[data-theme="light"] .cms-tab.active, html:not([data-theme]) .cms-tab.active
   .stat,.home-grid>.panel,.page>.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.daily-set-card,.knowledge-card{opacity:1!important;transform:none!important;transition:none!important;will-change:auto}
 }
 
+/* Admin is an operational workspace: prioritize scanning and fast repeated actions. */
+#admin,#admin *{animation:none!important}
+#admin .panel,#admin .cms-pane,#admin .cms-item,#admin .question-picker,#admin .teacher-import-card,#admin .daily-word-import{opacity:1!important;transform:none!important;filter:none!important;transition:none!important;will-change:auto}
+#admin .btn:hover:not(:disabled),#admin .nav-link:hover,#admin .cms-tab:hover{transform:none!important}
+
 /* ===== APPLE-LIKE TAB TRANSITIONS ===== */
 @supports (view-transition-name: none){
   .page:not(.d-none){view-transition-name:active-page}

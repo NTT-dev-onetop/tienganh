@@ -29,7 +29,9 @@ function page(id){
     if(id==='home')renderHome();if(id==='vocab')renderVocab();if(id==='grammar')renderGrammar();if(id==='mistakes')renderMistakes();if(id==='profile')renderProfile();if(id==='review')startReview();if(id==='textbook')renderTextbook();if(id==='listening')renderListeningTests();
     requestAnimationFrame(()=>{if(target){const mobileHeader=window.matchMedia('(max-width:991.98px)').matches;const offset=mobileHeader?78:24;const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-offset);window.scrollTo({top:y,behavior:'smooth'})}});
   };
-  if(document.startViewTransition)document.startViewTransition(updatePage);else updatePage();
+  const currentPage=document.querySelector('.page:not(.d-none)')?.id;
+  const useViewTransition=document.startViewTransition&&id!=='admin'&&currentPage!=='admin';
+  if(useViewTransition)document.startViewTransition(updatePage);else updatePage();
 }
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false')});
 const mobileMenuToggle=document.getElementById('mobileMenuToggle');mobileMenuToggle?.setAttribute('aria-label','Mở menu');
