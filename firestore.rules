@@ -12,18 +12,19 @@ service cloud.firestore {
     }
 
     function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
+      return isSignedIn()
+        && request.auth.uid == uid;
     }
 
     function isStaff() {
-      return request.auth != null
+      return isSignedIn()
         && get(
           /databases/$(database)/documents/users/$(request.auth.uid)
         ).data.role in ['admin', 'teacher'];
     }
 
     function isAdmin() {
-      return request.auth != null
+      return isSignedIn()
         && get(
           /databases/$(database)/documents/users/$(request.auth.uid)
         ).data.role == 'admin';
@@ -66,6 +67,7 @@ service cloud.firestore {
     // =========================================================
 
     match /users/{uid}/english_notes/{noteId} {
+
       allow read, create, update, delete: if isOwner(uid);
     }
 
@@ -123,54 +125,82 @@ service cloud.firestore {
     // SUBMISSIONS
     // =========================================================
 
-    match /submissions/{docId} {
+    match /submissions/{submissionId} {
 
       /*
-       * QUAN TRỌNG:
+       * GET
        *
-       * daily-set.js chạy:
+       * daily-set.js có:
+       *
+       * getDoc(
+       *   doc(db, 'submissions',
+       *   `${currentUser.uid}_${date}_${id}`)
+       * )
+       *
+       * Khi chưa làm bài, document chưa tồn tại.
+       *
+       * Vì vậy không được chỉ dựa vào resource.data.uid.
+       *
+       * ID submission của học sinh luôn bắt đầu bằng UID của
+       * chính học sinh đó.
+       */
+
+      allow get: if isSignedIn()
+        && (
+          isStaff()
+          || submissionId.matches(
+            '^' + request.auth.uid + '_.*'
+          )
+        );
+
+
+      /*
+       * LIST / QUERY
+       *
+       * daily-set.js:
        *
        * query(
        *   collection(db, 'submissions'),
        *   where('uid', '==', currentUser.uid)
        * )
        *
-       * Vì vậy student phải được phép đọc submission
-       * có uid đúng bằng UID hiện tại.
+       * Student chỉ được query submission của chính mình.
+       *
+       * Staff được query tất cả.
        */
 
-      allow read: if isSignedIn()
+      allow list: if isSignedIn()
         && (
-          request.auth.uid == resource.data.uid
-          || isStaff()
+          isStaff()
+          || resource.data.uid == request.auth.uid
         );
 
 
       /*
-       * Student tạo submission của chính mình.
+       * CREATE
        *
-       * Không ép format ID ở Rules nữa vì JS đã tự tạo:
-       *
-       * UID_DATE_SETID
-       *
-       * Việc ép chuỗi ID ở Rules không cần thiết cho
-       * quyền Firestore và có thể làm create bị deny
-       * nếu kiểu dữ liệu khác dự kiến.
+       * Student chỉ được tạo submission của chính mình.
        */
 
       allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.uid;
-
-
-      /*
-       * Cho phép chính chủ update submission của chính mình.
-       */
-      allow update: if isSignedIn()
-        && request.auth.uid == resource.data.uid
         && request.resource.data.uid == request.auth.uid;
 
 
-      // Chỉ admin được xoá
+      /*
+       * UPDATE
+       *
+       * Student chỉ được sửa submission của chính mình.
+       */
+
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid;
+
+
+      /*
+       * DELETE
+       */
+
       allow delete: if isAdmin();
     }
 
@@ -181,11 +211,9 @@ service cloud.firestore {
 
     match /sets/{setId} {
 
-      // Student chỉ đọc set đã publish
       allow read: if isSignedIn()
         && resource.data.published == true;
 
-      // Chỉ admin/teacher ghi
       allow create, update, delete: if isStaff();
     }
 
