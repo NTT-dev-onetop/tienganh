@@ -1,4 +1,4 @@
-import{doc,getDoc,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import{doc,getDoc,setDoc,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
 
 const escLocal=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -39,8 +39,10 @@ export async function initRosterGate(user,role){
       const mappingRef=doc(db,'users_by_roster','s45');
       const mapping=await getDoc(mappingRef);
       if(!mapping.exists()||mapping.data()?.uid===user.uid){
-        await setDoc(mappingRef,{uid:user.uid,email:ownerEmail,name:'Nguyễn Trung Trực',rosterId:'s45'},{merge:true});
-        await setDoc(doc(db,'users',user.uid),{rosterId:'s45',name:'Nguyễn Trung Trực',className:'11T1',role:'admin'},{merge:true});
+        const batch=writeBatch(db);
+        batch.set(mappingRef,{uid:user.uid,email:ownerEmail,name:'Nguyễn Trung Trực',rosterId:'s45'},{merge:true});
+        batch.set(doc(db,'users',user.uid),{rosterId:'s45',name:'Nguyễn Trung Trực',className:'11T1',role:'admin'},{merge:true});
+        await batch.commit();
         return true;
       }
     }
@@ -64,10 +66,8 @@ export async function initRosterGate(user,role){
         const target=students.find(x=>String(x.id)===rosterId);if(!target)throw new Error('Tên không còn trong roster.');
         const mappingRef=doc(db,'users_by_roster',rosterId);const mapping=await getDoc(mappingRef);
         if(mapping.exists()&&mapping.data()?.uid!==user.uid)throw new Error('Tên này đã được đăng ký. Liên hệ thầy.');
-        const normalizedEmail=String(user.email||'').trim().toLowerCase();
-        if(!normalizedEmail)throw new Error('Tài khoản Google không có email hợp lệ.');
         const batch=writeBatch(db);
-        batch.set(mappingRef,{uid:user.uid,email:normalizedEmail,name:String(target.name),rosterId},{merge:false});
+        batch.set(mappingRef,{uid:user.uid,email:String(user.email||'').toLowerCase(),name:String(target.name),rosterId},{merge:true});
         batch.set(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1'},{merge:true});
         await batch.commit();
         bs.hide();resolve();
