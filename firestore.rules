@@ -1,160 +1,191 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function email() { return signedIn() && request.auth.token.email != null ? request.auth.token.email.lower() : ''; }
-    function bootstrapAdmin() { return signedIn() && email() == 'icloud07072010@gmail.com'; }
-    function adminConfigExists() { return exists(/databases/$(database)/documents/config/admins); }
-    function adminConfig() { return get(/databases/$(database)/documents/config/admins); }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isOwnerEmail() {
+      return isSignedIn()
+        && request.auth.token.email == 'icloud07072010@gmail.com';
+    }
+
     function isAdmin() {
-      return signedIn() && (bootstrapAdmin() || (adminConfigExists() && adminConfig().data.emails is list && email() in adminConfig().data.emails));
-    }
-    function sameUser(uid) { return signedIn() && request.auth.uid == uid; }
-    function validRole(role) { return role == 'admin' || role == 'teacher' || role == 'student'; }
-    function owner() { return signedIn() && email() == 'icloud07072010@gmail.com'; }
-    function teacherConfigExists() { return exists(/databases/$(database)/documents/config/teachers); }
-    function teacherConfig() { return get(/databases/$(database)/documents/config/teachers); }
-    function isTeacher() { return signedIn() && !isAdmin() && teacherConfigExists() && teacherConfig().data.emails is list && email() in teacherConfig().data.emails; }
-    function isStaff() { return isAdmin() || isTeacher(); }
-
-    match /config/admins {
-      // Only admins and listed admins can inspect the admin allowlist.
-      allow read: if owner() || (signedIn() && resource.data.emails is list && email() in resource.data.emails);
-      allow create, update: if owner() && request.resource.data.emails is list;
-
-      allow delete: if owner();
+      return isOwnerEmail()
+        || (
+          isSignedIn()
+          && request.auth.token.email in
+            get(/databases/$(database)/documents/config/admins).data.emails
+        );
     }
 
-    match /config/teachers {
-      // A teacher can verify their own membership; students cannot enumerate staff emails.
-      allow read: if isAdmin() || (signedIn() && resource.data.emails is list && email() in resource.data.emails);
-      allow create, update, delete: if isAdmin();
+    function isTeacher() {
+      return !isAdmin()
+        && isSignedIn()
+        && request.auth.token.email in
+          get(/databases/$(database)/documents/config/teachers).data.emails;
     }
 
-    match /config/roster {
-      allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
+    function isStaff() {
+      return isAdmin() || isTeacher();
     }
 
     match /users/{uid} {
-      allow read: if sameUser(uid) || isStaff();
-      // Người dùng mới luôn được phép tạo hồ sơ của chính mình.
-      // Student không phụ thuộc vào config/admins. Admin chỉ được bootstrap bằng Gmail
-      // hoặc bằng email đã có trong config/admins.
-      allow create: if sameUser(uid)
-        && validRole(request.resource.data.role)
-        && request.resource.data.email == email()
-        && request.resource.data.name is string
-        && request.resource.data.className is string
+      // Hồ sơ: chính chủ hoặc staff.
+      allow read: if isOwner(uid) || isStaff();
+
+      // User chỉ được tự tạo hồ sơ của chính mình.
+      // Không thể tự tạo role admin/teacher trừ OWNER/admin hợp lệ.
+      allow create: if isOwner(uid)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role in ['student', 'teacher', 'admin']
         && (
           request.resource.data.role == 'student'
-          || (request.resource.data.role == 'admin' && isAdmin())
-          || (request.resource.data.role == 'teacher' && isAdmin())
+          || isStaff()
         );
-      allow update: if (
-          isAdmin()
-          && request.resource.data.email == resource.data.email
-          && validRole(request.resource.data.role)
-        ) || (
-          sameUser(uid)
-          && (
-            request.resource.data.email == resource.data.email
-            || (
-              !("email" in resource.data)
-              && request.resource.data.email == email()
-            )
+
+      // Chính chủ chỉ được cập nhật đúng các field cho phép,
+      // không được đổi role và email chỉ được bổ sung khi hồ sơ chưa có email.
+      allow update: if isOwner(uid)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name',
+          'className',
+          'streak',
+          'lastCompletedDate',
+          'totalSetsCompleted',
+          'totalBonusPoints',
+          'lastLoginAt',
+          'rosterId',
+          'email'
+        ])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
+          || (
+            !('email' in resource.data)
+            && request.resource.data.email == request.auth.token.email
           )
-          && request.resource.data.role == resource.data.role
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'lastLoginAt','name','className','rosterId','teacherLabel','teacherEmail','email',
-            'streak','lastCompletedDate','totalSetsCompleted','totalBonusPoints'
-          ])
-          && (
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rosterId','className'])
-            || (
-              !(resource.data.rosterId is string)
-              && request.resource.data.rosterId is string
-              && exists(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId))
-              && get(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId)).data.uid == uid
-            )
+        )
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rosterId'])
+          || (
+            !('rosterId' in resource.data)
+            && request.resource.data.rosterId is string
+            && exists(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId))
+            && get(/databases/$(database)/documents/users_by_roster/$(request.resource.data.rosterId)).data.uid == uid
           )
-        );
+        )
+        || isStaff();
+
       allow delete: if isAdmin();
+    }
+
+    match /users/{uid}/english_notes/{noteId} {
+      allow read, create, update, delete: if isOwner(uid);
     }
 
     match /users_by_roster/{rosterId} {
-      allow read: if isAdmin() || resource == null || sameUser(resource.data.uid);
-      allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.rosterId == rosterId
-        && request.resource.data.email == email()
-        && request.resource.data.name is string
-        && !exists(/databases/$(database)/documents/users_by_roster/$(rosterId));
-      allow update: if isAdmin() || (
-        sameUser(resource.data.uid)
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.rosterId == resource.data.rosterId
-        && request.resource.data.email == email()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email','name'])
-      );
+      // Roster mapping phải đọc được bởi mọi user đã đăng nhập.
+      allow read: if isSignedIn();
+
+      // Lần đầu gắn tên: uid phải chính là tài khoản đang đăng nhập.
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
+
+      // Chủ mapping hoặc staff được sửa.
+      allow update: if isStaff()
+        || (
+          isSignedIn()
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+        );
+
       allow delete: if isAdmin();
     }
 
+    match /config/admins {
+      // Roles.js cần đọc allowlist để xác định admin.
+      allow read: if isSignedIn();
 
-    match /knowledge/{knowledgeId} {
-      allow read: if signedIn() && resource.data.published == true || isStaff();
-      allow create, update, delete: if isStaff();
+      // Chỉ OWNER hoặc email đã có trong chính allowlist hiện tại.
+      allow create: if isOwnerEmail();
+      allow update: if isOwnerEmail()
+        || (
+          isSignedIn()
+          && request.auth.token.email in resource.data.emails
+        );
+      allow delete: if isOwnerEmail();
     }
 
-    match /questionBank/{questionId} {
-      allow read: if signedIn() && resource.data.published == true || isStaff();
-      allow create, update, delete: if isStaff();
+    match /config/teachers {
+      // Roles.js cần đọc allowlist để xác định teacher.
+      allow read: if isSignedIn();
+
+      // Chỉ OWNER hoặc email đã có trong chính allowlist hiện tại.
+      allow create: if isOwnerEmail();
+      allow update: if isOwnerEmail()
+        || (
+          isSignedIn()
+          && request.auth.token.email in resource.data.emails
+        );
+      allow delete: if isOwnerEmail();
     }
 
-    match /listeningContent/{listeningId} {
-      allow read: if signedIn() && resource.data.published == true || isStaff();
-      allow create, update, delete: if isStaff();
-    }
-
-    match /sets/{setId} {
-      allow read: if signedIn();
+    match /config/roster {
+      allow read: if isSignedIn();
       allow create, update, delete: if isStaff();
     }
 
     match /submissions/{submissionId} {
-      allow read: if signedIn() && (resource == null || resource.data.uid == request.auth.uid || isStaff());
-      allow create: if signedIn()
+      // Chính chủ hoặc staff.
+      allow read: if isSignedIn()
+        && (resource.data.uid == request.auth.uid || isStaff());
+
+      // Chỉ chính chủ tạo submission của chính mình.
+      allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.setId is string
-        && request.resource.data.setId.size() > 0
-        && submissionId == request.auth.uid + '_' + request.resource.data.date + '_' + request.resource.data.setId
-        && request.resource.data.total == 20
-        && request.resource.data.score is int
-        && request.resource.data.score >= 0
-        && request.resource.data.score <= 20
-        && request.resource.data.passed == (request.resource.data.score >= 15)
-        && request.resource.data.bonusPoints is int
-        && request.resource.data.bonusPoints >= 0
-        && request.resource.data.bonusPoints <= 2
-        && request.resource.data.date is string
-        && request.resource.data.signature is string
-        && request.resource.data.signature.size() > 0;
-      allow update, delete: if isAdmin();
+        && submissionId == request.auth.uid + '_' + request.resource.data.date + '_' + request.resource.data.setId;
+
+      // Không cho HS sửa/xóa submission sau khi tạo.
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
-    match /users/{uid}/english_notes/{noteId} {
-      allow read, create, update, delete: if sameUser(uid);
+    match /knowledge/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isStaff();
     }
 
+    match /questionBank/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isStaff();
+    }
+
+    match /listeningContent/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isStaff();
+    }
+
+    match /sets/{setId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isStaff();
+    }
+
+    // Giữ các collection hiện có của project, không mở rộng quyền.
     match /audit/{auditId} {
       allow read: if isAdmin();
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
     match /rate_limits/{id} {
-      allow read: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow read, create, update, delete: if isAdmin();
     }
   }
 }
