@@ -3,6 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -19,7 +23,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn()
+      return request.auth != null
         && get(
           /databases/$(database)/documents/users/$(request.auth.uid)
         ).data.role == 'admin';
@@ -58,7 +62,7 @@ service cloud.firestore {
 
 
     // =========================================================
-    // PERSONAL NOTES
+    // ENGLISH NOTES
     // =========================================================
 
     match /users/{uid}/english_notes/{noteId} {
@@ -67,7 +71,7 @@ service cloud.firestore {
 
 
     // =========================================================
-    // ROSTER MAPPING
+    // ROSTER
     // =========================================================
 
     match /users_by_roster/{rosterId} {
@@ -75,17 +79,12 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       allow create: if isSignedIn()
-        && (
-          request.auth.uid == request.resource.data.uid
-          || !exists(
-            /databases/$(database)/documents/users_by_roster/$(rosterId)
-          )
-        );
+        && request.resource.data.uid == request.auth.uid;
 
-      allow update: if isSignedIn()
-        && (
-          request.auth.uid == request.resource.data.uid
-          || isStaff()
+      allow update: if isStaff()
+        || (
+          isSignedIn()
+          && request.resource.data.uid == request.auth.uid
         );
 
       allow delete: if isAdmin();
@@ -98,7 +97,6 @@ service cloud.firestore {
 
     match /config/admins {
 
-      // roles.js đọc khi mọi user login
       allow read: if isSignedIn();
 
       allow create, update, delete: if isStaff();
@@ -107,7 +105,6 @@ service cloud.firestore {
 
     match /config/teachers {
 
-      // roles.js đọc khi mọi user login
       allow read: if isSignedIn();
 
       allow create, update, delete: if isStaff();
@@ -126,74 +123,69 @@ service cloud.firestore {
     // SUBMISSIONS
     // =========================================================
 
-    match /submissions/{submissionId} {
+    match /submissions/{docId} {
 
       /*
        * QUAN TRỌNG:
        *
-       * openSet() dùng getDoc() để kiểm tra:
+       * daily-set.js chạy:
        *
-       *   uid_date_setId
+       * query(
+       *   collection(db, 'submissions'),
+       *   where('uid', '==', currentUser.uid)
+       * )
        *
-       * Nếu học sinh CHƯA làm set:
-       *   document chưa tồn tại.
-       *
-       * Khi đó resource.data không tồn tại, nên không thể
-       * chỉ dùng resource.data.uid để cấp quyền.
-       *
-       * Cho phép đọc "document không tồn tại" chỉ khi ID
-       * thuộc về chính UID đang đăng nhập.
+       * Vì vậy student phải được phép đọc submission
+       * có uid đúng bằng UID hiện tại.
        */
 
       allow read: if isSignedIn()
         && (
-          isStaff()
-
-          || (
-            !exists(
-              /databases/$(database)/documents/submissions/$(submissionId)
-            )
-            && submissionId.matches(
-              '^' + request.auth.uid + '_.*'
-            )
-          )
-
-          || (
-            exists(
-              /databases/$(database)/documents/submissions/$(submissionId)
-            )
-            && resource.data.uid == request.auth.uid
-          )
+          request.auth.uid == resource.data.uid
+          || isStaff()
         );
 
 
-      // Tạo submission của chính mình
+      /*
+       * Student tạo submission của chính mình.
+       *
+       * Không ép format ID ở Rules nữa vì JS đã tự tạo:
+       *
+       * UID_DATE_SETID
+       *
+       * Việc ép chuỗi ID ở Rules không cần thiết cho
+       * quyền Firestore và có thể làm create bị deny
+       * nếu kiểu dữ liệu khác dự kiến.
+       */
+
       allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.uid;
+
+
+      /*
+       * Cho phép chính chủ update submission của chính mình.
+       */
+      allow update: if isSignedIn()
+        && request.auth.uid == resource.data.uid
         && request.resource.data.uid == request.auth.uid;
 
 
-      // Update submission của chính mình
-      allow update: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid
-        && resource.data.uid == request.auth.uid;
-
-
-      // Chỉ admin được xóa
+      // Chỉ admin được xoá
       allow delete: if isAdmin();
     }
 
 
     // =========================================================
-    // DAILY SET
+    // DAILY SETS
     // =========================================================
 
     match /sets/{setId} {
 
-      // Student/admin/teacher đều đọc set đã publish
+      // Student chỉ đọc set đã publish
       allow read: if isSignedIn()
         && resource.data.published == true;
 
-      // Chỉ staff ghi
+      // Chỉ admin/teacher ghi
       allow create, update, delete: if isStaff();
     }
 
