@@ -161,6 +161,8 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
   .nav .user-block{transform:translateX(-4px)}
 }
 
+  .theme-toggle-mobile{border:1px solid var(--border)!important;background:var(--surface-2)!important;color:var(--ink)!important;text-align:left!important}
+
 /* More sheet must be completely absent until the user opens it. */
 .more-sheet:not(.is-open){
   opacity:0!important;
