@@ -1,5 +1,3 @@
-import{log,hardenConsole}from'./logger.js';
-hardenConsole();
 import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import{collection,addDoc,doc,getDoc,setDoc,updateDoc,deleteDoc,onSnapshot,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{ensureUserDoc,getCurrentRole,clearCurrentRole,isStaffRole}from"./roles.js";
@@ -43,7 +41,7 @@ document.addEventListener('click',e=>{const menu=document.getElementById('mobile
 $('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){$('authErr').textContent=e.message;$('authErr').classList.remove('d-none')}};$('logout').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,async u=>{user=u;if(u){try{let profile=await ensureUserDoc(u);let role=getCurrentRole();$('auth').classList.add('d-none');$('app').classList.remove('d-none');$('user').textContent=u.email||'';$('userName').textContent=profile?.name||u.displayName||'Tài khoản';$('avatar').textContent=(profile?.name||u.displayName||u.email||'U').trim().charAt(0).toUpperCase();let adminNav=document.querySelectorAll('[data-admin-nav]');adminNav.forEach(x=>x.classList.toggle('d-none',!isStaffRole(role)));const gate=await initRosterGate(u,role);if(!gate){await signOut(auth);return}
 // Refresh the role after roster linking; teacher/admin roles come from config.
-profile=await ensureUserDoc(u);role=getCurrentRole();adminNav=document.querySelectorAll('[data-admin-nav]');adminNav.forEach(x=>x.classList.toggle('d-none',!isStaffRole(role)));if(isStaffRole(role))await loadAdminForUser(u);initKnowledge();initTeacherContent();if(!profile?.name)showNameModal(u);listen();renderProfile()}catch(e){log.error('Lỗi khởi tạo phiên đăng nhập:',e);$('authErr').textContent='Không thể khởi tạo tài khoản. Vui lòng thử lại.';$('authErr').classList.remove('d-none');await signOut(auth)}}else{clearCurrentRole();$('auth').classList.remove('d-none');$('app').classList.add('d-none');if(unsub){unsub();unsub=null}stopKnowledge();stopTeacherContent()}});
+profile=await ensureUserDoc(u);role=getCurrentRole();adminNav=document.querySelectorAll('[data-admin-nav]');adminNav.forEach(x=>x.classList.toggle('d-none',!isStaffRole(role)));if(isStaffRole(role))await loadAdminForUser(u);initKnowledge();initTeacherContent();if(!profile?.name)showNameModal(u);listen();renderProfile()}catch(e){console.error('Lỗi khởi tạo phiên đăng nhập:',e);$('authErr').textContent='Không thể khởi tạo tài khoản. Vui lòng thử lại.';$('authErr').classList.remove('d-none');await signOut(auth)}}else{clearCurrentRole();$('auth').classList.remove('d-none');$('app').classList.add('d-none');if(unsub){unsub();unsub=null}stopKnowledge();stopTeacherContent()}});
 async function renderProfile(){
   if(!user)return;
   try{
@@ -65,13 +63,13 @@ async function renderProfile(){
     if(el('profileClass'))el('profileClass').textContent=String(p.className||'11T1');
     if(el('profileRoleText'))el('profileRoleText').textContent=displayRole==='teacher'?'teacher':role;
     if(el('profileEmailInfo'))el('profileEmailInfo').textContent=user.email||'';
-  }catch(e){log.error('Không tải được hồ sơ:',e);toast('Không tải được hồ sơ.','error')}
+  }catch(e){console.error('Không tải được hồ sơ:',e);toast('Không tải được hồ sơ.','error')}
 }
 $('profileEdit')?.addEventListener('click',()=>showNameModal(user));
 
 function showNameModal(u){
   if(!u||!u.uid||document.getElementById('nameModal'))return;
-  const wrap=document.createElement('div');wrap.className='modal fade';wrap.id='nameModal';wrap.tabIndex=-1;wrap.setAttribute('aria-hidden','true');wrap.innerHTML='<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Hoàn tất hồ sơ</h5></div><div class="modal-body"><p class="muted">Nhập họ tên để hiển thị trong lớp 11T1.</p><input id="profileName" class="form-control form-control-lg" maxlength="80" placeholder="Nguyễn Văn A"><div id="profileErr" class="alert alert-danger d-none mt-3"></div></div><div class="modal-footer"><button id="profileSave" class="btn btn-primary">Lưu hồ sơ</button></div></div></div>';document.body.appendChild(wrap);const modal=window.bootstrap?.Modal?.getOrCreateInstance(wrap,{backdrop:'static',keyboard:false});if(!modal){wrap.remove();toast('Bootstrap Modal chưa sẵn sàng.','error');return}modal.show();wrap.querySelector('#profileSave').onclick=async()=>{const name=wrap.querySelector('#profileName')?.value.trim();const err=wrap.querySelector('#profileErr');if(name.length<2){err.textContent='Họ tên quá ngắn.';err.classList.remove('d-none');return}const btn=wrap.querySelector('#profileSave');btn.disabled=true;try{await setDoc(doc(db,'users',u.uid),{name,className:'11T1'},{merge:true});$('userName').textContent=name;$('avatar').textContent=name.charAt(0).toUpperCase();modal.hide();setTimeout(()=>wrap.remove(),250);renderProfile();toast('Đã lưu hồ sơ.')}catch(e){log.error('Lỗi lưu hồ sơ:',e);err.textContent='Không thể lưu hồ sơ.';err.classList.remove('d-none');btn.disabled=false}}}
+  const wrap=document.createElement('div');wrap.className='modal fade';wrap.id='nameModal';wrap.tabIndex=-1;wrap.setAttribute('aria-hidden','true');wrap.innerHTML='<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Hoàn tất hồ sơ</h5></div><div class="modal-body"><p class="muted">Nhập họ tên để hiển thị trong lớp 11T1.</p><input id="profileName" class="form-control form-control-lg" maxlength="80" placeholder="Nguyễn Văn A"><div id="profileErr" class="alert alert-danger d-none mt-3"></div></div><div class="modal-footer"><button id="profileSave" class="btn btn-primary">Lưu hồ sơ</button></div></div></div>';document.body.appendChild(wrap);const modal=window.bootstrap?.Modal?.getOrCreateInstance(wrap,{backdrop:'static',keyboard:false});if(!modal){wrap.remove();toast('Bootstrap Modal chưa sẵn sàng.','error');return}modal.show();wrap.querySelector('#profileSave').onclick=async()=>{const name=wrap.querySelector('#profileName')?.value.trim();const err=wrap.querySelector('#profileErr');if(name.length<2){err.textContent='Họ tên quá ngắn.';err.classList.remove('d-none');return}const btn=wrap.querySelector('#profileSave');btn.disabled=true;try{await setDoc(doc(db,'users',u.uid),{name,className:'11T1'},{merge:true});$('userName').textContent=name;$('avatar').textContent=name.charAt(0).toUpperCase();modal.hide();setTimeout(()=>wrap.remove(),250);renderProfile();toast('Đã lưu hồ sơ.')}catch(e){console.error('Lỗi lưu hồ sơ:',e);err.textContent='Không thể lưu hồ sơ.';err.classList.remove('d-none');btn.disabled=false}}}
 const base=()=>collection(db,'users',user.uid,'english_notes');
 function listen(){unsub=onSnapshot(base(),snap=>{data={vocab:[],grammar:[],mistakes:[]};snap.forEach(d=>{const x={id:d.id,...d.data()};if(data[x.type]&&!pendingDeletes.has(x.id))data[x.type].push(x)});data.vocab.sort(sortDate);data.grammar.sort(sortDate);data.mistakes.sort((a,b)=>(Number(b.priority||1)-Number(a.priority||1))||sortDate(a,b));renderHome();renderVocab();renderGrammar();renderMistakes();renderTextbookGrammar()})}
 function sortDate(a,b){return String(b.createdDate||'').localeCompare(String(a.createdDate||''))}
@@ -2190,7 +2188,7 @@ function exerciseItems(unit,count){
     shuffle(source).slice(0,maxCount).forEach((raw,index)=>{
       const item=normalizeExerciseItem(kind,raw);
       if(item)out.push(item);
-      else log.warn(`Bỏ item ${kind} lỗi tại vị trí ${index} — Unit ${unit}.`,raw);
+      else console.warn(`Bỏ item ${kind} lỗi tại vị trí ${index} — Unit ${unit}.`,raw);
     });
   };
   addItems('mcq',sections.mcq,safeCount);
@@ -2303,7 +2301,7 @@ async function checkExerciseAnswer(){
         await addNote('mistakes',{unit:s.unit,question:prompt,answer:String(answer),mistakeType:'Bài tập',why:'Sai khi tự luyện — xem lại câu và quy tắc.',rule,priority:2,resolved:false,resolvedDate:'',source:'exercise'});
         toast('Đã tự động ghim câu sai vào Sổ câu sai.','error');
       }catch(e){
-        log.error('Không thể ghim câu sai:',e);
+        console.error('Không thể ghim câu sai:',e);
         toast('Không thể lưu câu sai. Vui lòng thử lại.','error');
       }
     }
@@ -2321,7 +2319,7 @@ async function checkExerciseAnswer(){
       nav.appendChild(n);
     }
   }catch(e){
-    log.error('Lỗi kiểm tra bài tập:',e);
+    console.error('Lỗi kiểm tra bài tập:',e);
     toast('Không thể kiểm tra câu này. Vui lòng thử lại.','error');
     if(btn){btn.disabled=false;btn.innerHTML=s.index===s.items.length-1?'Nộp bài':'Kiểm tra';}
   }finally{s.checking=false;}

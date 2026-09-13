@@ -1,5 +1,3 @@
-import{log,hardenConsole}from'./logger.js';
-hardenConsole();
 import{doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
 
@@ -69,9 +67,9 @@ export async function initRosterGate(user,role){
         await setDoc(mappingRef,{uid:user.uid,email:String(user.email||'').toLowerCase(),name:String(target.name),rosterId});
         await setDoc(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1',email:String(user.email||'').trim().toLowerCase()},{merge:true});
         bs.hide();resolve();
-      }catch(e){log.error('Lỗi gắn roster:',e);err.textContent=e.message||'Không thể lưu tên.';err.classList.remove('d-none');save.disabled=false}
+      }catch(e){console.error('Lỗi gắn roster:',e);err.textContent=e.message||'Không thể lưu tên.';err.classList.remove('d-none');save.disabled=false}
     }});
     return true;
-  }catch(error){log.error('Lỗi roster:',error);toastGlobal(error.message||'Không thể kiểm tra roster.','error');return false}
+  }catch(error){console.error('Lỗi roster:',error);toastGlobal(error.message||'Không thể kiểm tra roster.','error');return false}
 }
 function toastGlobal(msg,type){return window.appToast?window.appToast(msg,type):undefined}

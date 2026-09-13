@@ -998,3 +998,14 @@ html[data-theme="dark"] .daily-review-row{background:var(--card-bg);color:var(--
   #review .review-area{margin-top:24px;padding-bottom:32px}
   #review .review-card{min-height:280px}
 }
+
+
+/* Word Set cards: one published Word file = one compact card. */
+.teacher-set-card{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;margin-bottom:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.04)}
+.teacher-set-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px}
+.teacher-set-summary h4{margin:8px 0 2px;font-size:18px}.teacher-set-summary p{font-size:13px}
+.teacher-set-quiz{padding:0 18px 18px;border-top:1px solid var(--border)}
+.teacher-quiz-list{display:grid;gap:10px;padding-top:14px}.teacher-quiz-q{padding:14px;border:1px solid var(--border);border-radius:14px}.teacher-quiz-q h5{font-size:16px;line-height:1.5;margin-bottom:10px}
+.teacher-quiz-option{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border-radius:10px;cursor:pointer}.teacher-quiz-option:hover{background:var(--surface-2)}
+.teacher-quiz-option input{margin-top:5px}.teacher-quiz-result{display:inline-flex;align-items:center;margin-left:auto;font-size:14px}
+@media(max-width:600px){.teacher-set-summary{align-items:flex-start;flex-direction:column}.teacher-set-summary .btn{width:100%}.teacher-quiz-result{margin-left:0;width:100%}}

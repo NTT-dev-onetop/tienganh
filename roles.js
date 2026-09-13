@@ -1,5 +1,3 @@
-import{log,hardenConsole}from'./logger.js';
-hardenConsole();
 import{doc,getDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
 
@@ -67,7 +65,7 @@ export async function ensureUserDoc(user){
    await setDoc(doc(db,'users_by_roster','s45'),{uid:user.uid,email:normalized,name:'Nguyễn Trung Trực',rosterId:'s45'},{merge:true});
   }
   currentRole=desiredRole;return {...profile,role:desiredRole};
- }catch(error){currentRole=null;log.error('Không thể tạo/đọc hồ sơ người dùng:',error);throw error}
+ }catch(error){currentRole=null;console.error('Không thể tạo/đọc hồ sơ người dùng:',error);throw error}
 }
 export function setCurrentRole(role){currentRole=role}
 export function getCurrentRole(){return currentRole}

@@ -11,26 +11,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function email() {
+    function isOwner(uid) {
       return isSignedIn()
-        ? (request.auth.token.email != null
-          ? request.auth.token.email.lower()
-          : '')
-        : '';
-    }
-
-    function isTeacherEmail() {
-      return isSignedIn()
-        && get(/databases/$(database)/documents/config/teachers).data.emails
-          .hasAny([email()]);
-    }
-
-    function isOwner() {
-      return isSignedIn() && email() == 'icloud07072010@gmail.com';
-    }
-
-    function isOwnerUid(uid) {
-      return isOwner() && request.auth.uid == uid;
+        && request.auth.uid == uid;
     }
 
     function isStaff() {
@@ -41,12 +24,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isOwner()
-        || (isSignedIn()
-          && get(
-            /databases/$(database)/documents/users/$(request.auth.uid)
-          ).data.role == 'admin');
+      return isSignedIn()
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
     }
+
 
     // =========================================================
     // USERS
@@ -54,65 +37,40 @@ service cloud.firestore {
 
     match /users/{uid} {
 
-      allow read: if isOwnerUid(uid) || isStaff();
+      allow read: if isOwner(uid) || isStaff();
 
-      // A normal account can only create itself as student.
-      // The owner may bootstrap the single owner account as admin.
-      // A configured teacher may create itself as teacher.
-      allow create: if isOwnerUid(uid)
-        || (
-          isSignedIn()
-          && uid == request.auth.uid
-          && (
-            request.resource.data.role == 'student'
-            || (request.resource.data.role == 'teacher' && isTeacherEmail())
-          )
-        );
+      allow create: if isOwner(uid);
 
-      allow update: if isAdmin()
+      allow update: if isStaff()
         || (
-          isOwnerUid(uid)
-          && request.resource.data.role == 'admin'
-          && request.resource.data.email == resource.data.email
-        )
-        || (
-          isSignedIn()
-          && uid == request.auth.uid
+          isOwner(uid)
           && request.resource.data.role == resource.data.role
-          && request.resource.data.email == resource.data.email
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'name',
             'className',
             'rosterId',
+            'email',
             'lastLoginAt',
             'streak',
             'lastCompletedDate',
             'totalSetsCompleted',
             'totalBonusPoints'
           ])
-          // Progress may only move forward by a small, bounded amount.
-          && request.resource.data.totalSetsCompleted
-              >= resource.data.totalSetsCompleted
-          && request.resource.data.totalSetsCompleted
-              <= resource.data.totalSetsCompleted + 1
-          && request.resource.data.totalBonusPoints
-              >= resource.data.totalBonusPoints
-          && request.resource.data.totalBonusPoints
-              <= resource.data.totalBonusPoints + 2
-          && request.resource.data.streak >= 0
-          && request.resource.data.streak <= resource.data.streak + 1
         );
 
       allow delete: if isAdmin();
     }
+
 
     // =========================================================
     // ENGLISH NOTES
     // =========================================================
 
     match /users/{uid}/english_notes/{noteId} {
-      allow read, create, update, delete: if isSignedIn() && uid == request.auth.uid;
+
+      allow read, create, update, delete: if isOwner(uid);
     }
+
 
     // =========================================================
     // USERS BY ROSTER
@@ -123,42 +81,53 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.rosterId == rosterId;
+        && request.resource.data.uid == request.auth.uid;
 
-      allow update: if isAdmin()
+      allow update: if isStaff()
         || (
           isSignedIn()
-          && resource.data.uid == request.auth.uid
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.rosterId == rosterId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'uid', 'email', 'name', 'rosterId'
-          ])
         );
 
       allow delete: if isAdmin();
     }
 
+
     // =========================================================
-    // CONFIG
+    // CONFIG - ADMINS
     // =========================================================
 
     match /config/admins {
+
       allow read: if isSignedIn();
-      // Only an admin may change privilege configuration.
-      allow create, update, delete: if isAdmin();
+
+      allow create, update, delete: if isStaff();
     }
+
+
+    // =========================================================
+    // CONFIG - TEACHERS
+    // =========================================================
 
     match /config/teachers {
+
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+
+      allow create, update, delete: if isStaff();
     }
 
+
+    // =========================================================
+    // CONFIG - ROSTER
+    // =========================================================
+
     match /config/roster {
+
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+
+      allow create, update, delete: if isStaff();
     }
+
 
     // =========================================================
     // SUBMISSIONS
@@ -166,15 +135,21 @@ service cloud.firestore {
 
     match /submissions/{submissionId} {
 
-      // Read only own submissions unless staff.
+      // getDoc() submission của chính mình.
+      // Cho phép cả trường hợp document chưa tồn tại,
+      // vì ID được tạo theo UID_date_setId.
+
       allow get: if isSignedIn()
         && (
           isStaff()
-          || (
-            resource.data.uid == request.auth.uid
-            && submissionId.matches('^' + request.auth.uid + '_.*')
+          || submissionId.matches(
+            '^' + request.auth.uid + '_.*'
           )
         );
+
+
+      // query submissions của chính mình.
+      // daily-set.js dùng where('uid', '==', currentUser.uid)
 
       allow list: if isSignedIn()
         && (
@@ -182,79 +157,115 @@ service cloud.firestore {
           || resource.data.uid == request.auth.uid
         );
 
-      // Submission ID is bound to the authenticated user + date + set.
-      // Score fields are validated server-side by Rules, but this is not
-      // equivalent to trusted server-side grading.
-      allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid
-        && submissionId == request.auth.uid + '_' +
-          request.resource.data.date + '_' + request.resource.data.setId
-        && request.resource.data.date is string
-        && request.resource.data.date.matches('^\d{4}-\d{2}-\d{2}$')
-        && request.resource.data.setId is string
-        && request.resource.data.setId.size() > 0
-        && request.resource.data.score is int
-        && request.resource.data.score >= 0
-        && request.resource.data.score <= 20
-        && request.resource.data.total == 20
-        && request.resource.data.passed is bool
-        && request.resource.data.bonusPoints is int
-        && request.resource.data.bonusPoints in [0, 2]
-        && request.resource.data.streakAtSubmission is int
-        && request.resource.data.streakAtSubmission >= 0
-        && request.resource.data.name is string
-        && request.resource.data.className is string
-        && request.resource.data.submittedAt is timestamp;
 
-      // An already accepted result cannot be edited by the client.
-      allow update, delete: if false;
+      // Tạo submission của chính mình
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
+
+
+      // Cập nhật submission của chính mình
+
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid;
+
+
+      // Chỉ admin được xóa
+
+      allow delete: if isAdmin();
     }
 
+
     // =========================================================
-    // DAILY SETS / CONTENT
+    // DAILY SETS
     // =========================================================
 
     match /sets/{setId} {
+
+      // Cho phép user đã đăng nhập đọc Daily Set.
+      // JS tự lọc published == true.
+
       allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý Daily Set
+
       allow create, update, delete: if isStaff();
     }
 
-    match /knowledge/{id} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isStaff();
-    }
-
-    match /questionBank/{id} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isStaff();
-    }
-
-    match /listeningContent/{id} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isStaff();
-    }
 
     // =========================================================
-    // AUDIT / RATE LIMITS
+    // KNOWLEDGE
+    // =========================================================
+
+    match /knowledge/{id} {
+
+      // Cho phép user đã đăng nhập đọc kiến thức.
+      // Không ép published trong Rules để tránh
+      // Permission Denied với dữ liệu cũ.
+
+      allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý kiến thức
+
+      allow create, update, delete: if isStaff();
+    }
+
+
+    // =========================================================
+    // QUESTION BANK
+    // =========================================================
+
+    match /questionBank/{id} {
+
+      // User đã đăng nhập được đọc ngân hàng câu hỏi
+
+      allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý ngân hàng câu hỏi
+
+      allow create, update, delete: if isStaff();
+    }
+
+
+    // =========================================================
+    // LISTENING CONTENT
+    // =========================================================
+
+    match /listeningContent/{id} {
+
+      // User đã đăng nhập được đọc Listening
+
+      allow read: if isSignedIn();
+
+      // Admin / teacher được quản lý Listening
+
+      allow create, update, delete: if isStaff();
+    }
+
+
+    // =========================================================
+    // AUDIT
     // =========================================================
 
     match /audit/{auditId} {
+
       allow read: if isAdmin();
+
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
+
       allow update, delete: if isAdmin();
     }
 
+
+    // =========================================================
+    // RATE LIMITS
+    // =========================================================
+
     match /rate_limits/{id} {
+
       allow read, create, update, delete: if isAdmin();
-    }
-
-    // =========================================================
-    // DEFAULT DENY
-    // =========================================================
-
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }
