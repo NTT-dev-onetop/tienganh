@@ -1009,3 +1009,40 @@ html[data-theme="dark"] .daily-review-row{background:var(--card-bg);color:var(--
 .teacher-quiz-option{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border-radius:10px;cursor:pointer}.teacher-quiz-option:hover{background:var(--surface-2)}
 .teacher-quiz-option input{margin-top:5px}.teacher-quiz-result{display:inline-flex;align-items:center;margin-left:auto;font-size:14px}
 @media(max-width:600px){.teacher-set-summary{align-items:flex-start;flex-direction:column}.teacher-set-summary .btn{width:100%}.teacher-quiz-result{margin-left:0;width:100%}}
+
+
+/* ===== Vocabulary UX polish / safe visual-only patch ===== */
+#vocab .head{align-items:flex-start;gap:20px}
+#vocab .head>div:first-child{min-width:0;flex:1}
+#vocab .head .filter-row{justify-content:flex-end;align-items:center;flex:0 0 auto;max-width:100%;margin-top:0}
+#vocab .head [data-vocab-view]{white-space:nowrap;min-width:132px}
+#vocab .filter-row.mb-3{align-items:center}
+#vocab #familyCount{white-space:nowrap;font-weight:700;padding:.55rem .7rem}
+#vocab .family-note{border-radius:16px;padding:16px 18px;line-height:1.7}
+#vocab .family-card{padding:18px;display:flex;flex-direction:column;min-height:190px}
+#vocab .family-root{font-size:25px;line-height:1.15}
+#vocab .family-chain{margin-top:auto;padding:11px 13px}
+#vocab .family-quiz-card{padding:24px;max-width:900px;margin:0 auto}
+#vocab .family-quiz-card h3{font-size:clamp(22px,2.4vw,30px);line-height:1.35;margin:20px 0 18px}
+#vocab .family-quiz-options{gap:12px}
+#vocab .family-option{background:var(--surface-2);min-height:58px;padding:13px 16px}
+#vocab .family-option:disabled{cursor:default;opacity:1}
+#vocab .family-feedback{font-weight:600}
+#vocab .quiz-result{max-width:900px;margin:0 auto}
+#vocab .quiz-error{border-color:#fecaca}
+@media(max-width:991.98px){
+  #vocab .head{align-items:stretch}
+  #vocab .head .filter-row{justify-content:flex-start}
+}
+@media(max-width:575.98px){
+  #vocab .head [data-vocab-view]{flex:1;min-width:0}
+  #vocab .head .filter-row{display:grid;grid-template-columns:1fr 1fr 1fr;width:100%}
+  #vocab .family-quiz-card{padding:18px}
+}
+/* Teacher knowledge: clean reading layout, no content changes. */
+#knowledge .head{align-items:flex-start}
+#knowledgeList{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start}
+#knowledgeList .knowledge-card{height:100%;padding:22px}
+#knowledgeList .knowledge-card h3{font-size:22px;line-height:1.35}
+#knowledgeList .knowledge-block{line-height:1.75}
+@media(max-width:575.98px){#knowledgeList{grid-template-columns:1fr}#knowledgeList .knowledge-card{padding:17px}}

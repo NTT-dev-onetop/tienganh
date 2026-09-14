@@ -3,9 +3,10 @@ import{db}from"./firebase-services.js";
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const text=s=>esc(s).replace(/\r?\n/g,'<br>');
 let stop=null,loadToken=0;
-const isPublished=v=>v===true||v===1||String(v??'').trim().toLowerCase()==='true'||String(v??'').trim().toLowerCase()==='published';
+const isPublished=v=>v===undefined||v===null||v===true||v===1||String(v).trim().toLowerCase()==='true'||String(v).trim().toLowerCase()==='published';
 function render(root,rows){
   rows.sort((a,b)=>{const ta=a.updatedAt?.seconds||a.createdAt?.seconds||0,tb=b.updatedAt?.seconds||b.createdAt?.seconds||0;return tb-ta});
+  root.classList.add('knowledge-ready');
   root.innerHTML=rows.length?rows.map(k=>`<article class="knowledge-card"><div class="d-flex justify-content-between gap-2 flex-wrap"><div><span class="tag">${esc(k.category||'Kiến thức')}</span>${k.unit?` <span class="tag">${esc(k.unit)}</span>`:''}</div><small class="muted">${esc(k.authorName||k.author||'Giáo viên')}</small></div><h3>${esc(k.title||'Không có tiêu đề')}</h3>${k.content?`<div class="knowledge-block"><b>Lý thuyết</b><div>${text(k.content)}</div></div>`:''}${k.examples?`<div class="knowledge-block"><b>Ví dụ</b><div>${text(k.examples)}</div></div>`:''}${k.notes?`<div class="knowledge-note"><b>💡 Ghi chú</b><div>${text(k.notes)}</div></div>`:''}${k.exercises?`<div class="knowledge-exercises"><b>📝 Bài tập</b><div>${text(k.exercises)}</div></div>`:''}</article>`).join(''):'<div class="empty"><div>📚</div><h3>Chưa có kiến thức mới</h3><p>Giáo viên sẽ đăng bài tại Dashboard. Khi đăng xong, nội dung xuất hiện ở đây.</p></div>';
 }
 export function stopKnowledge(){if(stop){stop();stop=null}}

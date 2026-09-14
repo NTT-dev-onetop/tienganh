@@ -88,7 +88,7 @@ async function loadSets(){
   if(!currentUser)return;
   try{
     const snap=await getDocs(query(collection(db,'sets'),where('published','==',true)));
-    currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if(x.isDaily !== false && (Number.isInteger(Number(x.order)) || Number(x.unit)>0))currentSets.push(x)});currentSets.sort((a,b)=>Number(a.unit||1)-Number(b.unit||1)||Number(a.dailyNumber||a.order||0)-Number(b.dailyNumber||b.order||0)||Number(a.order||0)-Number(b.order||0));
+    currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x)});currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
     await renderDailySetPage();
   }catch(e){console.error('Không tải được Daily Set:',e);toast('Không tải được bộ đề. Kiểm tra Firestore.','error')}
 }
@@ -99,19 +99,12 @@ async function passedSetIds(){
     const out=new Set();snap.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)out.add(String(x.setId))});return out;
   }catch(e){console.error('Không đọc được lịch sử set:',e);return new Set()}
 }
-function dailyPosition(set){
-  const unit=Math.max(1,Number(set?.unit)||1);
-  const daily=Math.max(1,Number(set?.dailyNumber)||Number(set?.order)||1);
-  return {unit,daily};
-}
 function unlockedFor(set,passed){
   if(!set)return false;
-  const pos=dailyPosition(set);
-  const prev=currentSets.filter(s=>{
-    const p=dailyPosition(s);
-    return p.unit<pos.unit || (p.unit===pos.unit && p.daily<pos.daily);
-  }).sort((a,b)=>{const x=dailyPosition(a),y=dailyPosition(b);return y.unit-x.unit||y.daily-x.daily})[0];
-  if(!prev)return true;
+  const order=Number(set.order);
+  if(!Number.isFinite(order)||order<=1)return true;
+  const prev=currentSets.find(s=>Number(s.order)===order-1);
+  if(!prev)return false;
   return passed.has(String(prev.id));
 }
 function progressFromSubmissionDocs(docs){
@@ -159,9 +152,9 @@ function watchSetsRealtime(){
     currentSets=[];
     snap.forEach(d=>{
       const x={id:d.id,...d.data()};
-      if(x.isDaily !== false && (Number.isInteger(Number(x.order)) || Number(x.unit)>0))currentSets.push(x);
+      if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x);
     });
-    currentSets.sort((a,b)=>Number(a.unit||1)-Number(b.unit||1)||Number(a.dailyNumber||a.order||0)-Number(b.dailyNumber||b.order||0)||Number(a.order||0)-Number(b.order||0))
+    currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
     const live=document.getElementById('dailyLiveStatus');
     if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
     if(!selectedSet)renderDailySetPage();
@@ -179,8 +172,9 @@ export async function renderDailySetPage(){
   try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e)}
   const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)passed.add(String(x.setId))});
   const progress=progressFromSubmissionDocs(submissionDocs);
-  const cards=currentSets.map(s=>{const unlocked=unlockedFor(s,passed);const done=passed.has(s.id);const unit=Math.max(1,Number(s.unit)||1),daily=Math.max(1,Number(s.dailyNumber)||Number(s.order)||1);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${unit}.${daily}</div><div class="daily-set-info"><b>${esc(s.title||`Unit ${unit} · Daily ${daily}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass Daily trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
-  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Mỗi Set có số câu riêng · đạt theo điều kiện của Set · mỗi ngày chỉ nộp 1 Set.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${passed.size}</b> Daily đã pass</div><div class="progress"><div class="progress-bar" style="width:${currentSets.length?Math.min(100,Math.round(passed.size/currentSets.length*100)):0}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Giáo viên có thể tạo Daily không giới hạn trong từng Unit.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
+  const allFivePassed=currentSets.length>=5&&currentSets.slice(0,5).every(x=>passed.has(x.id));
+  const cards=currentSets.map(s=>{const unlocked=allFivePassed||unlockedFor(s,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
+  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Mỗi Set có số câu riêng · đạt theo điều kiện của Set · mỗi ngày chỉ nộp 1 Set.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${Math.min(passed.size,5)}/5</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${Math.min(100,Math.round(Math.min(passed.size,5)/5*100))}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Admin hãy tạo 5 Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
   root.querySelectorAll('[data-set-id]').forEach(b=>b.onclick=()=>openSet(b.dataset.setId));
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
 }

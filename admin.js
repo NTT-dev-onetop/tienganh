@@ -89,7 +89,7 @@ function bindCmsTabs(){document.querySelectorAll('[data-cms]').forEach(b=>b.oncl
 
 // ===== KNOWLEDGE CMS =====
 async function loadKnowledge(){const r=document.getElementById('adminKnowledge');if(!r)return;try{const snap=await getDocs(collection(db,'knowledge'));knowledge=[];snap.forEach(d=>knowledge.push({id:d.id,...d.data()}));knowledge.sort((a,b)=>Number(b.updatedAt?.seconds||b.createdAt?.seconds||0)-Number(a.updatedAt?.seconds||a.createdAt?.seconds||0));renderKnowledgeAdmin()}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được kiến thức.</div>'}}
-function knowledgeForm(k=null){const x=k||{};return `<div class="cms-form"><div class="row g-3"><div class="col-md-8"><label>Tiêu đề *</label><input id="kTitle" class="form-control form-control-lg" value="${esc(x.title||'')}" placeholder="Unit 6 – Relative clauses"></div><div class="col-md-4"><label>Unit</label><select id="kUnit" class="form-select form-select-lg">${['Unit 1','Unit 2','Unit 3','Unit 4','Unit 5','Unit 6','Unit 7','Unit 8','Unit 9','Unit 10','Chuyên đề','Khác'].map(u=>`<option ${x.unit===u?'selected':''}>${u}</option>`).join('')}</select></div><div class="col-md-6"><label>Môn / chủ đề</label><input id="kCategory" class="form-control" value="${esc(x.category||'Grammar')}" placeholder="Grammar / Vocabulary / Reading..."></div><div class="col-12"><label>Lý thuyết *</label><textarea id="kContent" class="form-control" rows="7" placeholder="Viết nội dung bài học...">${esc(x.content||'')}</textarea></div><div class="col-12"><label>Ví dụ</label><textarea id="kExamples" class="form-control" rows="4" placeholder="Mỗi ví dụ một dòng...">${esc(x.examples||'')}</textarea></div><div class="col-md-6"><label>Ghi chú / mẹo nhớ</label><textarea id="kNotes" class="form-control" rows="4">${esc(x.notes||'')}</textarea></div><div class="col-md-6"><label>Bài tập (nếu muốn)</label><textarea id="kExercises" class="form-control" rows="4" placeholder="1. ...\n2. ...">${esc(x.exercises||'')}</textarea></div><div class="col-12"><div class="form-check form-switch"><input id="kPublished" class="form-check-input" type="checkbox" ${x.published?'checked':''}><label class="form-check-label"><b>Đã xuất bản</b> — học sinh sẽ thấy ngay</label></div></div></div><div class="form-actions"><button id="saveKnowledge" class="btn btn-primary btn-lg">💾 ${k?'Cập nhật':'Đăng kiến thức'}</button><button id="cancelKnowledge" class="btn btn-outline-secondary">Hủy</button></div></div>`}
+function knowledgeForm(k=null){const x=k||{};return `<div class="cms-form"><div class="row g-3"><div class="col-md-8"><label>Tiêu đề *</label><input id="kTitle" class="form-control form-control-lg" value="${esc(x.title||'')}" placeholder="Unit 6 – Relative clauses"></div><div class="col-md-4"><label>Unit</label><select id="kUnit" class="form-select form-select-lg">${['Unit 1','Unit 2','Unit 3','Unit 4','Unit 5','Unit 6','Unit 7','Unit 8','Unit 9','Unit 10','Chuyên đề','Khác'].map(u=>`<option ${x.unit===u?'selected':''}>${u}</option>`).join('')}</select></div><div class="col-md-6"><label>Môn / chủ đề</label><input id="kCategory" class="form-control" value="${esc(x.category||'Grammar')}" placeholder="Grammar / Vocabulary / Reading..."></div><div class="col-12"><label>Lý thuyết *</label><textarea id="kContent" class="form-control" rows="7" placeholder="Viết nội dung bài học...">${esc(x.content||'')}</textarea></div><div class="col-12"><label>Ví dụ</label><textarea id="kExamples" class="form-control" rows="4" placeholder="Mỗi ví dụ một dòng...">${esc(x.examples||'')}</textarea></div><div class="col-md-6"><label>Ghi chú / mẹo nhớ</label><textarea id="kNotes" class="form-control" rows="4">${esc(x.notes||'')}</textarea></div><div class="col-md-6"><label>Bài tập (nếu muốn)</label><textarea id="kExercises" class="form-control" rows="4" placeholder="1. ...\n2. ...">${esc(x.exercises||'')}</textarea></div><div class="col-12"><div class="form-check form-switch"><input id="kPublished" class="form-check-input" type="checkbox" ${x.published===false?'':'checked'}><label class="form-check-label"><b>Đã xuất bản</b> — học sinh sẽ thấy ngay</label></div></div></div><div class="form-actions"><button id="saveKnowledge" class="btn btn-primary btn-lg">💾 ${k?'Cập nhật':'Đăng kiến thức'}</button><button id="cancelKnowledge" class="btn btn-outline-secondary">Hủy</button></div></div>`}
 function renderKnowledgeAdmin(){const r=document.getElementById('adminKnowledge');if(!r)return;r.innerHTML=`<button id="newKnowledge" class="btn btn-primary mb-3">＋ Thêm kiến thức</button><div id="knowledgeEditor"></div><div class="cms-list">${knowledge.map(k=>`<article class="cms-item"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(k.unit||'')}</span><span class="tag ${k.published?'tag-published':'tag-draft'}">${k.published?'Đã xuất bản':'Nháp'}</span></div><h5 class="mt-2 mb-1">${esc(k.title||'Không có tiêu đề')}</h5><small class="muted">${esc(k.category||'')} · ${esc(k.authorName||'')}</small></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary" data-k-edit="${esc(k.id)}">Sửa</button><button class="btn btn-sm btn-outline-danger" data-k-del="${esc(k.id)}">Xóa</button></div></article>`).join('')||'<div class="muted">Chưa có bài kiến thức.</div>'}</div>`;document.getElementById('newKnowledge').onclick=()=>openKnowledge();r.querySelectorAll('[data-k-edit]').forEach(b=>b.onclick=()=>openKnowledge(b.dataset.kEdit));r.querySelectorAll('[data-k-del]').forEach(b=>b.onclick=()=>deleteKnowledge(b.dataset.kDel))}
 function openKnowledge(id){const r=document.getElementById('knowledgeEditor');if(!r)return;const k=id?knowledge.find(x=>x.id===id):null;r.innerHTML=knowledgeForm(k);document.getElementById('saveKnowledge').onclick=()=>saveKnowledge(id);document.getElementById('cancelKnowledge').onclick=()=>{r.innerHTML=''};r.scrollIntoView({behavior:'smooth',block:'start'})}
 async function saveKnowledge(id){if(!staff())return;try{const title=document.getElementById('kTitle').value.trim(),content=document.getElementById('kContent').value.trim();if(!title||!content)throw new Error('Tiêu đề và lý thuyết là bắt buộc.');const payload={title,unit:document.getElementById('kUnit').value,category:document.getElementById('kCategory').value.trim()||'Kiến thức',content,examples:document.getElementById('kExamples').value.trim(),notes:document.getElementById('kNotes').value.trim(),exercises:document.getElementById('kExercises').value.trim(),published:document.getElementById('kPublished').checked,author:currentUser.email||'',authorName:currentUser.displayName||currentUser.email||'Giáo viên',updatedAt:serverTimestamp()};if(id)await updateDoc(doc(db,'knowledge',id),payload);else await setDoc(doc(collection(db,'knowledge')),{...payload,createdAt:serverTimestamp()});toast(payload.published?'Đã đăng kiến thức — học sinh thấy ngay.':'Đã lưu bản nháp.');await loadKnowledge()}catch(e){console.error(e);toast(e.message||'Không thể lưu kiến thức.','error')}}
@@ -170,7 +170,7 @@ async function loadSets(){
   try{
     const snap=await getDocs(collection(db,'sets'));
     sets=[]; snap.forEach(d=>sets.push({id:d.id,...d.data()}));
-    sets.sort((a,b)=>{const au=Number(a.unit||1),bu=Number(b.unit||1),ad=Number(a.dailyNumber||a.order||0),bd=Number(b.dailyNumber||b.order||0);return au-bu||ad-bd||Number(a.order||0)-Number(b.order||0)});
+    sets.sort((a,b)=>Number(a.order||0)-Number(b.order||0));
     renderDailyAdmin();
   }catch(e){
     console.error(e);
@@ -277,21 +277,17 @@ function bindDailyWordImport(r){
     if(!pool.length||!staff())return;
     createBtn.disabled=true;
     try{
-      const unit=Math.max(1,Number(r.querySelector('#dwUnit').value)||1);
-      const dailyNumber=Math.max(1,Number(r.querySelector('#dwDailyNumber').value)||1);
-      const order=Number.MAX_SAFE_INTEGER;
+      const order=Number(r.querySelector('#dwOrder').value)||1;
       const out=Math.max(1,Math.min(pool.length,Number(count?.value)||pool.length));
       const passScore=Math.max(1,Math.min(out,Number(pass?.value)||setDefaultPass(out)));
       const selected=chooseSetQuestions(pool,out,!!random?.checked);
-      const setId=`unit${unit}_daily${dailyNumber}`;
+      const setId=`set${String(order).padStart(2,'0')}`;
       const ref=doc(db,'sets',setId),existing=await getDoc(ref);
       const qs=selected.map(sourceToSetQuestion);
       const fullPool=pool.map(sourceToSetQuestion);
       await setDoc(ref,{
         order,
-        unit,
-        dailyNumber,
-        title:title?.value.trim()||`Unit ${unit} · Daily ${dailyNumber}`,
+        title:title?.value.trim()||`Daily Set ${String(order).padStart(2,'0')}`,
         sourceQuestions:fullPool,
         questions:qs,
         totalQuestions:qs.length,
@@ -306,8 +302,8 @@ function bindDailyWordImport(r){
         updatedAt:serverTimestamp(),
         ...(existing.exists()?{}:{createdAt:serverTimestamp()})
       },{merge:true});
-      toast(`🚀 Đã tạo Unit ${unit} · Daily ${dailyNumber} · ${qs.length}/${fullPool.length} câu · đạt ${passScore}/${qs.length}.`);
-      status.textContent=`✅ Đã lưu Unit ${unit} · Daily ${dailyNumber}. Có thể bấm “Cập nhật” ở danh sách để đổi tên, số câu hoặc điều kiện.`;
+      toast(`🚀 Đã tạo ${String(order).padStart(2,'0')} · ${qs.length}/${fullPool.length} câu · đạt ${passScore}/${qs.length}.`);
+      status.textContent=`✅ Đã lưu Daily Set ${String(order).padStart(2,'0')}. Có thể bấm “Cập nhật” ở danh sách để đổi tên, số câu hoặc điều kiện.`;
       await loadSets();
     }catch(e){
       console.error(e);toast(e.message||'Không thể tạo Daily Set từ Word.','error');createBtn.disabled=false;
@@ -327,8 +323,7 @@ function renderDailyAdmin(){
     </div>
     <div class="cms-help mb-3"><b>Luồng dùng:</b> upload 1 file Word → web đọc toàn bộ câu → chọn <b>bao nhiêu câu muốn đưa ra</b> → đặt <b>tên Set</b> → đặt <b>điều kiện đạt</b> → tạo Daily. Ví dụ file 20 câu có thể tạo Daily 10/20, sau đó cập nhật thành 15/20 mà không cần upload lại.</div>
     <div class="row g-2 align-items-end">
-      <div class="col-md-2"><label class="fw-bold">Unit</label><input id="dwUnit" type="number" min="1" class="form-control" value="1"></div>
-      <div class="col-md-2"><label class="fw-bold">Daily số</label><input id="dwDailyNumber" type="number" min="1" class="form-control" value="1"></div>
+      <div class="col-md-2"><label class="fw-bold">Set số</label><select id="dwOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
       <div class="col-md-4"><label class="fw-bold">Tên Daily Set</label><input id="dwTitle" class="form-control" placeholder="VD: Unit 3 · Music"></div>
       <div class="col-md-2"><label class="fw-bold">Số câu đưa ra</label><input id="dwCount" type="number" min="1" class="form-control" value="1"></div>
       <div class="col-md-2"><label class="fw-bold">Điều kiện đạt</label><input id="dwPass" type="number" min="1" class="form-control" value="1"></div>
@@ -353,7 +348,7 @@ function renderDailyAdmin(){
       return `<article class="cms-item">
         <div>
           <div class="d-flex gap-2 flex-wrap">
-            <span class="tag">UNIT ${Number(s.unit||1)} · DAILY ${Number(s.dailyNumber||s.order||0)}</span>
+            <span class="tag">DAILY ${String(Number(s.order||0)).padStart(2,'0')}</span>
             <span class="tag ${s.published?'tag-published':'tag-draft'}">${s.published?'Đã xuất bản':'Nháp'}</span>
           </div>
           <h6 class="mt-2 mb-0">${esc(s.title||'Không có tên')}</h6>
@@ -373,7 +368,7 @@ function renderDailyAdmin(){
     <summary class="fw-bold">⚙ Tạo Daily từ ngân hàng câu hỏi thủ công</summary>
     <div class="cms-form mt-3">
       <div class="row g-3">
-        <div class="col-md-2"><label>Unit</label><input id="dUnit" type="number" min="1" class="form-control" value="1"></div><div class="col-md-2"><label>Daily số</label><input id="dDailyNumber" type="number" min="1" class="form-control" value="1"></div>
+        <div class="col-md-3"><label>Set số</label><select id="dOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}">Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
         <div class="col-md-7"><label>Tiêu đề</label><input id="dTitle" class="form-control" placeholder="Daily Set"></div>
         <div class="col-md-2"><label>Điều kiện đạt</label><input id="dPassScore" type="number" min="1" class="form-control" value="1"></div>
         <div class="col-12"><label>Chọn câu hỏi <span id="dSelectedCount" class="badge text-bg-primary">0 câu</span></label><div class="question-picker">${published.map(q=>`<label class="question-pick"><input type="checkbox" value="${esc(q.id)}"><span><b>${esc(q.unit||'')}</b> · ${esc(q.prompt||'').slice(0,120)}</span></label>`).join('')||'<div class="muted">Chưa có câu hỏi đã xuất bản.</div>'}</div></div>
@@ -400,17 +395,15 @@ function bindManualDailyEditor(r){
   r.querySelector('#saveDaily')?.addEventListener('click',async()=>{
     if(!staff())return;
     try{
-      const unit=Math.max(1,Number(r.querySelector('#dUnit').value)||1);
-      const dailyNumber=Math.max(1,Number(r.querySelector('#dDailyNumber').value)||1);
-      const order=Number.MAX_SAFE_INTEGER;
-      const title=r.querySelector('#dTitle').value.trim()||`Unit ${unit} · Daily ${dailyNumber}`;
+      const order=Number(r.querySelector('#dOrder').value)||1;
+      const title=r.querySelector('#dTitle').value.trim()||`Daily Set ${String(order).padStart(2,'0')}`;
       const ids=[...r.querySelectorAll('.question-pick input:checked')].map(x=>x.value);
       if(!ids.length)throw new Error('Hãy chọn ít nhất 1 câu.');
       const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);
       const qs=chosen.map(sourceToSetQuestion);
       const pass=Math.max(1,Math.min(qs.length,Number(r.querySelector('#dPassScore').value)||setDefaultPass(qs.length)));
-      await setDoc(doc(db,'sets',`unit${unit}_daily${dailyNumber}`),{
-        order,unit,dailyNumber,title,questions:qs,sourceQuestions:qs,totalQuestions:qs.length,sourceQuestionCount:qs.length,
+      await setDoc(doc(db,'sets',`set${String(order).padStart(2,'0')}`),{
+        order,title,questions:qs,sourceQuestions:qs,totalQuestions:qs.length,sourceQuestionCount:qs.length,
         passScore:pass,passTotal:qs.length,published:r.querySelector('#dPublished').checked,isDaily:true,
         author:currentUser.email||'',updatedAt:serverTimestamp(),createdAt:serverTimestamp()
       },{merge:true});
@@ -425,12 +418,12 @@ function openSetEditor(id){
   const root=document.getElementById('dailyEditor');if(!root)return;
   const pool=setPool(s);const current=Array.isArray(s.questions)?s.questions:[];
   const currentKeys=new Set(current.map(q=>String(q.prompt||'').trim()));
-  const order=Number(s.order)||1,unit=Math.max(1,Number(s.unit)||1),dailyNumber=Math.max(1,Number(s.dailyNumber)||order),total=current.length,sourceCount=pool.length;
+  const order=Number(s.order)||1,total=current.length,sourceCount=pool.length;
   const pass=Math.max(1,Math.min(total||1,Number(s.passScore)||setDefaultPass(total||1)));
   root.innerHTML=`<div class="cms-form panel">
     <div class="panel-title"><div><div class="eyebrow">✏️ CẬP NHẬT DAILY SET</div><h5>${esc(s.title||`Daily ${String(order).padStart(2,'0')}`)}</h5></div><span class="tag">${total}/${sourceCount} câu</span></div>
     <div class="row g-3 mt-1">
-      <div class="col-md-2"><label>Unit</label><input id="eUnit" type="number" min="1" class="form-control" value="${unit}"></div><div class="col-md-2"><label>Daily số</label><input id="eDailyNumber" type="number" min="1" class="form-control" value="${dailyNumber}"></div>
+      <div class="col-md-2"><label>Set số</label><select id="eOrder" class="form-select">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===order?'selected':''}>Daily ${String(n).padStart(2,'0')}</option>`).join('')}</select></div>
       <div class="col-md-5"><label>Tên Set</label><input id="eTitle" class="form-control" value="${esc(s.title||'')}"></div>
       <div class="col-md-2"><label>Số câu đưa ra</label><input id="eCount" type="number" min="1" max="${Math.max(1,sourceCount)}" class="form-control" value="${Math.max(1,total)}"></div>
       <div class="col-md-3"><label>Điều kiện đạt</label><input id="ePass" type="number" min="1" max="${Math.max(1,total)}" class="form-control" value="${pass}"></div>
@@ -473,19 +466,17 @@ function openSetEditor(id){
       }
       if(!selected.length)throw new Error('Hãy chọn ít nhất 1 câu.');
       const pass=Math.max(1,Math.min(selected.length,Number(root.querySelector('#ePass').value)||setDefaultPass(selected.length)));
-      const newUnit=Math.max(1,Number(root.querySelector('#eUnit').value)||unit);
-      const newDailyNumber=Math.max(1,Number(root.querySelector('#eDailyNumber').value)||dailyNumber);
-      const newOrder=order;
-      const newId=`unit${newUnit}_daily${newDailyNumber}`;
+      const newOrder=Number(root.querySelector('#eOrder').value)||order;
+      const newId=`set${String(newOrder).padStart(2,'0')}`;
       const payload={
-        order:newOrder,unit:newUnit,dailyNumber:newDailyNumber,title:root.querySelector('#eTitle').value.trim()||`Unit ${newUnit} · Daily ${newDailyNumber}`,
+        order:newOrder,title:root.querySelector('#eTitle').value.trim()||`Daily Set ${String(newOrder).padStart(2,'0')}`,
         questions:selected.map(toSetQuestion),totalQuestions:selected.length,passScore:pass,passTotal:selected.length,
         published:root.querySelector('#ePublished').checked,isDaily:true,sourceQuestions:pool.map(toSetQuestion),
         sourceQuestionCount:pool.length,updatedAt:serverTimestamp()
       };
       if(newId!==id){
         const existing=await getDoc(doc(db,'sets',newId));
-        if(existing.exists())throw new Error(`Unit ${newUnit} · Daily ${newDailyNumber} đã tồn tại.`);
+        if(existing.exists())throw new Error(`Daily Set ${String(newOrder).padStart(2,'0')} đã tồn tại.`);
         await setDoc(doc(db,'sets',newId),{...payload,createdAt:serverTimestamp()});
         await deleteDoc(doc(db,'sets',id));
       }else{

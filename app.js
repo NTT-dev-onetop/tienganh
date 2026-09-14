@@ -2088,69 +2088,87 @@ function buildReview(items){reviewQueue=[];items.forEach(k=>{const [type,id]=k.s
 
 let familyQuiz={items:[],index:0,score:0,answered:false};
 let familyView='mine';
-function familyChain(f){
-  return [f.noun,f.verb,f.adjective,f.adverb].filter(Boolean).join(' → ');
-}
-function familyLabel(f){
-  return `<span class="tag">${esc(f.source||'')}</span><span class="tag">${esc(f.level||'')}</span>`;
-}
+function familyChain(f){return [f.noun,f.verb,f.adjective,f.adverb].filter(Boolean).join(' → ')}
+function familyLabel(f){return `<span class="tag">${esc(f.source||'')}</span><span class="tag">${esc(f.level||'')}</span>`}
 function renderFamilyBank(){
   const q=($('familySearch')?.value||'').trim().toLowerCase();
   const src=$('familySource')?.value||'all';
   const list=(window.vocabExpansion?.familyBank||[]).filter(f=>
     (src==='all'||(src==='file'&&f.source==='Tệp 1')||(src==='common'&&f.source!=='Tệp 1')) &&
-    `${f.root} ${f.meaning} ${familyChain(f)}`.toLowerCase().includes(q)
+    `${f.root||''} ${f.meaning||''} ${familyChain(f)}`.toLowerCase().includes(q)
   );
   $('familyCount')?.replaceChildren(document.createTextNode(`${list.length} gia đình từ`));
   $('familyBankList').innerHTML=list.map(f=>`<div class="col-md-6 col-xl-4"><div class="family-card"><div class="d-flex gap-2 flex-wrap">${familyLabel(f)}</div><div class="family-root">${esc(f.root)}</div><div class="family-meaning">${esc(f.meaning)}</div><div class="family-chain">${esc(familyChain(f)||'Chưa đủ dạng')}</div></div></div>`).join('')||'<div class="col-12"><div class="empty"><div>🔤</div><h4>Không tìm thấy</h4><p>Thử từ khác hoặc đổi nguồn.</p></div></div>';
+  observeReveal?.($('familyBankList'));
 }
 function quizChoices(correct,pool){
-  const set=new Set([correct]);
-  shuffle(pool.filter(x=>x!==correct)).slice(0,3).forEach(x=>set.add(x));
+  const answer=String(correct??'').trim();
+  const set=new Set(answer?[answer]:[]);
+  shuffle((Array.isArray(pool)?pool:[]).map(x=>String(x??'').trim()).filter(x=>x&&x!==answer)).slice(0,3).forEach(x=>set.add(x));
   return shuffle([...set]);
 }
 function makeFamilyQuiz(){
-  const bank=window.vocabExpansion?.familyBank||[];
-  const usable=bank.filter(f=>f.noun||f.verb||f.adjective||f.adverb);
-  const selected=shuffle(usable).slice(0,20);
-  const items=[];
-  selected.forEach(f=>{
-    const types=['noun','verb','adjective','adverb'].filter(k=>f[k]);
-    const type=types[Math.floor(Math.random()*types.length)];
-    const answer=f[type];
-    const label={noun:'danh từ',verb:'động từ',adjective:'tính từ',adverb:'trạng từ'}[type];
-    const pool=usable.map(x=>x[type]).filter(Boolean).filter(x=>x!==answer);
-    const choices=quizChoices(answer,pool);
-    items.push({type:'mcq',f,question:`Dạng ${label} của "${f.root}" là gì?`,answer,choices,explain:`${f.root} → ${familyChain(f)}`});
-  });
-  familyQuiz={items,index:0,score:0,answered:false};
-  renderFamilyQuiz();
+  const area=$('familyQuizArea');
+  if(!area)return;
+  try{
+    const bank=Array.isArray(window.vocabExpansion?.familyBank)?window.vocabExpansion.familyBank:[];
+    const usable=bank.filter(f=>f&&['noun','verb','adjective','adverb'].some(k=>String(f[k]??'').trim()));
+    if(!usable.length){
+      familyQuiz={items:[],index:0,score:0,answered:false};
+      renderFamilyQuiz();
+      return;
+    }
+    const selected=shuffle(usable).slice(0,20);
+    const items=[];
+    selected.forEach(f=>{
+      const types=['noun','verb','adjective','adverb'].filter(k=>String(f[k]??'').trim());
+      if(!types.length)return;
+      const type=types[Math.floor(Math.random()*types.length)];
+      const answer=String(f[type]).trim();
+      const label={noun:'danh từ',verb:'động từ',adjective:'tính từ',adverb:'trạng từ'}[type];
+      const pool=usable.map(x=>String(x?.[type]??'').trim()).filter(Boolean).filter(x=>x!==answer);
+      const choices=quizChoices(answer,pool);
+      items.push({type:'mcq',f,question:`Dạng ${label} của "${String(f.root||'từ này')}" là gì?`,answer,choices,explain:`${String(f.root||'')} → ${familyChain(f)}`});
+    });
+    familyQuiz={items,index:0,score:0,answered:false};
+    renderFamilyQuiz();
+  }catch(e){
+    console.error('Word Family Challenge:',e);
+    area.innerHTML='<div class="family-quiz-card quiz-error"><div class="empty"><div>⚠️</div><h4>Không thể tạo câu hỏi</h4><p>Hãy thử bấm <b>Bộ mới</b> để tạo lại.</p><button class="btn btn-primary" id="newFamilyQuiz">↻ Bộ mới</button></div></div>';
+    $('familyQuizScore')?.replaceChildren();
+    $('newFamilyQuiz')?.addEventListener('click',makeFamilyQuiz);
+  }
 }
 function renderFamilyQuiz(){
   const area=$('familyQuizArea'),score=$('familyQuizScore');
   if(!area)return;
-  if(!familyQuiz.items.length){area.innerHTML='<div class="empty"><div>🧩</div><h4>Chưa có câu hỏi</h4><button class="btn btn-primary" id="newFamilyQuiz">Tạo bộ câu hỏi</button></div>';score.textContent='';$('newFamilyQuiz')?.addEventListener('click',makeFamilyQuiz);return}
+  if(!familyQuiz.items.length){
+    area.innerHTML='<div class="family-quiz-card"><div class="empty"><div>🧩</div><h4>Chưa có câu hỏi</h4><p>Kho Word Family hiện chưa có dữ liệu phù hợp.</p><button class="btn btn-primary" id="newFamilyQuiz">Tạo bộ câu hỏi</button></div></div>';
+    if(score)score.textContent='';
+    $('newFamilyQuiz')?.addEventListener('click',makeFamilyQuiz);
+    return;
+  }
   if(familyQuiz.index>=familyQuiz.items.length){
     area.innerHTML=`<div class="quiz-result"><div class="quiz-result-score">${familyQuiz.score}/${familyQuiz.items.length}</div><h3>Hoàn thành!</h3><p>${Math.round(familyQuiz.score/familyQuiz.items.length*100)}% · Làm lại để gặp gia đình từ khác.</p><button class="btn btn-primary" id="newFamilyQuiz">↻ Bộ mới</button></div>`;
-    score.textContent='Xong';
+    if(score)score.textContent='Xong';
     $('newFamilyQuiz').onclick=makeFamilyQuiz;
     return;
   }
   const q=familyQuiz.items[familyQuiz.index];
-  score.textContent=`${familyQuiz.index+1}/${familyQuiz.items.length} · ${familyQuiz.score} điểm`;
+  if(score)score.textContent=`${familyQuiz.index+1}/${familyQuiz.items.length} · ${familyQuiz.score} điểm`;
   area.innerHTML=`<div class="family-quiz-card"><div class="d-flex justify-content-between gap-2 flex-wrap"><span class="tag">WORD FAMILY</span><span class="tag">${esc(q.f.root)}</span></div><h3>${esc(q.question)}</h3><div class="family-quiz-options">${q.choices.map((c,i)=>`<button class="family-option" data-family-answer="${esc(c)}">${String.fromCharCode(65+i)}. ${esc(c)}</button>`).join('')}</div><div id="familyQuizFeedback" class="family-feedback d-none"></div><button id="familyNext" class="btn btn-primary mt-3 d-none">Câu tiếp →</button></div>`;
   familyQuiz.answered=false;
-  document.querySelectorAll('[data-family-answer]').forEach(b=>b.onclick=()=>{
+  area.querySelectorAll('[data-family-answer]').forEach(b=>b.onclick=()=>{
     if(familyQuiz.answered)return;
     familyQuiz.answered=true;
     const ok=b.dataset.familyAnswer===q.answer;
     if(ok)familyQuiz.score++;
-    document.querySelectorAll('[data-family-answer]').forEach(x=>{x.disabled=true;if(x.dataset.familyAnswer===q.answer)x.classList.add('is-correct')});
+    area.querySelectorAll('[data-family-answer]').forEach(x=>{x.disabled=true;if(x.dataset.familyAnswer===q.answer)x.classList.add('is-correct')});
     if(!ok)b.classList.add('is-wrong');
-    const fb=$('familyQuizFeedback');fb.classList.remove('d-none');fb.className=`family-feedback ${ok?'correct':'wrong'}`;
-    fb.innerHTML=`<b>${ok?'✓ Chính xác':'✗ Chưa đúng'}</b><br>Đáp án: <b>${esc(q.answer)}</b><br><span>${esc(q.explain)}</span>`;
-    $('familyNext').classList.remove('d-none');
-    $('familyNext').onclick=()=>{familyQuiz.index++;renderFamilyQuiz()};
+    const fb=$('familyQuizFeedback');
+    if(fb){fb.classList.remove('d-none');fb.className=`family-feedback ${ok?'correct':'wrong'}`;fb.innerHTML=`<b>${ok?'✓ Chính xác':'✗ Chưa đúng'}</b><br>Đáp án: <b>${esc(q.answer)}</b><br><span>${esc(q.explain)}</span>`}
+    $('familyNext')?.classList.remove('d-none');
+    if($('familyNext'))$('familyNext').onclick=()=>{familyQuiz.index++;renderFamilyQuiz()};
   });
 }
 function setFamilyView(v){
