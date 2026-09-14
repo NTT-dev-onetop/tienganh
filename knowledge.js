@@ -19,7 +19,7 @@ export function initKnowledge(){
   const q=query(collection(db,'knowledge'));
   stop=onSnapshot(q,snap=>{
     if(token!==loadToken)return;
-    const rows=[];snap.forEach(d=>{const data=d.data()||{};if(isPublished(data.published))rows.push({id:d.id,...data})});
+    const rows=[];snap.forEach(d=>{const data=d.data()||{};if(data.published===undefined||isPublished(data.published))rows.push({id:d.id,...data})});
     render(root,rows);
   },e=>{
     console.error('Lỗi tải kiến thức:',e);
