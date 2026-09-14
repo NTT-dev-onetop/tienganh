@@ -1,306 +1,283 @@
 rules_version = '2';
 
 service cloud.firestore {
-match /databases/{database}/documents {
+  match /databases/{database}/documents {
 
-// =========================================================
-// HELPERS
-// =========================================================
+    // =========================================================
+    // HELPERS
+    // =========================================================
 
-function isSignedIn() {
-  return request.auth != null;
-}
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-function isOwner(uid) {
-  return isSignedIn()
-    && request.auth.uid == uid;
-}
+    function isOwner(uid) {
+      return isSignedIn()
+        && request.auth.uid == uid;
+    }
 
-function isStaff() {
-  return isSignedIn()
-    && get(
-      /databases/$(database)/documents/users/$(request.auth.uid)
-    ).data.role in ['admin', 'teacher'];
-}
+    function isStaff() {
+      return isSignedIn()
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role in ['admin', 'teacher'];
+    }
 
-function isAdmin() {
-  return isSignedIn()
-    && get(
-      /databases/$(database)/documents/users/$(request.auth.uid)
-    ).data.role == 'admin';
-}
+    function isAdmin() {
+      return isSignedIn()
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
+    }
 
 
-// =========================================================
-// USERS
-// =========================================================
+    // =========================================================
+    // USERS
+    // =========================================================
 
-match /users/{uid} {
+    match /users/{uid} {
 
-  allow read: if isOwner(uid) || isStaff();
+      allow read: if isOwner(uid) || isStaff();
 
-  allow create: if isOwner(uid);
+      allow create: if isOwner(uid);
 
-  allow update: if isStaff()
-    || (
-      isOwner(uid)
-      && request.resource.data.role == resource.data.role
-      && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'name',
-        'className',
-        'rosterId',
-        'email',
-        'lastLoginAt',
-        'streak',
-        'lastCompletedDate',
-        'totalSetsCompleted',
-        'totalBonusPoints'
-      ])
-    );
+      allow update: if isStaff()
+        || (
+          isOwner(uid)
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name',
+            'className',
+            'rosterId',
+            'email',
+            'lastLoginAt',
+            'streak',
+            'lastCompletedDate',
+            'totalSetsCompleted',
+            'totalBonusPoints'
+          ])
+        );
 
-  allow delete: if isAdmin();
-}
+      allow delete: if isAdmin();
+    }
 
 
-// =========================================================
-// ENGLISH NOTES
-// =========================================================
+    // =========================================================
+    // ENGLISH NOTES
+    // =========================================================
 
-match /users/{uid}/english_notes/{noteId} {
+    match /users/{uid}/english_notes/{noteId} {
 
-  allow read, create, update, delete: if isOwner(uid);
-}
+      allow read, create, update, delete: if isOwner(uid);
+    }
 
 
-// =========================================================
-// USERS BY ROSTER
-// =========================================================
+    // =========================================================
+    // USERS BY ROSTER
+    // =========================================================
 
-match /users_by_roster/{rosterId} {
+    match /users_by_roster/{rosterId} {
 
-  allow read: if isSignedIn();
+      allow read: if isSignedIn();
 
-  allow create: if isSignedIn()
-    && request.resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
 
-  allow update: if isStaff()
-    || (
-      isSignedIn()
-      && request.resource.data.uid == request.auth.uid
-    );
+      allow update: if isStaff()
+        || (
+          isSignedIn()
+          && request.resource.data.uid == request.auth.uid
+        );
 
-  allow delete: if isAdmin();
-}
+      allow delete: if isAdmin();
+    }
 
 
-// =========================================================
-// CONFIG - ADMINS
-// =========================================================
+    // =========================================================
+    // CONFIG - ADMINS
+    // =========================================================
 
-match /config/admins {
+    match /config/admins {
 
-  allow read: if isSignedIn();
+      allow read: if isSignedIn();
 
-  allow create, update, delete: if isStaff();
-}
+      allow create, update, delete: if isStaff();
+    }
 
 
-// =========================================================
-// CONFIG - TEACHERS
-// =========================================================
+    // =========================================================
+    // CONFIG - TEACHERS
+    // =========================================================
 
-match /config/teachers {
+    match /config/teachers {
 
-  allow read: if isSignedIn();
+      allow read: if isSignedIn();
 
-  allow create, update, delete: if isStaff();
-}
+      allow create, update, delete: if isStaff();
+    }
 
 
-// =========================================================
-// CONFIG - ROSTER
-// =========================================================
+    // =========================================================
+    // CONFIG - ROSTER
+    // =========================================================
 
-match /config/roster {
+    match /config/roster {
 
-  allow read: if isSignedIn();
+      allow read: if isSignedIn();
 
-  allow create, update, delete: if isStaff();
-}
+      allow create, update, delete: if isStaff();
+    }
 
 
-// =========================================================
-// SUBMISSIONS
-// =========================================================
+    // =========================================================
+    // SUBMISSIONS
+    // =========================================================
 
-match /submissions/{submissionId} {
+    match /submissions/{submissionId} {
 
-  // getDoc() submission của chính mình.
-  // Cho phép cả trường hợp document chưa tồn tại,
-  // vì ID được tạo theo UID_date_setId.
+      // getDoc() submission của chính mình.
+      // Cho phép cả trường hợp document chưa tồn tại,
+      // vì ID được tạo theo UID_date_setId.
 
-  allow get: if isSignedIn()
-    && (
-      isStaff()
-      || submissionId.matches(
-        '^' + request.auth.uid + '_.*'
-      )
-    );
+      allow get: if isSignedIn()
+        && (
+          isStaff()
+          || submissionId.matches(
+            '^' + request.auth.uid + '_.*'
+          )
+        );
 
 
-  // query submissions của chính mình.
-  // daily-set.js dùng:
-  // where('uid', '==', currentUser.uid)
+      // query submissions của chính mình.
+      // daily-set.js dùng where('uid', '==', currentUser.uid)
 
-  allow list: if isSignedIn()
-    && (
-      isStaff()
-      || resource.data.uid == request.auth.uid
-    );
+      allow list: if isSignedIn()
+        && (
+          isStaff()
+          || resource.data.uid == request.auth.uid
+        );
 
 
-  // =======================================================
-  // CREATE SUBMISSION
-  // =======================================================
-  //
-  // Một học sinh có thể nộp nhiều Daily Set trong cùng ngày.
-  //
-  // Ví dụ:
-  // uid_date_set1
-  // uid_date_set2
-  //
-  // Daily 1 KHÔNG khóa Daily 2.
-  //
-  // Không kiểm tra totalQuestions/passScore bằng get()
-  // vì Daily Set có thể được cấu hình số câu riêng.
-  // =======================================================
+      // Tạo submission của chính mình. Total/passScore phải khớp Set.
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.setId is string
+        && request.resource.data.date is string
+        && request.resource.data.score is int
+        && request.resource.data.total is int
+        && request.resource.data.passScore is int
+        && request.resource.data.score >= 0
+        && request.resource.data.total > 0
+        && request.resource.data.score <= request.resource.data.total
+        && request.resource.data.total == get(
+          /databases/$(database)/documents/sets/$(request.resource.data.setId)
+        ).data.totalQuestions
+        && request.resource.data.passScore == get(
+          /databases/$(database)/documents/sets/$(request.resource.data.setId)
+        ).data.passScore
+        && request.resource.data.passed == (
+          request.resource.data.score >= request.resource.data.passScore
+        );
 
-  allow create: if isSignedIn()
+      // Submission là bất biến: không được sửa điểm sau khi nộp.
+      allow update: if false;
 
-    // Chỉ được nộp bài của chính mình
-    && request.resource.data.uid == request.auth.uid
 
-    // Các field bắt buộc
-    && request.resource.data.setId is string
-    && request.resource.data.date is string
-    && request.resource.data.score is int
-    && request.resource.data.total is int
-    && request.resource.data.passScore is int
-    && request.resource.data.passed is bool
+      // Chỉ admin được xóa
 
-    // Điểm hợp lệ
-    && request.resource.data.score >= 0
-    && request.resource.data.total > 0
-    && request.resource.data.score <= request.resource.data.total
+      allow delete: if isAdmin();
+    }
 
-    // passScore hợp lệ
-    && request.resource.data.passScore > 0
-    && request.resource.data.passScore <= request.resource.data.total
 
-    // passed phải đúng với score/passScore
-    && request.resource.data.passed == (
-      request.resource.data.score >= request.resource.data.passScore
-    );
+    // =========================================================
+    // DAILY SETS
+    // =========================================================
 
+    match /sets/{setId} {
 
-  // Submission đã nộp thì không được sửa
-  allow update: if false;
+      // Cho phép user đã đăng nhập đọc Daily Set.
+      // JS tự lọc published == true.
 
+      allow read: if isSignedIn();
 
-  // Chỉ admin được xóa submission
-  allow delete: if isAdmin();
-}
+      // Admin / teacher được quản lý Daily Set
 
+      allow create, update, delete: if isStaff();
+    }
 
-// =========================================================
-// DAILY SETS
-// =========================================================
 
-match /sets/{setId} {
+    // =========================================================
+    // KNOWLEDGE
+    // =========================================================
 
-  // User đã đăng nhập được đọc Daily Set.
-  // daily-set.js tự xử lý published/schedule/unlock.
+    match /knowledge/{id} {
 
-  allow read: if isSignedIn();
+      // Cho phép user đã đăng nhập đọc kiến thức.
+      // Không ép published trong Rules để tránh
+      // Permission Denied với dữ liệu cũ.
 
-  // Admin / teacher được quản lý Daily Set
+      allow read: if isSignedIn();
 
-  allow create, update, delete: if isStaff();
-}
+      // Admin / teacher được quản lý kiến thức
 
+      allow create, update, delete: if isStaff();
+    }
 
-// =========================================================
-// KNOWLEDGE
-// =========================================================
 
-match /knowledge/{id} {
+    // =========================================================
+    // QUESTION BANK
+    // =========================================================
 
-  // User đã đăng nhập được đọc kiến thức.
+    match /questionBank/{id} {
 
-  allow read: if isSignedIn();
+      // User đã đăng nhập được đọc ngân hàng câu hỏi
 
-  // Admin / teacher được quản lý kiến thức
+      allow read: if isSignedIn();
 
-  allow create, update, delete: if isStaff();
-}
+      // Admin / teacher được quản lý ngân hàng câu hỏi
 
+      allow create, update, delete: if isStaff();
+    }
 
-// =========================================================
-// QUESTION BANK
-// =========================================================
 
-match /questionBank/{id} {
+    // =========================================================
+    // LISTENING CONTENT
+    // =========================================================
 
-  // User đã đăng nhập được đọc ngân hàng câu hỏi
+    match /listeningContent/{id} {
 
-  allow read: if isSignedIn();
+      // User đã đăng nhập được đọc Listening
 
-  // Admin / teacher được quản lý ngân hàng câu hỏi
+      allow read: if isSignedIn();
 
-  allow create, update, delete: if isStaff();
-}
+      // Admin / teacher được quản lý Listening
 
+      allow create, update, delete: if isStaff();
+    }
 
-// =========================================================
-// LISTENING CONTENT
-// =========================================================
 
-match /listeningContent/{id} {
+    // =========================================================
+    // AUDIT
+    // =========================================================
 
-  // User đã đăng nhập được đọc Listening
+    match /audit/{auditId} {
 
-  allow read: if isSignedIn();
+      allow read: if isAdmin();
 
-  // Admin / teacher được quản lý Listening
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
 
-  allow create, update, delete: if isStaff();
-}
+      allow update, delete: if isAdmin();
+    }
 
 
-// =========================================================
-// AUDIT
-// =========================================================
+    // =========================================================
+    // RATE LIMITS
+    // =========================================================
 
-match /audit/{auditId} {
+    match /rate_limits/{id} {
 
-  allow read: if isAdmin();
-
-  allow create: if isSignedIn()
-    && request.resource.data.uid == request.auth.uid;
-
-  allow update, delete: if isAdmin();
-}
-
-
-// =========================================================
-// RATE LIMITS
-// =========================================================
-
-match /rate_limits/{id} {
-
-  allow read, create, update, delete: if isAdmin();
-}
-
-
-}
+      allow read, create, update, delete: if isAdmin();
+    }
+  }
 }
