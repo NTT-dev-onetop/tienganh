@@ -82,3 +82,23 @@ body.more-open{overflow:hidden}
   .form-actions{display:grid;grid-template-columns:1fr;gap:8px}.form-actions .btn{width:100%;min-height:52px}
   .mistake-actions .btn{min-width:44px;min-height:44px}.card-actions .btn{min-height:44px}
 }
+
+
+/* ===== TARGETED FIX · Word Family Challenge + Teacher Knowledge =====
+   These two surfaces are rendered dynamically and do not use observeReveal().
+   The global reveal animation otherwise leaves them at opacity:0.
+   UI-only: no content, data, Firestore schema, or learning logic changed. */
+#familyQuizArea .family-quiz-card,
+#familyQuizArea .quiz-result,
+#knowledgeList .knowledge-card{
+  opacity:1!important;
+  transform:none!important;
+  visibility:visible!important;
+}
+#familyQuizArea{
+  min-height:0;
+}
+#knowledgeList.knowledge-ready{
+  opacity:1;
+  visibility:visible;
+}
