@@ -51,6 +51,7 @@ let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=(msg,type='success')=>window.appToast?window.appToast(msg,type):undefined;
+const isPassedValue=v=>v===true||v===1||String(v).toLowerCase()==='true'||String(v).toLowerCase()==='passed';
 
 function _scheduleDate(value) {
   if (!value) return null;
@@ -95,17 +96,20 @@ async function passedSetIds(){
   if(!currentUser)return new Set();
   try{
     const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));
-    const out=new Set();snap.forEach(d=>{const x=d.data()||{};if(x.passed===true&&x.setId)out.add(String(x.setId))});return out;
+    const out=new Set();snap.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)out.add(String(x.setId))});return out;
   }catch(e){console.error('Không đọc được lịch sử set:',e);return new Set()}
 }
-function unlockedFor(set,index,passed){
-  if(!set||index<0)return false;
-  if(index===0)return true;
-  const previous=currentSets[index-1];return previous?passed.has(previous.id):false;
+function unlockedFor(set,passed){
+  if(!set)return false;
+  const order=Number(set.order);
+  if(!Number.isFinite(order)||order<=1)return true;
+  const prev=currentSets.find(s=>Number(s.order)===order-1);
+  if(!prev)return false;
+  return passed.has(String(prev.id));
 }
 function progressFromSubmissionDocs(docs){
   const bySet=new Map();
-  const sorted=[...docs].map(d=>d.data?d.data():(d||{})).filter(x=>x?.passed===true&&x?.setId).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  const sorted=[...docs].map(d=>d.data?d.data():(d||{})).filter(x=>isPassedValue(x?.passed)&&x?.setId).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
   for(const x of sorted){
     const setId=String(x.setId);
     if(bySet.has(setId))continue; // only the first pass of a set counts for bonus/streak
@@ -166,10 +170,10 @@ export async function renderDailySetPage(){
   if(!currentUser){root.innerHTML='<div class="empty"><div>🔒</div><h3>Đăng nhập để làm Daily Set</h3></div>';return}
   let submissionDocs=[];
   try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e)}
-  const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(x.passed===true&&x.setId)passed.add(String(x.setId))});
+  const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)passed.add(String(x.setId))});
   const progress=progressFromSubmissionDocs(submissionDocs);
   const allFivePassed=currentSets.length>=5&&currentSets.slice(0,5).every(x=>passed.has(x.id));
-  const cards=currentSets.map((s,i)=>{const unlocked=allFivePassed||unlockedFor(s,i,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
+  const cards=currentSets.map(s=>{const unlocked=allFivePassed||unlockedFor(s,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
   root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Mỗi Set có số câu riêng · đạt theo điều kiện của Set · mỗi ngày chỉ nộp 1 Set.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${Math.min(passed.size,5)}/5</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${Math.min(100,Math.round(Math.min(passed.size,5)/5*100))}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Admin hãy tạo 5 Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
   root.querySelectorAll('[data-set-id]').forEach(b=>b.onclick=()=>openSet(b.dataset.setId));
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
@@ -249,7 +253,7 @@ export async function submitSet(){
     const userRef=doc(db,'users',currentUser.uid),userSnap=await getDoc(userRef);if(!userSnap.exists())throw new Error('Hồ sơ học sinh không tồn tại.');
     const profile=userSnap.data()||{};
     const historySnap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));
-    const firstPass=!historySnap.docs.some(d=>{const x=d.data()||{};return x.passed===true&&String(x.setId||'')===String(selectedSet.id)});
+    const firstPass=!historySnap.docs.some(d=>{const x=d.data()||{};return isPassedValue(x.passed)&&String(x.setId||'')===String(selectedSet.id)});
     const bonusPoints=passed&&firstPass?2:0;
     const previousProgress=progressFromSubmissionDocs(historySnap.docs);
     const oldStreak=Number(previousProgress.streak||0);const last=String(previousProgress.lastCompletedDate||'');let streak=oldStreak;
