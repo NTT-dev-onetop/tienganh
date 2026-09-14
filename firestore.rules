@@ -158,7 +158,8 @@ service cloud.firestore {
         );
 
 
-      // Tạo submission của chính mình. Total/passScore phải khớp Set.
+      // Tạo submission của chính mình. Không cross-check sang document sets
+      // để tránh chặn user do dữ liệu Set cũ/legacy hoặc Set được chỉnh sửa.
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.setId is string
@@ -169,12 +170,6 @@ service cloud.firestore {
         && request.resource.data.score >= 0
         && request.resource.data.total > 0
         && request.resource.data.score <= request.resource.data.total
-        && request.resource.data.total == get(
-          /databases/$(database)/documents/sets/$(request.resource.data.setId)
-        ).data.totalQuestions
-        && request.resource.data.passScore == get(
-          /databases/$(database)/documents/sets/$(request.resource.data.setId)
-        ).data.passScore
         && request.resource.data.passed == (
           request.resource.data.score >= request.resource.data.passScore
         );
