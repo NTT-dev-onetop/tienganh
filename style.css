@@ -1046,3 +1046,64 @@ html[data-theme="dark"] .daily-review-row{background:var(--card-bg);color:var(--
 #knowledgeList .knowledge-card h3{font-size:22px;line-height:1.35}
 #knowledgeList .knowledge-block{line-height:1.75}
 @media(max-width:575.98px){#knowledgeList{grid-template-columns:1fr}#knowledgeList .knowledge-card{padding:17px}}
+
+
+
+/* ===== V18.7.4 · Family tab + Knowledge card dark mode fix ===== */
+
+/* 1) Đảm bảo card động render ra là thấy ngay, kể cả nếu IntersectionObserver
+      không kịp bắt sự kiện (phòng hờ). Chỉ áp cho container động. */
+#knowledgeList .knowledge-card,
+#familyQuizArea .family-quiz-card,
+#familyQuizArea .quiz-result{
+  opacity:1;
+  transform:none;
+  visibility:visible;
+}
+/* Không ép !important để vẫn giữ animation is-visible khi observer bắt được. */
+
+/* 2) Dark mode cho tab Gia đình từ + Đố gia đình từ.
+      Các selector .family-* / .quiz-result đang hard-code #fff ở trên. */
+html[data-theme="dark"] .family-card,
+html[data-theme="dark"] .family-quiz-card,
+html[data-theme="dark"] .quiz-result,
+html[data-theme="dark"] .family-option{
+  background:var(--card-bg);
+  color:var(--ink);
+  border-color:var(--border);
+}
+html[data-theme="dark"] .family-meaning,
+html[data-theme="dark"] .family-root,
+html[data-theme="dark"] .family-note,
+html[data-theme="dark"] .family-quiz-card h3{
+  color:var(--ink);
+}
+html[data-theme="dark"] .family-option:hover{
+  background:var(--primary-soft);
+  border-color:#4867ad;
+}
+html[data-theme="dark"] .family-option.is-correct{
+  background:#0c2f26;border-color:#168d69;color:var(--ink);
+}
+html[data-theme="dark"] .family-option.is-wrong{
+  background:#3b1513;border-color:#c1443a;color:var(--ink);
+}
+html[data-theme="dark"] .family-feedback.correct{
+  background:#0c2f26;border-color:#168d69;color:var(--ink);
+}
+html[data-theme="dark"] .family-feedback.wrong{
+  background:#3b1513;border-color:#c1443a;color:var(--ink);
+}
+html[data-theme="dark"] .family-note{
+  background:var(--surface-2);color:var(--ink);border-color:var(--border);
+}
+/* Badge đếm "N gia đình từ" — tránh nền trắng chữ trắng. */
+html[data-theme="dark"] #familyCount.text-bg-light,
+html[data-theme="dark"] #vocab .text-bg-light{
+  background:#202b3d!important;color:#e5e7eb!important;
+}
+/* Ô tìm kiếm + select trên tab Gia đình đã dùng .form-control → đã có override,
+   nhưng thêm chắc chắn cho placeholder tối. */
+html[data-theme="dark"] #familySearch::placeholder{
+  color:#7f8ba0;
+}
