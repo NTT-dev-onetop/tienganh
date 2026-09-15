@@ -1262,3 +1262,77 @@ html[data-theme="dark"] .daily-exam-progress{background:#1e293b}
   .daily-exam-overlay{transition:opacity .15s linear;transform:none;opacity:0;pointer-events:none}
   .daily-exam-overlay.is-open{opacity:1;pointer-events:auto}
 }
+
+
+/* ===== V18.7.5 · DARK THEME — FAMILY QUIZ + AVATAR GAP FIX ===== */
+
+/* 1. Family cards / quiz card — nền theo theme */
+html[data-theme="dark"] .family-card,
+html[data-theme="dark"] .family-quiz-card{
+  background:var(--card-bg);
+  color:var(--ink);
+  border-color:var(--border);
+}
+html[data-theme="dark"] .family-quiz-card h3{
+  color:var(--ink);
+}
+html[data-theme="dark"] .family-meaning{
+  color:var(--muted);
+}
+
+/* 2. Family answer buttons */
+html[data-theme="dark"] .family-option{
+  background:var(--card-bg);
+  color:var(--ink);
+  border-color:var(--border);
+}
+html[data-theme="dark"] .family-option:hover:not(:disabled){
+  background:var(--surface-2);
+  border-color:var(--primary);
+}
+
+/* 3. Family feedback — đúng/sai theo tông tối */
+html[data-theme="dark"] .family-option.is-correct{
+  background:#0c2f26;
+  border-color:#168d69;
+  color:#9be7c6;
+}
+html[data-theme="dark"] .family-option.is-wrong{
+  background:#3b1513;
+  border-color:#dc2626;
+  color:#fecaca;
+}
+html[data-theme="dark"] .family-feedback.correct{
+  background:#0c2f26;
+  border-color:#168d69;
+  color:#9be7c6;
+}
+html[data-theme="dark"] .family-feedback.wrong{
+  background:#3b1513;
+  border-color:#dc2626;
+  color:#fecaca;
+}
+
+/* 4. Quiz result + score */
+html[data-theme="dark"] .quiz-result{
+  background:var(--card-bg);
+  color:var(--ink);
+  border-color:var(--border);
+}
+html[data-theme="dark"] .quiz-result-score{
+  color:var(--ink);
+}
+html[data-theme="dark"] .quiz-error{
+  border-color:#dc2626;
+}
+
+/* 5. Avatar + mobile menu button */
+html[data-theme="dark"] .avatar{
+  background:#1f2937;
+  color:#e5e7eb;
+}
+html[data-theme="dark"] .mobile-menu-btn{
+  background:var(--surface);
+  color:var(--ink);
+  border-color:var(--border);
+}
