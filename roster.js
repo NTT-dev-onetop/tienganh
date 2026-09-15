@@ -7,7 +7,7 @@ const escLocal=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','
 const DEFAULT_ROSTER=[
 'Trần Diễm Linh Giang','Võ Hồ Minh Hằng','Nguyễn Anh Khôi','Huỳnh Nguyễn Ly Lam','Nguyễn Thị Ngọc Mỹ',
 'Lê Bảo Ngọc','Phạm Minh Triết','Phan Trần Huỳnh Hương','Võ Mai Khánh','Nguyễn Trần Thùy Ngân',
-'Nguyễn Thanh Sang','Phạm Nhật Trường','Nguyễn Dương Gia Nghi','Nguyễn Phúc Thịnh','Lê Nguyễn Trung Trực',
+'Nguyễn Thanh Sang','Phạm Nhật Trường','Nguyễn Dương Gia Nghi','Nguyễn Phúc Thịnh','Lê Nguyễn Trung Thực',
 'Nguyễn Ngọc Bích Anh','Nguyễn Thùy Anh','Lê Ngọc Quốc Bảo','Huỳnh Lê Minh Đạt','Lê Minh Đạt',
 'Lê Ngọc Bảo Hân','Trương Thị Kim Hân','Trần Huy Hoàng','Nguyễn Tuấn Huy','Nguyễn Đăng Khoa',
 'Lê Nguyễn Hoàng Nam','Nguyễn Khánh Ngọc','Nguyễn Lê Hồng Ngọc','Nguyễn Vũ Bảo Ngọc','Bùi Ngọc An Nhi',
@@ -15,26 +15,45 @@ const DEFAULT_ROSTER=[
 'Nguyễn Bùi Phúc Trí','Lê Nhã Thanh','Nguyễn Khánh Thi','Phạm Hoàng Thiên','Trần Thiện Tín',
 'Phạm Ngọc Bảo Trân','Vĩnh Huỳnh Diễm Trinh','Lê Quốc Trọng','Võ Hoàng Trọng','Nguyễn Trung Trực'
 ].map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
+
 let modalEl=null;
+let rosterCache=null,rosterCacheAt=0;
+const ROSTER_TTL=60_000;
+
 function getModal(){
   if(modalEl)return modalEl;
   modalEl=document.createElement('div');
   modalEl.className='modal fade';modalEl.id='rosterModal';modalEl.tabIndex=-1;modalEl.setAttribute('aria-hidden','true');
   modalEl.innerHTML='<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Chọn tên trong danh sách lớp</h5></div><div class="modal-body"><p class="muted">Lần đầu đăng nhập, chọn đúng tên của bạn. Không tự nhập tên khác.</p><select id="rosterSelect" class="form-select form-select-lg"></select><div id="rosterErr" class="alert alert-danger d-none mt-3"></div></div><div class="modal-footer"><button id="rosterSave" class="btn btn-primary">Xác nhận tên</button></div></div></div>';
-  document.body.appendChild(modalEl);return modalEl;
+  document.body.appendChild(modalEl);
+  return modalEl;
 }
+
 async function readRoster(){
+  const now=Date.now();
+  if(rosterCache&&now-rosterCacheAt<ROSTER_TTL)return rosterCache;
   const snap=await getDoc(doc(db,'config','roster'));
-  if(!snap.exists())return DEFAULT_ROSTER;
-  const students=snap.data()?.students;
-  return Array.isArray(students)&&students.length?students.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
+  let students;
+  if(!snap.exists())students=DEFAULT_ROSTER;
+  else{
+    const s=snap.data()?.students;
+    students=Array.isArray(s)&&s.length?s.filter(x=>x&&String(x.id??'').trim()&&String(x.name??'').trim()):DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
+  }
+  rosterCache=students;rosterCacheAt=now;
+  return students;
 }
-export async function initRosterGate(user,role){
+export function invalidateRosterCache(){rosterCache=null;rosterCacheAt=0}
+
+// existingProfile (tuỳ chọn): dùng lại profile từ ensureUserDoc để tránh đọc lại users/{uid}.
+export async function initRosterGate(user,role,existingProfile=null){
   if(!user||!user.uid)return true;
   try{
-    const userSnap=await getDoc(doc(db,'users',user.uid));
-    if(!userSnap.exists())throw new Error('Không tìm thấy hồ sơ người dùng.');
-    const profile=userSnap.data()||{};
+    let profile=existingProfile;
+    if(!profile){
+      const userSnap=await getDoc(doc(db,'users',user.uid));
+      if(!userSnap.exists())throw new Error('Không tìm thấy hồ sơ người dùng.');
+      profile=userSnap.data()||{};
+    }
     const ownerEmail=OWNER_EMAIL;
     if(String(user.email||'').trim().toLowerCase()===ownerEmail){
       const mappingRef=doc(db,'users_by_roster','s45');
@@ -59,18 +78,29 @@ export async function initRosterGate(user,role){
     if(!bs)throw new Error('Bootstrap Modal chưa sẵn sàng.');
     bs.show();
     await new Promise(resolve=>{save.onclick=async()=>{
-      const rosterId=String(select.value||'').trim();if(!rosterId){err.textContent='Hãy chọn tên.';err.classList.remove('d-none');return}
+      const rosterId=String(select.value||'').trim();
+      if(!rosterId){err.textContent='Hãy chọn tên.';err.classList.remove('d-none');return}
       save.disabled=true;
       try{
-        const target=students.find(x=>String(x.id)===rosterId);if(!target)throw new Error('Tên không còn trong roster.');
-        const mappingRef=doc(db,'users_by_roster',rosterId);const mapping=await getDoc(mappingRef);
+        const target=students.find(x=>String(x.id)===rosterId);
+        if(!target)throw new Error('Tên không còn trong roster.');
+        const mappingRef=doc(db,'users_by_roster',rosterId);
+        const mapping=await getDoc(mappingRef);
         if(mapping.exists()&&mapping.data()?.uid!==user.uid)throw new Error('Tên này đã được đăng ký. Liên hệ thầy.');
         await setDoc(mappingRef,{uid:user.uid,email:String(user.email||'').toLowerCase(),name:String(target.name),rosterId});
         await setDoc(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1',email:String(user.email||'').trim().toLowerCase()},{merge:true});
         bs.hide();resolve();
-      }catch(e){console.error('Lỗi gắn roster:',e);err.textContent=e.message||'Không thể lưu tên.';err.classList.remove('d-none');save.disabled=false}
+      }catch(e){
+        console.error('Lỗi gắn roster:',e);
+        err.textContent=e.message||'Không thể lưu tên.';
+        err.classList.remove('d-none');save.disabled=false;
+      }
     }});
     return true;
-  }catch(error){console.error('Lỗi roster:',error);toastGlobal(error.message||'Không thể kiểm tra roster.','error');return false}
+  }catch(error){
+    console.error('Lỗi roster:',error);
+    toastGlobal(error.message||'Không thể kiểm tra roster.','error');
+    return false;
+  }
 }
 function toastGlobal(msg,type){return window.appToast?window.appToast(msg,type):undefined}
