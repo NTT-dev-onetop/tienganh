@@ -1642,3 +1642,440 @@ html[data-theme="dark"] .exercise-option.is-wrong   { background:#3b1513 !import
   .daily-node .daily-node-fallback{font-size:24px}
   .daily-node .daily-node-check{font-size:30px}
 }
+/* ===== MOBILE NAV · LIQUID GLASS v3 (Apple-like) ===== */
+@media (max-width:767.98px){
+
+  /* ---- 1. Navbar: glass sâu, ít đục ---- */
+  .mobile-bottom{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.48)) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.08) !important;
+    backdrop-filter: blur(40px) saturate(200%) brightness(1.08) !important;
+    border: 0 !important;
+    /* Viền: chỉ sáng ở trên + hơi tối dưới → ánh sáng từ trên xuống */
+    box-shadow:
+      inset 0  1px 0 rgba(255,255,255,.90),      /* specular top — sáng nhất */
+      inset 0 -1px 0 rgba(0,0,0,.06),            /* ambient bottom */
+      inset 0  0  0 0.5px rgba(255,255,255,.30),
+      0 -12px 40px -8px rgba(16,24,40,.18),      /* shadow lan rộng, mềm */
+      0  -2px  8px     rgba(16,24,40,.06) !important;
+  }
+
+  html[data-theme="dark"] .mobile-bottom{
+    background:
+      linear-gradient(180deg, rgba(20,28,45,.72), rgba(15,23,42,.62)) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(.95) !important;
+    backdrop-filter: blur(40px) saturate(180%) brightness(.95) !important;
+    box-shadow:
+      inset 0  1px 0 rgba(255,255,255,.10),
+      inset 0 -1px 0 rgba(0,0,0,.35),
+      inset 0  0  0 0.5px rgba(255,255,255,.06),
+      0 -12px 40px -8px rgba(0,0,0,.55) !important;
+  }
+
+  /* ---- 2. Pill: glass trong, viền top sáng, có highlight chéo ---- */
+  .mobile-bottom{ --i: 0; }
+  .mobile-bottom::before{
+    content:"" !important;
+    position:absolute;
+    top:7px;
+    bottom:7px;
+    left:8px;
+    width: calc((100% - 32px) / 5);
+    border-radius:18px;
+
+    /* Nền: kính mờ + highlight radial chéo góc trên trái (kiểu Apple) */
+    background:
+      radial-gradient(120% 90% at 22% 8%,
+        rgba(255,255,255,.95) 0%,
+        rgba(255,255,255,.35) 28%,
+        rgba(255,255,255,0)   55%),
+      radial-gradient(120% 90% at 80% 110%,
+        rgba(49,94,251,.16) 0%,
+        rgba(49,94,251,0)   60%),
+      linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.30));
+
+    /* Viền: top sáng, bottom tối — mô phỏng khối kính dày */
+    border: 0;
+    box-shadow:
+      inset 0  1px 0 rgba(255,255,255,.95),        /* đỉnh kính sáng */
+      inset 0 -1px 0 rgba(49,94,251,.18),          /* đáy kính ám xanh nhẹ */
+      inset 0  0   0 0.5px rgba(255,255,255,.60),
+      0 6px 16px -4px rgba(49,94,251,.22),         /* shadow ngoài đổ xuống */
+      0 1px  3px     rgba(16,24,40,.06);
+
+    /* Trượt có overshoot nhẹ → cảm giác "nước chảy" */
+    transform: translateX(calc(var(--i) * (100% + 4px)));
+    transition: transform 480ms cubic-bezier(.34, 1.56, .64, 1);   /* easeOutBack */
+    pointer-events:none;
+    z-index:0;
+    will-change:transform;
+  }
+
+  html[data-theme="dark"] .mobile-bottom::before{
+    background:
+      radial-gradient(120% 90% at 22% 8%,
+        rgba(255,255,255,.18) 0%,
+        rgba(255,255,255,.06) 28%,
+        rgba(255,255,255,0)   55%),
+      radial-gradient(120% 90% at 80% 110%,
+        rgba(123,163,255,.28) 0%,
+        rgba(123,163,255,0)   60%),
+      linear-gradient(180deg, rgba(49,94,251,.30), rgba(49,94,251,.14));
+    box-shadow:
+      inset 0  1px 0 rgba(255,255,255,.22),
+      inset 0 -1px 0 rgba(0,0,0,.30),
+      inset 0  0   0 0.5px rgba(255,255,255,.08),
+      0 6px 16px -4px rgba(0,0,0,.55),
+      0 1px  3px     rgba(0,0,0,.30);
+  }
+
+  /* ---- 3. Index của tab active ---- */
+  @supports selector(:has(*)){
+    .mobile-bottom:has(> :nth-child(1).active)::before{--i:0}
+    .mobile-bottom:has(> :nth-child(2).active)::before{--i:1}
+    .mobile-bottom:has(> :nth-child(3).active)::before{--i:2}
+    .mobile-bottom:has(> :nth-child(4).active)::before{--i:3}
+    .mobile-bottom:has(> .mobile-more-trigger[aria-expanded="true"])::before{--i:4}
+  }
+
+  /* ---- 4. Button nằm trên pill ---- */
+  .mobile-bottom button,
+  .mobile-bottom .mobile-more-trigger{
+    position:relative;
+    z-index:1;
+  }
+
+  @supports selector(:has(*)){
+    .mobile-bottom button.active{
+      background: transparent !important;
+      color: var(--primary) !important;
+      font-weight: 800 !important;
+    }
+    html[data-theme="dark"] .mobile-bottom button.active{
+      color: #7ba3ff !important;
+    }
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .mobile-bottom::before{ transition:none !important; }
+}
+/* ===== MOBILE NAV · LIQUID GLASS v4 (one more level) ===== */
+@media (max-width:767.98px){
+
+  /* ---- 1. Navbar: glass + grain + ambient glow ---- */
+  .mobile-bottom{
+    background:
+      /* grain kính — SVG noise, cực nhẹ */
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+      /* nền gradient 2 lớp */
+      linear-gradient(180deg, rgba(255,255,255,.68), rgba(255,255,255,.52)) !important;
+    -webkit-backdrop-filter: blur(44px) saturate(210%) brightness(1.10) !important;
+    backdrop-filter: blur(44px) saturate(210%) brightness(1.10) !important;
+
+    /* Viền: specular 3 tầng + ambient halo màu */
+    box-shadow:
+      inset 0  1.5px 0 rgba(255,255,255,.95),
+      inset 0 -1px   0 rgba(0,0,0,.07),
+      inset 0  0   0 .5px rgba(255,255,255,.35),
+      inset 0  8px 20px -10px rgba(255,255,255,.40),   /* halo trắng từ trên đổ vào */
+      inset 0 -8px 20px -10px rgba(49,94,251,.10),     /* halo xanh từ dưới hắt lên */
+      0 -14px 44px -10px rgba(16,24,40,.20),
+      0  -3px 10px     rgba(16,24,40,.06) !important;
+  }
+
+  html[data-theme="dark"] .mobile-bottom{
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+      linear-gradient(180deg, rgba(22,30,48,.75), rgba(15,23,42,.65)) !important;
+    -webkit-backdrop-filter: blur(44px) saturate(190%) brightness(.95) !important;
+    backdrop-filter: blur(44px) saturate(190%) brightness(.95) !important;
+    box-shadow:
+      inset 0  1.5px 0 rgba(255,255,255,.14),
+      inset 0 -1px   0 rgba(0,0,0,.40),
+      inset 0  0   0 .5px rgba(255,255,255,.08),
+      inset 0  8px 20px -10px rgba(123,163,255,.18),
+      0 -14px 44px -10px rgba(0,0,0,.60) !important;
+  }
+
+  /* ---- 2. Pill: refraction ring + chromatic fringe + sheen ---- */
+  .mobile-bottom{ --i: 0; isolation:isolate; }
+  .mobile-bottom::before{
+    content:"" !important;
+    position:absolute;
+    top:7px;
+    bottom:7px;
+    left:8px;
+    width: calc((100% - 32px) / 5);
+    border-radius:18px;
+
+    /* Nền: 4 lớp — specular chéo, halo xanh dưới, base gradient, sheen ngang */
+    background:
+      /* lớp 4: sheen chạy ngang — vệt sáng mảnh giữa pill */
+      linear-gradient(115deg,
+        transparent 30%,
+        rgba(255,255,255,.55) 45%,
+        transparent 60%) 0 0 / 250% 100% no-repeat,
+      /* lớp 3: specular chéo góc trên trái */
+      radial-gradient(120% 90% at 22% 8%,
+        rgba(255,255,255,.98) 0%,
+        rgba(255,255,255,.42) 28%,
+        rgba(255,255,255,0)   55%),
+      /* lớp 2: halo xanh dưới phải */
+      radial-gradient(120% 90% at 80% 110%,
+        rgba(49,94,251,.22) 0%,
+        rgba(49,94,251,0)  60%),
+      /* lớp 1: base gradient */
+      linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.32));
+
+    /* Chromatic fringe: 3 shadow lệch màu — viền như lăng kính */
+    box-shadow:
+      /* specular top — trắng tinh */
+      inset 0  1px 0 rgba(255,255,255,.98),
+      /* fringe đỏ phía trên-trái */
+      inset 1px  0 0 rgba(255,180,180,.35),
+      /* fringe xanh phía dưới-phải */
+      inset -1px 0 0 rgba(140,180,255,.45),
+      /* viền sáng ngoài cùng */
+      inset 0 0 0 .5px rgba(255,255,255,.70),
+      /* shadow đổ xuống có hướng + co lại */
+      0 8px 20px -4px rgba(49,94,251,.28),
+      0 2px  4px     rgba(16,24,40,.08);
+
+    transform: translateX(calc(var(--i) * (100% + 4px)));
+    transition: transform 480ms cubic-bezier(.34, 1.56, .64, 1);
+    pointer-events:none;
+    z-index:0;
+    will-change:transform;
+
+    /* sheen chạy ngang liên tục, cực chậm — như nước lấp lánh */
+    animation: pillSheen 5.5s ease-in-out infinite;
+  }
+
+  /* Refraction ring — vòng khúc xạ mờ bên trong pill */
+  .mobile-bottom::after{
+    content:"" !important;
+    position:absolute;
+    top:7px;
+    bottom:7px;
+    left:8px;
+    width: calc((100% - 32px) / 5);
+    border-radius:18px;
+    /* Vòng khúc xạ: sáng ở viền, trong suốt ở giữa */
+    background: radial-gradient(80% 80% at 50% 50%,
+      transparent 55%,
+      rgba(255,255,255,.35) 88%,
+      rgba(255,255,255,0) 100%);
+    transform: translateX(calc(var(--i) * (100% + 4px)));
+    transition: transform 480ms cubic-bezier(.34, 1.56, .64, 1);
+    pointer-events:none;
+    z-index:0;
+    mix-blend-mode: screen;
+    opacity:.55;
+  }
+
+  html[data-theme="dark"] .mobile-bottom::before{
+    background:
+      linear-gradient(115deg,
+        transparent 30%,
+        rgba(123,163,255,.35) 45%,
+        transparent 60%) 0 0 / 250% 100% no-repeat,
+      radial-gradient(120% 90% at 22% 8%,
+        rgba(255,255,255,.24) 0%,
+        rgba(255,255,255,.08) 28%,
+        rgba(255,255,255,0)   55%),
+      radial-gradient(120% 90% at 80% 110%,
+        rgba(123,163,255,.40) 0%,
+        rgba(123,163,255,0)  60%),
+      linear-gradient(180deg, rgba(49,94,251,.38), rgba(49,94,251,.16));
+    box-shadow:
+      inset 0  1px 0 rgba(255,255,255,.30),
+      inset 1px 0  0 rgba(255,150,150,.20),
+      inset -1px 0 0 rgba(140,180,255,.32),
+      inset 0 0 0 .5px rgba(255,255,255,.10),
+      0 8px 20px -4px rgba(0,0,0,.55),
+      0 2px  4px     rgba(0,0,0,.35);
+  }
+  html[data-theme="dark"] .mobile-bottom::after{
+    background: radial-gradient(80% 80% at 50% 50%,
+      transparent 55%,
+      rgba(123,163,255,.28) 88%,
+      rgba(123,163,255,0) 100%);
+    opacity:.7;
+  }
+
+  /* ---- 3. Index của tab active ---- */
+  @supports selector(:has(*)){
+    .mobile-bottom:has(> :nth-child(1).active)::before,
+    .mobile-bottom:has(> :nth-child(1).active)::after{--i:0}
+    .mobile-bottom:has(> :nth-child(2).active)::before,
+    .mobile-bottom:has(> :nth-child(2).active)::after{--i:1}
+    .mobile-bottom:has(> :nth-child(3).active)::before,
+    .mobile-bottom:has(> :nth-child(3).active)::after{--i:2}
+    .mobile-bottom:has(> :nth-child(4).active)::before,
+    .mobile-bottom:has(> :nth-child(4).active)::after{--i:3}
+    .mobile-bottom:has(> .mobile-more-trigger[aria-expanded="true"])::before,
+    .mobile-bottom:has(> .mobile-more-trigger[aria-expanded="true"])::after{--i:4}
+  }
+
+  /* ---- 4. Button trên pill + icon spring ---- */
+  .mobile-bottom button,
+  .mobile-bottom .mobile-more-trigger{
+    position:relative;
+    z-index:1;
+  }
+
+  @supports selector(:has(*)){
+    .mobile-bottom button.active{
+      background: transparent !important;
+      color: var(--primary) !important;
+      font-weight: 800 !important;
+    }
+    .mobile-bottom button.active .mb-icon{
+      animation: iconSpring 520ms cubic-bezier(.34,1.56,.64,1) both;
+      filter: drop-shadow(0 2px 6px rgba(49,94,251,.35));
+    }
+    html[data-theme="dark"] .mobile-bottom button.active{
+      color: #7ba3ff !important;
+    }
+    html[data-theme="dark"] .mobile-bottom button.active .mb-icon{
+      filter: drop-shadow(0 2px 6px rgba(123,163,255,.45));
+    }
+  }
+}
+
+/* ---- Animations ---- */
+@keyframes pillSheen{
+  0%,   55%{ background-position: 220% 0, 0 0, 0 0, 0 0; }
+  75%, 100%{ background-position: -50% 0, 0 0, 0 0, 0 0; }
+}
+@keyframes iconSpring{
+  0%  { transform: scale(1)   translateY(0); }
+  40% { transform: scale(1.22) translateY(-2px); }
+  70% { transform: scale(.94) translateY(0); }
+  100%{ transform: scale(1)   translateY(0); }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .mobile-bottom::before,
+  .mobile-bottom::after{ transition:none !important; animation:none !important; }
+  .mobile-bottom button.active .mb-icon{ animation:none !important; }
+}
+/* ===== MORE SHEET · GLASS (match pill) ===== */
+@media (max-width:767.98px){
+
+  /* ---- 1. Backdrop: blur nhẹ phía sau ---- */
+  .more-backdrop{
+    background: rgba(15,23,42,.35) !important;
+    -webkit-backdrop-filter: blur(6px) saturate(140%) !important;
+    backdrop-filter: blur(6px) saturate(140%) !important;
+  }
+  html[data-theme="dark"] .more-backdrop{
+    background: rgba(0,0,0,.45) !important;
+  }
+
+  /* ---- 2. Sheet: glass nhẹ, opacity cao ---- */
+  .more-sheet{
+    background:
+      /* grain mịn giống nav */
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .03 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+      linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.82)) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(180%) brightness(1.05) !important;
+    backdrop-filter: blur(22px) saturate(180%) brightness(1.05) !important;
+
+    /* Viền trên: specular sáng — match với pill nav bên dưới */
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      inset 0 0 0 .5px rgba(255,255,255,.45),
+      0 -18px 50px -12px rgba(16,24,40,.28),
+      0  -2px 10px     rgba(16,24,40,.10) !important;
+  }
+
+  html[data-theme="dark"] .more-sheet{
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+      linear-gradient(180deg, rgba(24,32,50,.90), rgba(15,23,42,.85)) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(170%) brightness(.95) !important;
+    backdrop-filter: blur(22px) saturate(170%) brightness(.95) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.14),
+      inset 0 0 0 .5px rgba(255,255,255,.06),
+      0 -18px 50px -12px rgba(0,0,0,.65) !important;
+  }
+
+  /* ---- 3. Handle (thanh kéo): sáng hơn, giống rãnh kính ---- */
+  .more-sheet .more-handle{
+    background: linear-gradient(180deg,
+      rgba(0,0,0,.18),
+      rgba(0,0,0,.10)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.55),
+      0 1px 2px rgba(255,255,255,.25);
+    height:4px !important;
+    width:44px !important;
+    border-radius:99px !important;
+  }
+  html[data-theme="dark"] .more-sheet .more-handle{
+    background: linear-gradient(180deg,
+      rgba(255,255,255,.18),
+      rgba(255,255,255,.08)) !important;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.35);
+  }
+
+  /* ---- 4. Item trong sheet: bo tròn, hover nhẹ ---- */
+  .more-grid button{
+    background: rgba(255,255,255,.55) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255,255,255,.60) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.85),
+      0 1px 2px rgba(16,24,40,.04) !important;
+    transition:
+      background 180ms ease,
+      border-color 180ms ease,
+      transform 180ms cubic-bezier(.34,1.56,.64,1),
+      box-shadow 180ms ease !important;
+  }
+  .more-grid button:hover,
+  .more-grid button:active{
+    background: rgba(49,94,251,.10) !important;
+    border-color: rgba(49,94,251,.30) !important;
+    transform: translateY(-1px) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.90),
+      0 4px 12px -4px rgba(49,94,251,.25) !important;
+  }
+
+  html[data-theme="dark"] .more-grid button{
+    background: rgba(255,255,255,.05) !important;
+    border-color: rgba(255,255,255,.10) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.08),
+      0 1px 2px rgba(0,0,0,.20) !important;
+  }
+  html[data-theme="dark"] .more-grid button:hover,
+  html[data-theme="dark"] .more-grid button:active{
+    background: rgba(123,163,255,.14) !important;
+    border-color: rgba(123,163,255,.35) !important;
+  }
+
+  /* ---- 5. Nút close: match pill style ---- */
+  .more-sheet .more-sheet-close{
+    background: rgba(0,0,0,.06) !important;
+    border: 1px solid rgba(255,255,255,.60) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.90);
+    transition:
+      background 180ms ease,
+      transform 220ms cubic-bezier(.34,1.56,.64,1) !important;
+  }
+  .more-sheet .more-sheet-close:hover{
+    background: rgba(0,0,0,.10) !important;
+    transform: rotate(90deg) !important;
+  }
+  html[data-theme="dark"] .more-sheet .more-sheet-close{
+    background: rgba(255,255,255,.06) !important;
+    border-color: rgba(255,255,255,.12) !important;
+  }
+}
