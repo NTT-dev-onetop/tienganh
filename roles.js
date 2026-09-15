@@ -3,7 +3,6 @@ import{db}from"./firebase-services.js";
 
 // Chủ sở hữu hệ thống: chỉ email này được bootstrap thành ADMIN cao nhất.
 export const OWNER_EMAIL="icloud07072010@gmail.com";
-export const ADMIN_EMAILS=[OWNER_EMAIL];
 let currentRole=null;
 const cleanEmail=e=>String(e??'').trim().toLowerCase();
 

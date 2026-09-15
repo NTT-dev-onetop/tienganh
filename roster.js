@@ -1,5 +1,6 @@
 import{doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
+import{OWNER_EMAIL}from"./roles.js";
 
 const escLocal=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 
@@ -34,7 +35,7 @@ export async function initRosterGate(user,role){
     const userSnap=await getDoc(doc(db,'users',user.uid));
     if(!userSnap.exists())throw new Error('Không tìm thấy hồ sơ người dùng.');
     const profile=userSnap.data()||{};
-    const ownerEmail='icloud07072010@gmail.com';
+    const ownerEmail=OWNER_EMAIL;
     if(String(user.email||'').trim().toLowerCase()===ownerEmail){
       const mappingRef=doc(db,'users_by_roster','s45');
       const mapping=await getDoc(mappingRef);

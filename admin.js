@@ -1,7 +1,7 @@
 import{collection,doc,getDoc,setDoc,updateDoc,deleteDoc,getDocs,query,where,onSnapshot,serverTimestamp,writeBatch}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
 import{encodeCorrectIndex,decodeCorrectIndex}from"./security.js";
-import{getCurrentRole,isStaffRole}from"./roles.js";
+import{getCurrentRole,isStaffRole,OWNER_EMAIL}from"./roles.js";
 import{normalizeExerciseItem}from"./exercises.js";
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const DEFAULT_ROSTER=['Trần Diễm Linh Giang','Võ Hồ Minh Hằng','Nguyễn Anh Khôi','Huỳnh Nguyễn Ly Lam','Nguyễn Thị Ngọc Mỹ','Lê Bảo Ngọc','Phạm Minh Triết','Phan Trần Huỳnh Hương','Võ Mai Khánh','Nguyễn Trần Thùy Ngân','Nguyễn Thanh Sang','Phạm Nhật Trường','Nguyễn Dương Gia Nghi','Nguyễn Phúc Thịnh','Lê Nguyễn Trung Trực','Nguyễn Ngọc Bích Anh','Nguyễn Thùy Anh','Lê Ngọc Quốc Bảo','Huỳnh Lê Minh Đạt','Lê Minh Đạt','Lê Ngọc Bảo Hân','Trương Thị Kim Hân','Trần Huy Hoàng','Nguyễn Tuấn Huy','Nguyễn Đăng Khoa','Lê Nguyễn Hoàng Nam','Nguyễn Khánh Ngọc','Nguyễn Lê Hồng Ngọc','Nguyễn Vũ Bảo Ngọc','Bùi Ngọc An Nhi','Dương Ngọc Tâm Như','Nguyễn Tấn Phát','Trần Minh Phi','Nguyễn Ngọc Bích Phương','Phạm Hà Mai Quỳnh','Nguyễn Bùi Phúc Trí','Lê Nhã Thanh','Nguyễn Khánh Thi','Phạm Hoàng Thiên','Trần Thiện Tín','Phạm Ngọc Bảo Trân','Vĩnh Huỳnh Diễm Trinh','Lê Quốc Trọng','Võ Hoàng Trọng','Nguyễn Trung Trực'];
@@ -11,18 +11,10 @@ const role=()=>getCurrentRole();
 const admin=()=>!!currentUser&&role()==='admin';
 const staff=()=>!!currentUser&&isStaffRole(role());
 export async function loadAdminForUser(user){if(stopUsersProgress){stopUsersProgress();stopUsersProgress=null}currentUser=user;if(staff())await loadAdmin();else renderDenied()}
+export function stopAdminListeners(){if(stopUsersProgress){stopUsersProgress();stopUsersProgress=null}currentUser=null;}
 async function loadAdmin(){await Promise.all([loadUsers(),loadTeachers(),loadRoster(),loadKnowledge(),loadQuestions(),loadListenings()]);await loadSets();bindCmsTabs();if(role()!=='admin'){document.querySelector('[data-cms=admins]')?.classList.add('d-none')} }
 function renderDenied(){const r=document.getElementById('adminContent');if(r)r.innerHTML='<div class="empty"><div>🔒</div><h3>Khu vực dành cho giáo viên</h3><p>Tài khoản này chưa được cấp quyền quản trị.</p></div>'}
-function progressFromSubmissionDocs(docs){
-  const byUid=new Map();
-  const firstPassByUid=new Map();
-  for(const d of docs){const x=d.data?d.data():(d||{});if(x.passed!==true||!x.uid||!x.setId)continue;const uid=String(x.uid);let m=firstPassByUid.get(uid);if(!m){m=new Map();firstPassByUid.set(uid,m)}const setId=String(x.setId);const old=m.get(setId);if(!old||String(x.date||'')<String(old.date||''))m.set(setId,x)}
-  for(const [uid,setMap] of firstPassByUid){const p={totalPassed:setMap.size,totalBonus:0,dates:new Set(),lastCompletedDate:''};for(const x of setMap.values()){p.totalBonus+=2;const date=String(x.date||'');if(date){p.dates.add(date);if(date>p.lastCompletedDate)p.lastCompletedDate=date}}byUid.set(uid,p)}
-  const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-  const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-  for(const p of byUid.values()){let streak=0;const now=today(),yd=yesterday();if(p.dates.has(now)||p.dates.has(yd)){let cursor=new Date((p.dates.has(now)?now:yd)+'T00:00:00');while(true){const key=`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;if(!p.dates.has(key))break;streak++;cursor.setDate(cursor.getDate()-1)}}p.streak=streak}
-  return byUid;
-}
+
 async function loadUsers(){
   const r=document.getElementById('adminUsers');if(!r)return;
   if(stopUsersProgress){stopUsersProgress();stopUsersProgress=null}
@@ -77,13 +69,13 @@ async function loadUsers(){
     render();
   }catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được học sinh.</div>'}
 }
-async function saveAdmins(){if(!admin())return;try{const lines=String(document.getElementById('adminEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error('Có email admin không hợp lệ.');const ownerEmail='icloud07072010@gmail.com';const emails=[...new Set([ownerEmail,...lines])];await setDoc(doc(db,'config','admins'),{emails,updatedAt:serverTimestamp()},{merge:true});toast('Đã lưu danh sách admin.');await loadTeachers()}catch(e){console.error(e);toast(e.message||'Không thể lưu admin.','error')}}
+async function saveAdmins(){if(!admin())return;try{const lines=String(document.getElementById('adminEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error('Có email admin không hợp lệ.');const ownerEmail=OWNER_EMAIL;const emails=[...new Set([ownerEmail,...lines])];await setDoc(doc(db,'config','admins'),{emails,updatedAt:serverTimestamp()},{merge:true});toast('Đã lưu danh sách admin.');await loadTeachers()}catch(e){console.error(e);toast(e.message||'Không thể lưu admin.','error')}}
 
 async function loadTeachers(){const r=document.getElementById('adminAdmins');if(!r||!admin())return;let adminEmails=[],teacherEmails=[];try{const a=await getDoc(doc(db,'config','admins'));adminEmails=a.exists()&&Array.isArray(a.data()?.emails)?a.data().emails.map(x=>String(x).trim().toLowerCase()).filter(Boolean):[];const t=await getDoc(doc(db,'config','teachers'));teacherEmails=t.exists()&&Array.isArray(t.data()?.emails)?t.data().emails.map(x=>String(x).trim().toLowerCase()).filter(Boolean):[];const me=String(currentUser?.email||'').trim().toLowerCase();if(me&&!adminEmails.includes(me))adminEmails.unshift(me);r.innerHTML=`<div class="cms-form"><h6>👑 Admin</h6><textarea id="adminEmails" class="form-control" rows="3">${esc(adminEmails.join('\n'))}</textarea><div class="small muted mt-2">Admin có toàn quyền và có thể bổ nhiệm giáo viên.</div><button id="saveAdmins" class="btn btn-dark mt-2">Lưu Admin</button><hr class="my-4"><h6>👨‍🏫 Giáo viên</h6><textarea id="teacherEmails" class="form-control" rows="4" placeholder="thayco@example.com">${esc(teacherEmails.join('\n'))}</textarea><div class="small muted mt-2">Mỗi dòng một Gmail. Giáo viên có quyền quản lý nội dung, Daily Set và xuất tiến độ; không có quyền quản trị hệ thống.</div><button id="saveTeachers" class="btn btn-success mt-2">Lưu danh sách giáo viên</button></div>`;document.getElementById('saveAdmins').onclick=saveAdmins;document.getElementById('saveTeachers').onclick=saveTeachers}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được danh sách quản trị viên.</div>'}}
 async function saveTeachers(){if(!admin())return;try{const lines=String(document.getElementById('teacherEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error('Có email giáo viên không hợp lệ.');const admins=(await getDoc(doc(db,'config','admins'))).data()?.emails||[];const cleanAdmins=new Set(admins.map(x=>String(x).trim().toLowerCase()));const teachers=[...new Set(lines.filter(x=>!cleanAdmins.has(x)))];await setDoc(doc(db,'config','teachers'),{emails:teachers,updatedAt:serverTimestamp()});toast('Đã lưu danh sách giáo viên.');await loadTeachers()}catch(e){console.error(e);toast(e.message||'Không thể lưu giáo viên.','error')}}
 
-async function loadRoster(){const r=document.getElementById('adminRoster');if(!r)return;try{const snap=await getDoc(doc(db,'config','roster'));const students=snap.exists()&&Array.isArray(snap.data()?.students)&&snap.data().students.length?snap.data().students:DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));r.innerHTML=`<textarea id="rosterNames" class="form-control" rows="10" placeholder="Mỗi dòng một tên">${esc(students.map(x=>String(x.name||'')).join('\n'))}</textarea><div class="small muted mt-2">Roster 45 HS · đã nạp sẵn danh sách lớp, chỉ cần sửa nếu danh sách thay đổi.</div><button id="saveRoster" class="btn btn-success mt-2">Lưu roster</button>`;document.getElementById('saveRoster').onclick=saveRoster}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được roster.</div>'}}
-async function saveRoster(){if(!admin())return;try{const lines=String(document.getElementById('rosterNames')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(lines.length!==45)throw new Error(`Roster phải có 45 tên. Hiện có ${lines.length}.`);await setDoc(doc(db,'config','roster'),{students:lines.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}))});toast('Đã lưu roster 45 HS.')}catch(e){toast(e.message||'Không thể lưu roster.','error')}}
+async function loadRoster(){const r=document.getElementById('adminRoster');if(!r)return;try{const snap=await getDoc(doc(db,'config','roster'));const students=snap.exists()&&Array.isArray(snap.data()?.students)&&snap.data().students.length?snap.data().students:DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));r.innerHTML=`<textarea id="rosterNames" class="form-control" rows="10" placeholder="Mỗi dòng một tên">${esc(students.map(x=>String(x.name||'')).join('\n'))}</textarea><div class="small muted mt-2">Roster lớp · đã nạp sẵn danh sách lớp, chỉ cần sửa nếu danh sách thay đổi.</div><button id="saveRoster" class="btn btn-success mt-2">Lưu roster</button>`;document.getElementById('saveRoster').onclick=saveRoster}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được roster.</div>'}}
+async function saveRoster(){if(!admin())return;try{const lines=String(document.getElementById('rosterNames')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(lines.length<1)throw new Error('Roster phải có ít nhất 1 tên.');if(lines.length!==45&&!window.confirm(`Lớp hiện có ${lines.length} HS (khác mặc định 45). Vẫn lưu?`))return;await setDoc(doc(db,'config','roster'),{students:lines.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}))});toast(`Đã lưu roster ${lines.length} HS.`)}catch(e){toast(e.message||'Không thể lưu roster.','error')}}
 
 function bindCmsTabs(){document.querySelectorAll('[data-cms]').forEach(b=>b.onclick=()=>{const id=b.dataset.cms;document.querySelectorAll('.cms-tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.cms-pane').forEach(x=>x.classList.toggle('d-none',x.id!==`cms-${id}`));})}
 
@@ -137,7 +129,7 @@ function bindQuestionBulk(r){
   sync();
 }
 
-async function deleteQuestionsBulk(ids){if(!staff()||!ids.length)return;try{const batch=writeBatch(db);ids.forEach(id=>batch.delete(doc(db,'questionBank',id)));await batch.commit();toast(`🗑 Đã xóa ${ids.length} câu hỏi.`);await loadQuestions()}catch(e){console.error(e);toast(e.message||'Xóa hàng loạt thất bại.','error')}}
+async function deleteQuestionsBulk(ids){if(!staff()||!ids.length)return;const CHUNK=450;try{for(let i=0;i<ids.length;i+=CHUNK){const batch=writeBatch(db);ids.slice(i,i+CHUNK).forEach(id=>batch.delete(doc(db,'questionBank',id)));await batch.commit()}toast(`🗑 Đã xóa ${ids.length} câu hỏi.`);await loadQuestions()}catch(e){console.error(e);toast(e.message||'Xóa hàng loạt thất bại.','error')}}
 
 async function createDailySetFromQuestionIds(ids,order=1,published=true,unit=1){if(!staff()||ids.length<1)return;try{const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);if(chosen.length!==ids.length)throw new Error('Một số câu hỏi không còn tồn tại. Hãy tải lại danh sách.');const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error(`Câu hỏi "${String(q.prompt||'').slice(0,60)}" sai định dạng.`);const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});const setId=`u${String(unit).padStart(2,'0')}d${String(order).padStart(2,'0')}`;const ref=doc(db,'sets',setId);const existing=await getDoc(ref);await setDoc(ref,{order,unitNumber:unit,dailyNumber:order,title:`Unit ${unit} · Daily ${String(order).padStart(2,'0')}`,questions:qs,totalQuestions:qs.length,passScore:Math.max(1,Math.min(qs.length,Math.ceil(qs.length*0.75))),passTotal:qs.length,published,isDaily:true,author:currentUser.email||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(`🚀 Đã đưa ${qs.length} câu vào Unit ${unit} · Daily ${String(order).padStart(2,'0')} và ${published?'xuất bản':'lưu nháp'}.`);await loadSets();document.querySelector('[data-cms="questions"]')?.click()}catch(e){console.error(e);toast(e.message||'Không thể tạo Daily Set.','error')}}
 
@@ -560,50 +552,3 @@ async function handleExportStreak(button){
   }catch(error){button.classList.remove('exporting');button.innerHTML=original;button.disabled=false;button.removeAttribute('aria-busy');delete button.dataset.exporting;throw error}
 }
 document.addEventListener('click',e=>{const button=e.target?.closest?.('#exportStreak');if(button)handleExportStreak(button)});
-
-
-/*
- * Daily Set Schedule Controls
- * Adds optional Start Time, End Time and Duration fields without changing
- * existing collection/field names.
- */
-function buildSetScheduleFields(container) {
-  if (!container || document.getElementById('daily-set-schedule-controls')) return;
-
-  const wrap = document.createElement('div');
-  wrap.id = 'daily-set-schedule-controls';
-  wrap.style.cssText =
-    'margin-top:16px;padding:14px;border:1px solid #ddd;border-radius:12px;';
-
-  wrap.innerHTML = `
-    <div style="font-weight:700;margin-bottom:10px">⏰ Thời gian & hạn chót</div>
-    <div style="display:grid;gap:10px">
-      <label>
-        <div style="font-size:.9rem;margin-bottom:4px">Thời gian mở đề</div>
-        <input id="set-start-at" type="datetime-local" class="form-control">
-      </label>
-      <label>
-        <div style="font-size:.9rem;margin-bottom:4px">Thời gian đóng đề</div>
-        <input id="set-end-at" type="datetime-local" class="form-control">
-      </label>
-      <label>
-        <div style="font-size:.9rem;margin-bottom:4px">Thời gian làm bài (phút)</div>
-        <input id="set-duration-minutes" type="number" min="1" step="1"
-               class="form-control" placeholder="VD: 45">
-      </label>
-    </div>
-  `;
-  container.appendChild(wrap);
-}
-
-function getSetSchedulePayload() {
-  const start = document.getElementById('set-start-at')?.value || '';
-  const end = document.getElementById('set-end-at')?.value || '';
-  const duration = Number(document.getElementById('set-duration-minutes')?.value || 0);
-
-  const payload = {};
-  if (start) payload.startAt = new Date(start).toISOString();
-  if (end) payload.endAt = new Date(end).toISOString();
-  payload.durationMinutes = Number.isFinite(duration) && duration > 0 ? duration : 0;
-  return payload;
-}

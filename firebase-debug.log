@@ -1,23 +1,34 @@
-[debug] [2026-09-13T23:03:56.450Z] ----------------------------------------------------------------------
-[debug] [2026-09-13T23:03:56.471Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\VI TINH THANH AN\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js use --add
-[debug] [2026-09-13T23:03:56.471Z] CLI Version:   14.12.0
-[debug] [2026-09-13T23:03:56.471Z] Platform:      win32
-[debug] [2026-09-13T23:03:56.471Z] Node Version:  v24.19.0
-[debug] [2026-09-13T23:03:56.472Z] Time:          Mon Sep 14 2026 06:03:56 GMT+0700 (Indochina Time)
-[debug] [2026-09-13T23:03:56.472Z] ----------------------------------------------------------------------
+[debug] [2026-09-15T12:09:07.348Z] ----------------------------------------------------------------------
+[debug] [2026-09-15T12:09:07.351Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\VI TINH THANH AN\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only firestore:rules
+[debug] [2026-09-15T12:09:07.351Z] CLI Version:   14.12.0
+[debug] [2026-09-15T12:09:07.351Z] Platform:      win32
+[debug] [2026-09-15T12:09:07.351Z] Node Version:  v24.19.0
+[debug] [2026-09-15T12:09:07.351Z] Time:          Tue Sep 15 2026 19:09:07 GMT+0700 (Indochina Time)
+[debug] [2026-09-15T12:09:07.352Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2026-09-13T23:03:56.476Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
-[debug] [2026-09-13T23:03:56.720Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-09-13T23:03:56.721Z] > authorizing via signed-in user (icloud07072010@gmail.com)
-[debug] [2026-09-13T23:03:56.722Z] Checked if tokens are valid: false, expires at: 1789279325898
-[debug] [2026-09-13T23:03:56.722Z] Checked if tokens are valid: false, expires at: 1789279325898
-[debug] [2026-09-13T23:03:56.722Z] > refreshing access token with scopes: []
-[debug] [2026-09-13T23:03:56.723Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2026-09-13T23:03:56.724Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2026-09-13T23:03:56.925Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2026-09-13T23:03:56.926Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2026-09-13T23:03:56.940Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
-[debug] [2026-09-13T23:03:57.308Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
-[debug] [2026-09-13T23:03:57.308Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
-[debug] [2026-09-13T23:03:57.904Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
-[debug] [2026-09-13T23:03:57.904Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-09-15T12:09:07.556Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-15T12:09:07.557Z] > authorizing via signed-in user (icloud07072010@gmail.com)
+[debug] [2026-09-15T12:09:07.557Z] [iam] checking project englishproject-c0131 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-09-15T12:09:07.559Z] Checked if tokens are valid: true, expires at: 1789477006406
+[debug] [2026-09-15T12:09:07.559Z] Checked if tokens are valid: true, expires at: 1789477006406
+[debug] [2026-09-15T12:09:07.560Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/englishproject-c0131:testIamPermissions [none]
+[debug] [2026-09-15T12:09:07.560Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/englishproject-c0131:testIamPermissions x-goog-quota-user=projects/englishproject-c0131
+[debug] [2026-09-15T12:09:07.560Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/englishproject-c0131:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-09-15T12:09:09.789Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/englishproject-c0131:testIamPermissions 200
+[debug] [2026-09-15T12:09:09.789Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/englishproject-c0131:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'englishproject-c0131'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: reading indexes from firestore.indexes.json... 
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-09-15T12:09:09.794Z] Checked if tokens are valid: true, expires at: 1789477006406
+[debug] [2026-09-15T12:09:09.794Z] Checked if tokens are valid: true, expires at: 1789477006406
+[debug] [2026-09-15T12:09:09.794Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/englishproject-c0131:test [none]
+[debug] [2026-09-15T12:09:09.794Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/englishproject-c0131:test [omitted]
+[debug] [2026-09-15T12:09:15.682Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/englishproject-c0131:test 200
+[debug] [2026-09-15T12:09:15.682Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/englishproject-c0131:test {}
+[info] +  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-09-15T12:09:15.684Z] Checked if tokens are valid: true, expires at: 1789477006406
+[debug] [2026-09-15T12:09:15.684Z] Checked if tokens are valid: true, expires at: 1789477006406
+[debug] [2026-09-15T12:09:15.684Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/englishproject-c0131/databases/(default) [none]

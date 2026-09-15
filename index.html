@@ -117,30 +117,18 @@
 </main></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="exercise-bank.js"></script><script src="listening-bank.js"></script><script src="vocab-expansion.js"></script><script src="toast.js"></script><script type="module" src="exercises.js"></script><script type="module" src="knowledge.js"></script><script type="module" src="teacher-content.js"></script><script type="module" src="daily-set.js"></script><script type="module" src="admin.js"></script><script>
-(function(){const key="english-notebook-theme";const saved=localStorage.getItem(key);document.documentElement.dataset.theme=saved==="dark"?"dark":"light";const sync=()=>{const dark=document.documentElement.dataset.theme==="dark";const b=document.getElementById("themeToggle");if(b){b.textContent=dark?"☀️":"🌙";b.setAttribute("aria-label",dark?"Chuyển sang giao diện sáng":"Chuyển sang giao diện tối");b.title=dark?"Giao diện sáng":"Giao diện tối"}};document.addEventListener("DOMContentLoaded",()=>{sync();document.getElementById("themeToggle")?.addEventListener("click",()=>{const dark=document.documentElement.dataset.theme!=="dark";document.documentElement.dataset.theme=dark?"dark":"light";localStorage.setItem(key,dark?"dark":"light");sync()})})})();
-</script>
-<script>
 (() => {
-  const toggle = document.getElementById('themeToggleMobile');
-  const sync = () => {
-    const dark = document.documentElement.dataset.theme === 'dark';
-    if (toggle) {
-      toggle.textContent = dark ? '☀️ Giao diện sáng' : '🌙 Giao diện tối';
-      toggle.setAttribute('aria-label', dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
-    }
+  const key="english-notebook-theme";
+  const syncTheme=()=>{
+    const dark=document.documentElement.dataset.theme==="dark";
+    const desktop=document.getElementById('themeToggle');
+    const mobile=document.getElementById('themeToggleMobile');
+    if(desktop){desktop.textContent=dark?'☀️':'🌙';desktop.setAttribute('aria-label',dark?'Chuyển sang giao diện sáng':'Chuyển sang giao diện tối');desktop.title=dark?'Giao diện sáng':'Giao diện tối';}
+    if(mobile){mobile.textContent=dark?'☀️ Giao diện sáng':'🌙 Giao diện tối';mobile.setAttribute('aria-label',dark?'Chuyển sang giao diện sáng':'Chuyển sang giao diện tối');}
   };
-  document.addEventListener('DOMContentLoaded', () => {
-    sync();
-    toggle?.addEventListener('click', () => {
-      const dark = document.documentElement.dataset.theme !== 'dark';
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      localStorage.setItem('english-notebook-theme', dark ? 'dark' : 'light');
-      sync();
-      document.getElementById('themeToggle')?.setAttribute('aria-label', dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
-      const desktop = document.getElementById('themeToggle');
-      if (desktop) desktop.textContent = dark ? '☀️' : '🌙';
-    });
-  });
+  const toggleTheme=()=>{const dark=document.documentElement.dataset.theme!=="dark";document.documentElement.dataset.theme=dark?'dark':'light';localStorage.setItem(key,dark?'dark':'light');syncTheme();};
+  const init=()=>{const saved=localStorage.getItem(key);document.documentElement.dataset.theme=saved==='dark'?'dark':'light';syncTheme();document.getElementById('themeToggle')?.addEventListener('click',toggleTheme);document.getElementById('themeToggleMobile')?.addEventListener('click',toggleTheme);};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
 <script type="module" src="app.js"></script>

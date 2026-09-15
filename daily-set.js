@@ -1,3 +1,4 @@
+import{getProgressForUid}from"./progress.js";
 
 function startDailySetCountdown(set) {
   const minutes = getSetDurationMinutes(set);
@@ -47,7 +48,7 @@ import{onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.5/fireba
 import{auth,db}from"./firebase-services.js";
 import{decodeCorrectIndex}from"./security.js";
 
-let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false,stopSets=null,stopProgress=null;
+let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false,stopSets=null,stopProgress=null,_passedCache=null;
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=(msg,type='success')=>window.appToast?window.appToast(msg,type):undefined;
@@ -110,11 +111,13 @@ function getDailyOfSet(s){
   const o=Number(s?.order);
   return Number.isFinite(o)&&o>0?o:1;
 }
-async function passedSetIds(){
+async function passedSetIds(force=false){
+  if(_passedCache && !force)return _passedCache;
   if(!currentUser)return new Set();
   try{
     const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));
-    const out=new Set();snap.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)out.add(String(x.setId))});return out;
+    const out=new Set();snap.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)out.add(String(x.setId))});
+    _passedCache=out;return out;
   }catch(e){console.error('Không đọc được lịch sử set:',e);return new Set()}
 }
 function unlockedFor(set,passed){
@@ -128,38 +131,16 @@ function unlockedFor(set,passed){
   const sameUnit=currentSets.filter(x=>getUnitOfSet(x)===unit).sort((a,b)=>getDailyOfSet(a)-getDailyOfSet(b));
   return sameUnit.filter(x=>getDailyOfSet(x)<daily).every(x=>passed.has(String(x.id)));
 }
-function progressFromSubmissionDocs(docs){
-  const bySet=new Map();
-  const sorted=[...docs].map(d=>d.data?d.data():(d||{})).filter(x=>isPassedValue(x?.passed)&&x?.setId).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
-  for(const x of sorted){
-    const setId=String(x.setId);
-    if(bySet.has(setId))continue; // only the first pass of a set counts for bonus/streak
-    bySet.set(setId,x);
-  }
-  const passedDates=new Set();let totalBonus=0,lastCompletedDate='';
-  for(const x of bySet.values()){
-    const date=String(x.date||'');
-    if(date){passedDates.add(date);if(date>lastCompletedDate)lastCompletedDate=date}
-    totalBonus+=2;
-  }
-  const now=today();const yesterdayDate=(()=>{const d=new Date();d.setDate(d.getDate()-1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})();
-  let streak=0;
-  if(passedDates.has(now)||passedDates.has(yesterdayDate)){
-    let cursor=new Date((passedDates.has(now)?now:yesterdayDate)+'T00:00:00');
-    while(true){const key=`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;if(!passedDates.has(key))break;streak++;cursor.setDate(cursor.getDate()-1)}
-  }
-  return {streak,totalPassed:bySet.size,totalBonus,lastCompletedDate};
-}
 async function getStudentProgress(){
   if(!currentUser)return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};
-  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));return progressFromSubmissionDocs(snap.docs)}catch(e){console.error('Không đọc được tiến độ Daily Set:',e);return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''}}
+  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));return getProgressForUid(snap.docs,currentUser.uid)}catch(e){console.error('Không đọc được tiến độ Daily Set:',e);return {streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''}}
 }
 function watchStudentProgress(){
   if(stopProgress)stopProgress();
   if(!currentUser)return;
   const q=query(collection(db,'submissions'),where('uid','==',currentUser.uid));
   stopProgress=onSnapshot(q,snap=>{
-    const p=progressFromSubmissionDocs(snap.docs);const el=document.getElementById('dailyStreak');
+    const p=getProgressForUid(snap.docs,currentUser.uid);const el=document.getElementById('dailyStreak');
     if(el)el.textContent=`🔥 ${p.streak} ngày`;
     const live=document.getElementById('dailyLiveStatus');if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
     if(!selectedSet)renderDailySetPage();
@@ -187,14 +168,14 @@ function watchSetsRealtime(){
     if(live){live.textContent='🟠 Đang chờ kết nối';live.classList.add('is-offline')}
   });
 }
-export async function initDailySet(){onAuthStateChanged(auth,async u=>{currentUser=u;if(stopSets){stopSets();stopSets=null}if(stopProgress){stopProgress();stopProgress=null}if(!u){currentSets=[];selectedSet=null;renderDailySetPage();return}await loadSets();watchSetsRealtime();watchStudentProgress()})}
+export async function initDailySet(){onAuthStateChanged(auth,async u=>{currentUser=u;_passedCache=null;if(stopSets){stopSets();stopSets=null}if(stopProgress){stopProgress();stopProgress=null}if(!u){currentSets=[];selectedSet=null;renderDailySetPage();return}await loadSets();watchSetsRealtime();watchStudentProgress()})}
 export async function renderDailySetPage(){
   const root=document.getElementById('daily');if(!root)return;
   if(!currentUser){root.innerHTML='<div class="empty"><div>🔒</div><h3>Đăng nhập để làm Daily Set</h3></div>';return}
   let submissionDocs=[];
   try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e)}
   const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)passed.add(String(x.setId))});
-  const progress=progressFromSubmissionDocs(submissionDocs);
+  const progress=getProgressForUid(submissionDocs,currentUser.uid);
   const unitMap=new Map();
   for(const s of currentSets){const u=getUnitOfSet(s);if(!unitMap.has(u))unitMap.set(u,[]);unitMap.get(u).push(s)}
   const units=[...unitMap.entries()].map(([u,sets])=>({unit:u,sets:sets.sort((a,b)=>getDailyOfSet(a)-getDailyOfSet(b))})).sort((a,b)=>a.unit-b.unit);
@@ -209,13 +190,18 @@ export async function renderDailySetPage(){
     const nodes=u.sets.map((s,si)=>{
       const prevDailies=u.sets.slice(0,si),allPrevPassed=prevDailies.every(p=>passed.has(String(p.id)));
       const unlocked=unitUnlocked&&allPrevPassed,done=passed.has(String(s.id));
-      const state=done?'done':(unlocked?'open':'locked'),icon=done?'✓':(unlocked?'▶':'🔒');
-      return `<button class="daily-node ${state}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'} aria-label="Daily ${getDailyOfSet(s)}"><span class="daily-node-num">${String(getDailyOfSet(s)).padStart(2,'0')}</span><span class="daily-node-label">${icon}</span></button>`;
+      const state=done?'done':(unlocked?'open':'locked');
+      const label=done?'✓':(unlocked?'BẮT ĐẦU':'🔒');
+      const mascot=unlocked&&!done?`<img class="daily-node-mascot" src="./img/roach.png" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"> <span class="daily-node-fallback" style="display:none" aria-hidden="true">🪳</span>`:'';
+      const doneIcon=done?'<span class="daily-node-check" aria-hidden="true">✓</span>':'';
+      const justPassed=done&&String(window._dailyJustPassedId||'')===String(s.id);
+      return `<button class="daily-node ${state}" data-set-id="${esc(s.id)}" ${justPassed?'data-just-passed="true"':''} ${unlocked?'':'disabled'} aria-label="Daily ${getDailyOfSet(s)}"><span class="daily-node-num">${doneIcon||mascot||String(getDailyOfSet(s)).padStart(2,'0')}</span><span class="daily-node-label">${label}</span></button>`;
     }).join('');
     return `<article class="daily-unit ${unitUnlocked?'unlocked':'locked'} ${isCurrent?'is-current':''}"><header class="daily-unit-head"><div><div class="eyebrow">UNIT ${String(u.unit).padStart(2,'0')}</div><b>${u.passed}/${u.total} daily đã pass</b></div><div class="daily-unit-progress"><span style="width:${unitProg}%"></span></div></header><div class="daily-unit-path">${nodes||'<div class="muted small">Chưa có daily</div>'}</div></article>`;
   }).join('');
   root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Học theo lộ trình <b>Unit → Daily</b>. Pass Daily trong Unit để mở Daily kế tiếp; pass hết Unit sẽ mở Unit tiếp theo.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${totalPassed}/${totalSets}</b> daily đã pass</div><div class="progress"><div class="progress-bar" style="width:${totalSets?Math.round(totalPassed/totalSets*100):0}%"></div></div></div><div class="daily-units">${unitHtml||'<div class="empty"><h4>Chưa có Unit nào</h4><p>Admin hãy tạo Daily Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
   root.querySelectorAll('[data-set-id]:not([disabled])').forEach(b=>b.onclick=()=>_dpOpen(b.dataset.setId));
+  window._dailyJustPassedId=null;
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
 }
 async function openSet(id){
@@ -293,58 +279,50 @@ function saveCurrentAnswer(){
   const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];const idx=Object.keys(answers).length;if(idx<0||idx>=qs.length)return;const q=qs[idx];let val='';if(q.kind==='form'||q.kind==='rewrite')val=document.getElementById('dailyText')?.value||'';else val=document.querySelector('input[name="dailyAnswer"]:checked')?.value||'';if(!String(val).trim()){if(btn)btn.disabled=false;toast('Hãy trả lời câu này trước.','error');return}answers[idx]=val;if(idx===qs.length-1)submitSet();else renderSetQuestion();
 }
 export async function submitSet(){
-  // Re-check the schedule immediately before writing the submission.
-  // This prevents submissions after End Time even if the page stayed open.
-  try {
-    const scheduleSnap = await getDoc(doc(db, 'sets', selectedSet.id));
-    if (!scheduleSnap.exists()) {
-      throw new Error('Bài tập không còn tồn tại.');
-    }
-    const currentSet = scheduleSnap.data();
-    const schedule = getSetScheduleState(currentSet);
-    if (schedule.state === 'upcoming') {
-      throw new Error(`Bài chưa mở. Bắt đầu: ${formatScheduleDate(schedule.start)}`);
-    }
-    if (schedule.state === 'closed') {
-      throw new Error(`Đã hết hạn nộp bài (${formatScheduleDate(schedule.end)}).`);
-    }
-    const duration = getSetDurationMinutes(currentSet);
-    if (duration > 0 && window._dailySetStartedAt) {
-      const elapsed = (Date.now() - window._dailySetStartedAt) / 60000;
-      if (elapsed >= duration) {
-        throw new Error('Đã hết thời gian làm bài.');
-      }
-    }
-  } catch (scheduleError) {
-    throw scheduleError;
-  }
-
-  if(submitting||!currentUser||!selectedSet)return;submitting=true;
-  const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];let score=0;
-  qs.forEach((q,i)=>{const val=answers[i];const ci=decodeCorrectIndex(String(q?.correctCode||''));if(q?.kind==='form'||q?.kind==='rewrite'){if(normalizeText(val)===normalizeText(q?.answer||''))score++;}else if(Number(val)===ci)score++});
-  const date=today();const total=qs.length;const required=Math.max(1,Math.min(total,Number(selectedSet?.passScore)||Math.ceil(total*0.75)));const passed=score>=required;
+  if(submitting||!currentUser||!selectedSet)return;
+  submitting=true;
   try{
+    const setId=String(selectedSet.id);
+    const scheduleSnap=await getDoc(doc(db,'sets',setId));
+    if(!scheduleSnap.exists())throw new Error('Bài tập không còn tồn tại.');
+    const currentSet=scheduleSnap.data()||{};
+    const schedule=getSetScheduleState(currentSet);
+    if(schedule.state==='upcoming')throw new Error(`Bài chưa mở. Bắt đầu: ${formatScheduleDate(schedule.start)}`);
+    if(schedule.state==='closed')throw new Error(`Đã hết hạn nộp bài (${formatScheduleDate(schedule.end)}).`);
+    const duration=getSetDurationMinutes(currentSet);
+    if(duration>0&&window._dailySetStartedAt){
+      const elapsed=(Date.now()-window._dailySetStartedAt)/60000;
+      if(elapsed>=duration)throw new Error('Đã hết thời gian làm bài.');
+    }
+    const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];let score=0;
+    qs.forEach((q,i)=>{const val=answers[i];const ci=decodeCorrectIndex(String(q?.correctCode||''));if(q?.kind==='form'||q?.kind==='rewrite'){if(normalizeText(val)===normalizeText(q?.answer||''))score++;}else if(Number(val)===ci)score++});
+    const date=today();const total=qs.length;const required=Math.max(1,Math.min(total,Number(selectedSet?.passScore)||Math.ceil(total*0.75)));const passed=score>=required;
     const userRef=doc(db,'users',currentUser.uid),userSnap=await getDoc(userRef);if(!userSnap.exists())throw new Error('Hồ sơ học sinh không tồn tại.');
     const profile=userSnap.data()||{};
     const historySnap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));
-    const firstPass=!historySnap.docs.some(d=>{const x=d.data()||{};return isPassedValue(x.passed)&&String(x.setId||'')===String(selectedSet.id)});
+    const firstPass=!historySnap.docs.some(d=>{const x=d.data()||{};return isPassedValue(x.passed)&&String(x.setId||'')===setId});
     const bonusPoints=passed&&firstPass?2:0;
-    const previousProgress=progressFromSubmissionDocs(historySnap.docs);
+    const previousProgress=getProgressForUid(historySnap.docs,currentUser.uid);
     const oldStreak=Number(previousProgress.streak||0);const last=String(previousProgress.lastCompletedDate||'');let streak=oldStreak;
     const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);const y=`${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
     if(passed&&firstPass){streak=last===date?oldStreak:last===y?oldStreak+1:1}
-    const ref=doc(db,'submissions',`${currentUser.uid}_${date}_${selectedSet.id}`);
-    const existing=await getDoc(ref);if(existing.exists()){toast('Bạn đã nộp Set này hôm nay.','error');submitting=false;return}
+    const ref=doc(db,'submissions',`${currentUser.uid}_${date}_${setId}`);
+    const existing=await getDoc(ref);if(existing.exists()){toast('Bạn đã nộp Set này hôm nay.','error');return}
     await setDoc(ref,{uid:currentUser.uid,name:String(profile.name||currentUser.displayName||'Tài khoản'),className:String(profile.className||'11T1'),setId:selectedSet.id,score,total,passScore:required,passed,bonusPoints,submittedAt:serverTimestamp(),date,streakAtSubmission:streak});
-    // Submission là nguồn dữ liệu chuẩn. Summary trên users chỉ là dữ liệu denormalized để đọc nhanh.
+    _passedCache=null;
     if(passed&&firstPass){
       try{
-        const latest=progressFromSubmissionDocs((await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)))).docs);
+        const latest=getProgressForUid((await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)))).docs,currentUser.uid);
         await setDoc(userRef,{lastCompletedDate:latest.lastCompletedDate,streak:latest.streak,totalSetsCompleted:latest.totalPassed,totalBonusPoints:latest.totalBonus},{merge:true});
       }catch(summaryError){console.warn('Đã lưu submission nhưng chưa cập nhật summary users:',summaryError)}
     }
+    window._dailySetStartedAt=null;
+    if(window._dailySetTimerInterval){clearInterval(window._dailySetTimerInterval);window._dailySetTimerInterval=null;}
+    document.getElementById('daily-set-countdown')?.remove();
+    if(passed&&firstPass)window._dailyJustPassedId=selectedSet.id;
     rootResult(score,passed,streak);
-  }catch(e){console.error('Lỗi nộp Daily Set:',e);toast('Không thể nộp bài. Vui lòng thử lại.','error');submitting=false}
+  }catch(e){console.error('Lỗi nộp Daily Set:',e);toast(e.message||'Không thể nộp bài. Vui lòng thử lại.','error')}
+  finally{submitting=false}
 }
 function rootResult(score,passed,streak){
   const root=document.getElementById('dailyExamBody');if(!root)return;
@@ -383,6 +361,9 @@ function _openExamOverlay(){
   document.body.classList.add('daily-exam-open');
 }
 function _closeExamOverlay(){
+  if(window._dailySetTimerInterval){clearInterval(window._dailySetTimerInterval);window._dailySetTimerInterval=null;}
+  window._dailySetTimerEnd=null;
+  document.getElementById('daily-set-countdown')?.remove();
   const el=document.getElementById('dailyExamOverlay');
   el?.classList.remove('is-open');
   document.body.classList.remove('daily-exam-open');
