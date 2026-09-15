@@ -14,22 +14,7 @@ const reviewPage=$('review');
 if(appMain&&reviewPage&&reviewPage.parentElement!==appMain)appMain.appendChild(reviewPage);
 const revealSelector='.stat,.home-grid>.panel,.page>.panel,.vocab-card,.grammar-card,.mistake-card,.exercise-card,.listening-card,.family-card,.family-quiz-card,.daily-set-card,.knowledge-card';
 const revealObserver=!window.matchMedia('(prefers-reduced-motion: reduce)').matches&&'IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');revealObserver.unobserve(entry.target)}}),{threshold:.12,rootMargin:'0px 0px -8%'}):null;
-const observeReveal=(root=document)=>{
-  if(!revealObserver)return;
-  const els=[];
-  // QUAN TRỌNG: MutationObserver truyền chính node vừa thêm (vd .knowledge-card).
-  // querySelectorAll KHÔNG bao gồm chính node đó → phải check matches() trước.
-  if(root&&root.nodeType===1&&typeof root.matches==='function'&&root.matches(revealSelector))els.push(root);
-  if(root&&typeof root.querySelectorAll==='function'){
-    root.querySelectorAll(revealSelector).forEach(el=>els.push(el));
-  }
-  els.forEach((el,index)=>{
-    if(el.dataset.revealBound)return;
-    el.dataset.revealBound='1';
-    if(index%2)el.classList.add('reveal-from-right');
-    revealObserver.observe(el);
-  });
-};
+const observeReveal=(root=document)=>{if(!revealObserver)return;root.querySelectorAll(revealSelector).forEach((el,index)=>{if(el.dataset.revealBound)return;el.dataset.revealBound='1';if(index%2)el.classList.add('reveal-from-right');revealObserver.observe(el)})};
 observeReveal();
 if(!revealObserver)document.querySelectorAll(revealSelector).forEach(el=>el.classList.add('is-visible'));
 new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)observeReveal(node)}))).observe(document.body,{childList:true,subtree:true});

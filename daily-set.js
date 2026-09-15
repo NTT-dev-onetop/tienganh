@@ -88,9 +88,27 @@ async function loadSets(){
   if(!currentUser)return;
   try{
     const snap=await getDocs(query(collection(db,'sets'),where('published','==',true)));
-    currentSets=[];snap.forEach(d=>{const x={id:d.id,...d.data()};if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x)});currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
+    currentSets=[];
+    snap.forEach(d=>{
+      const x={id:d.id,...d.data()};
+      const hasOrder=Number.isInteger(Number(x.order));
+      const hasUnit=Number.isInteger(Number(x.unitNumber));
+      if((hasOrder||hasUnit) && x.isDaily!==false)currentSets.push(x);
+    });
+    currentSets.sort((a,b)=>getUnitOfSet(a)-getUnitOfSet(b)||getDailyOfSet(a)-getDailyOfSet(b));
     await renderDailySetPage();
   }catch(e){console.error('Không tải được Daily Set:',e);toast('Không tải được bộ đề. Kiểm tra Firestore.','error')}
+}
+function getUnitOfSet(s){
+  const u=Number(s?.unitNumber);
+  if(Number.isFinite(u)&&u>0)return u;
+  return 1;
+}
+function getDailyOfSet(s){
+  const d=Number(s?.dailyNumber);
+  if(Number.isFinite(d)&&d>0)return d;
+  const o=Number(s?.order);
+  return Number.isFinite(o)&&o>0?o:1;
 }
 async function passedSetIds(){
   if(!currentUser)return new Set();
@@ -101,11 +119,14 @@ async function passedSetIds(){
 }
 function unlockedFor(set,passed){
   if(!set)return false;
-  const order=Number(set.order);
-  if(!Number.isFinite(order)||order<=1)return true;
-  const prev=currentSets.find(s=>Number(s.order)===order-1);
-  if(!prev)return false;
-  return passed.has(String(prev.id));
+  const unit=getUnitOfSet(set), daily=getDailyOfSet(set);
+  const units=[...new Set(currentSets.map(getUnitOfSet))].sort((a,b)=>a-b);
+  const unitIndex=units.indexOf(unit);
+  if(unitIndex<0)return false;
+  const previousUnits=units.filter(u=>u<unit);
+  if(previousUnits.some(u=>currentSets.filter(x=>getUnitOfSet(x)===u).some(x=>!passed.has(String(x.id)))))return false;
+  const sameUnit=currentSets.filter(x=>getUnitOfSet(x)===unit).sort((a,b)=>getDailyOfSet(a)-getDailyOfSet(b));
+  return sameUnit.filter(x=>getDailyOfSet(x)<daily).every(x=>passed.has(String(x.id)));
 }
 function progressFromSubmissionDocs(docs){
   const bySet=new Map();
@@ -152,9 +173,11 @@ function watchSetsRealtime(){
     currentSets=[];
     snap.forEach(d=>{
       const x={id:d.id,...d.data()};
-      if(Number.isInteger(Number(x.order)) && x.isDaily !== false)currentSets.push(x);
+      const hasOrder=Number.isInteger(Number(x.order));
+      const hasUnit=Number.isInteger(Number(x.unitNumber));
+      if((hasOrder||hasUnit) && x.isDaily!==false)currentSets.push(x);
     });
-    currentSets.sort((a,b)=>Number(a.order)-Number(b.order));
+    currentSets.sort((a,b)=>getUnitOfSet(a)-getUnitOfSet(b)||getDailyOfSet(a)-getDailyOfSet(b));
     const live=document.getElementById('dailyLiveStatus');
     if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
     if(!selectedSet)renderDailySetPage();
@@ -172,14 +195,36 @@ export async function renderDailySetPage(){
   try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e)}
   const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)passed.add(String(x.setId))});
   const progress=progressFromSubmissionDocs(submissionDocs);
-  const allFivePassed=currentSets.length>=5&&currentSets.slice(0,5).every(x=>passed.has(x.id));
-  const cards=currentSets.map(s=>{const unlocked=allFivePassed||unlockedFor(s,passed);const done=passed.has(s.id);return `<button class="daily-set-card ${unlocked?'':'is-locked'}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'}><div class="daily-set-number">${String(Number(s.order)).padStart(2,'0')}</div><div class="daily-set-info"><b>${esc(s.title||`Set ${Number(s.order)}`)}</b><span>${done?'✓ Đã pass':unlocked?'🔓 Đã mở':'🔒 Cần pass set trước'}</span></div><div class="daily-set-arrow">→</div></button>`}).join('');
-  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Mỗi Set có số câu riêng · đạt theo điều kiện của Set · mỗi ngày chỉ nộp 1 Set.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${Math.min(passed.size,5)}/5</b> set đã pass</div><div class="progress"><div class="progress-bar" style="width:${Math.min(100,Math.round(Math.min(passed.size,5)/5*100))}%"></div></div></div><div class="daily-set-grid">${cards||'<div class="empty"><h4>Chưa có Set</h4><p>Admin hãy tạo 5 Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
-  root.querySelectorAll('[data-set-id]').forEach(b=>b.onclick=()=>openSet(b.dataset.setId));
+  const unitMap=new Map();
+  for(const s of currentSets){const u=getUnitOfSet(s);if(!unitMap.has(u))unitMap.set(u,[]);unitMap.get(u).push(s)}
+  const units=[...unitMap.entries()].map(([u,sets])=>({unit:u,sets:sets.sort((a,b)=>getDailyOfSet(a)-getDailyOfSet(b))})).sort((a,b)=>a.unit-b.unit);
+  const unitStats=units.map(u=>({...u,total:u.sets.length,passed:u.sets.filter(s=>passed.has(String(s.id))).length}));
+  const totalPassed=unitStats.reduce((sum,u)=>sum+u.passed,0),totalSets=unitStats.reduce((sum,u)=>sum+u.total,0);
+  let currentUnitIdx=0;
+  const allDone=unitStats.every(u=>u.passed===u.total)&&unitStats.length>0;
+  if(allDone)currentUnitIdx=Math.max(0,unitStats.length-1);else{const idx=unitStats.findIndex(u=>u.passed<u.total);currentUnitIdx=idx<0?0:idx}
+  const unitHtml=unitStats.map((u,ui)=>{
+    const unitUnlocked=ui===0||unitStats.slice(0,ui).every(prev=>prev.passed===prev.total);
+    const isCurrent=ui===currentUnitIdx,unitProg=u.total?Math.round(u.passed/u.total*100):0;
+    const nodes=u.sets.map((s,si)=>{
+      const prevDailies=u.sets.slice(0,si),allPrevPassed=prevDailies.every(p=>passed.has(String(p.id)));
+      const unlocked=unitUnlocked&&allPrevPassed,done=passed.has(String(s.id));
+      const state=done?'done':(unlocked?'open':'locked'),icon=done?'✓':(unlocked?'▶':'🔒');
+      return `<button class="daily-node ${state}" data-set-id="${esc(s.id)}" ${unlocked?'':'disabled'} aria-label="Daily ${getDailyOfSet(s)}"><span class="daily-node-num">${String(getDailyOfSet(s)).padStart(2,'0')}</span><span class="daily-node-label">${icon}</span></button>`;
+    }).join('');
+    return `<article class="daily-unit ${unitUnlocked?'unlocked':'locked'} ${isCurrent?'is-current':''}"><header class="daily-unit-head"><div><div class="eyebrow">UNIT ${String(u.unit).padStart(2,'0')}</div><b>${u.passed}/${u.total} daily đã pass</b></div><div class="daily-unit-progress"><span style="width:${unitProg}%"></span></div></header><div class="daily-unit-path">${nodes||'<div class="muted small">Chưa có daily</div>'}</div></article>`;
+  }).join('');
+  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Học theo lộ trình <b>Unit → Daily</b>. Pass Daily trong Unit để mở Daily kế tiếp; pass hết Unit sẽ mở Unit tiếp theo.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${totalPassed}/${totalSets}</b> daily đã pass</div><div class="progress"><div class="progress-bar" style="width:${totalSets?Math.round(totalPassed/totalSets*100):0}%"></div></div></div><div class="daily-units">${unitHtml||'<div class="empty"><h4>Chưa có Unit nào</h4><p>Admin hãy tạo Daily Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
+  root.querySelectorAll('[data-set-id]:not([disabled])').forEach(b=>b.onclick=()=>_dpOpen(b.dataset.setId));
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
 }
 async function openSet(id){
   const set=currentSets.find(x=>x.id===id);if(!set)return;
+  const passed=await passedSetIds();
+  if(!unlockedFor(set,passed)){
+    toast('Daily này chưa mở. Hãy hoàn thành các Daily trước theo lộ trình.','error');
+    return;
+  }
   // Schedule gate: start/end times are authoritative for the student UI.
   // The final submit is checked again below, so an expired attempt cannot be submitted.
   const schedule = getSetScheduleState(set);
@@ -201,18 +246,47 @@ async function openSet(id){
     const existing=await getDoc(doc(db,'submissions',`${currentUser.uid}_${date}_${id}`));
     if(existing.exists()){toast('Bạn đã nộp Set này hôm nay.','error');return}
   }catch(e){console.error('Không kiểm tra được submission:',e);toast('Không thể kiểm tra lượt làm.','error');return}
-  selectedSet=set;answers={};submitting=false;renderSetQuestion();
+  selectedSet=set;answers={};submitting=false;_openExamOverlay();renderSetQuestion();
 }
 function normalizeText(s){return String(s??'').trim().toLowerCase().replace(/[.!?]+$/,'').replace(/\s+/g,' ')}
 function renderSetQuestion(){
-  const root=document.getElementById('dailyWork');if(!root||!selectedSet)return;
-  const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];const i=Object.keys(answers).length;const idx=Math.min(i,qs.length-1);const q=qs[idx];if(!q){return}
-  const kind=String(q.kind||'mcq');const opts=Array.isArray(q.options)?q.options:[];
+  if(!selectedSet)return;
+  const ov=document.getElementById('dailyExamOverlay');
+  if(!ov||!ov.classList.contains('is-open'))_openExamOverlay();
+  const root=document.getElementById('dailyExamBody');
+  if(!root)return;
+  const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];
+  const i=Object.keys(answers).length;
+  const idx=Math.min(i,qs.length-1);
+  const q=qs[idx];
+  if(!q)return;
+  // Cập nhật thanh tiến độ + đếm câu
+  const bar=document.getElementById('dailyExamProgressBar');
+  if(bar)bar.style.width=Math.round(((idx+1)/qs.length)*100)+'%';
+  const counter=document.getElementById('dailyExamCounter');
+  if(counter)counter.textContent=`${idx+1}/${qs.length}`;
+  const kind=String(q.kind||'mcq');
+  const opts=Array.isArray(q.options)?q.options:[];
   let body='';
-  if(kind==='form'||kind==='rewrite')body=`<input id="dailyText" class="form-control form-control-lg" placeholder="${kind==='form'?'Nhập dạng đúng…':'Viết lại câu…'}" autocomplete="off">`;
-  else body=`<div class="option-grid">${opts.map((o,j)=>`<label class="exercise-option"><input type="radio" name="dailyAnswer" value="${j}"><span><b>${String.fromCharCode(65+j)}.</b> ${esc(o)}</span></label>`).join('')}</div>`;
-  root.innerHTML=`<div class="panel daily-question"><div class="d-flex justify-content-between gap-3 flex-wrap"><span class="tag">${esc(selectedSet.title||'Daily Set')}</span><b>Câu ${idx+1}/${qs.length}</b></div><div class="progress my-3"><div class="progress-bar" style="width:${Math.round(((idx+1)/qs.length)*100)}%"></div></div><h3>${idx+1}. ${esc(q.prompt||'Câu hỏi')}</h3>${body}<div class="d-flex justify-content-between mt-4"><button id="dailyCancel" class="btn btn-outline-secondary">← Danh sách Set</button><button id="dailyNext" class="btn btn-primary">${idx===qs.length-1?'Nộp bài':'Tiếp →'}</button></div></div>`;
-  document.getElementById('dailyCancel').onclick=()=>{selectedSet=null;renderDailySetPage()};document.getElementById('dailyNext').onclick=saveCurrentAnswer;
+  if(kind==='form'||kind==='rewrite'){
+    body=`<input id="dailyText" class="form-control form-control-lg" placeholder="${kind==='form'?'Nhập dạng đúng…':'Viết lại câu…'}" autocomplete="off">`;
+  }else{
+    body=`<div class="option-grid">${opts.map((o,j)=>`<label class="exercise-option"><input type="radio" name="dailyAnswer" value="${j}"><span><b>${String.fromCharCode(65+j)}.</b> ${esc(o)}</span></label>`).join('')}</div>`;
+  }
+  root.innerHTML=`<div class="daily-question">
+    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center">
+      <span class="tag">${esc(selectedSet.title||'Daily Set')}</span>
+      <b>Câu ${idx+1}/${qs.length}</b>
+    </div>
+    <h3>${idx+1}. ${esc(q.prompt||'Câu hỏi')}</h3>
+    ${body}
+    <div class="d-flex justify-content-between mt-4 exercise-nav">
+      <button id="dailyCancel" class="btn btn-outline-secondary">← Thoát</button>
+      <button id="dailyNext" class="btn btn-primary">${idx===qs.length-1?'Nộp bài':'Tiếp →'}</button>
+    </div>
+  </div>`;
+  document.getElementById('dailyCancel').onclick=()=>{if(window.confirm('Thoát bài làm? Tiến độ chưa nộp sẽ bị mất.'))_closeExamOverlay()};
+  document.getElementById('dailyNext').onclick=saveCurrentAnswer;
 }
 function saveCurrentAnswer(){
   const btn=document.getElementById('dailyNext');if(btn?.disabled)return;if(btn)btn.disabled=true;
@@ -273,8 +347,108 @@ export async function submitSet(){
   }catch(e){console.error('Lỗi nộp Daily Set:',e);toast('Không thể nộp bài. Vui lòng thử lại.','error');submitting=false}
 }
 function rootResult(score,passed,streak){
-  const root=document.getElementById('dailyWork');if(!root)return;
+  const root=document.getElementById('dailyExamBody');if(!root)return;
+  const bar=document.getElementById('dailyExamProgressBar');if(bar)bar.style.width='100%';
   const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];
   const review=qs.map((q,i)=>{const val=String(answers[i]??'');const ci=decodeCorrectIndex(String(q?.correctCode||''));const correct=(q?.kind==='form'||q?.kind==='rewrite')?String(q?.answer||''):(Number.isInteger(ci)&&Array.isArray(q?.options)?`${String.fromCharCode(65+ci)}. ${q.options[ci]??''}`:'');const yours=(q?.kind==='form'||q?.kind==='rewrite')?val:(val!==''&&Array.isArray(q?.options)?`${String.fromCharCode(65+Number(val))}. ${q.options[Number(val)]??''}`:'Chưa trả lời');const ok=(q?.kind==='form'||q?.kind==='rewrite')?normalizeText(val)===normalizeText(q?.answer||''):Number(val)===ci;return `<div class="daily-review-row ${ok?'is-correct':'is-wrong'}"><b>Câu ${i+1}</b><span>${ok?'✓':'✗'} Bạn: ${esc(yours)}</span>${ok?'':'<span>Đúng: '+esc(correct)+'</span>'}</div>`}).join('');
-  root.innerHTML=`<div class="panel daily-result"><div class="result-icon">${passed?'🏆':'📚'}</div><h2>${score}/${qs.length}</h2><p>${passed?'Đạt — Set tiếp theo đã được mở.':'Chưa đạt — bạn có thể xem lại kiến thức và thử lại Set này vào ngày mai.'}<br><span class="muted">Điều kiện đạt: <b>${Math.max(1,Math.min(qs.length,Number(selectedSet?.passScore)||Math.ceil(qs.length*0.75)))}/${qs.length}</b> câu đúng</span></p><div class="streak-result">🔥 Streak: <b>${streak}</b> ngày ${passed?'<span class="text-success"> · +2 điểm (lần pass đầu tiên của Set)</span>':''}</div><details class="daily-answer-review mt-4 text-start"><summary><b>Xem lại đáp án</b></summary><div class="daily-review-list mt-3">${review}</div></details><button id="dailyBack" class="btn btn-primary mt-3">← Về Daily Set</button></div>`;document.getElementById('dailyBack').onclick=()=>{selectedSet=null;loadSets()}}
+  root.innerHTML=`<div class="panel daily-result"><div class="result-icon">${passed?'🏆':'📚'}</div><h2>${score}/${qs.length}</h2><p>${passed?'Đạt — Set tiếp theo đã được mở.':'Chưa đạt — bạn có thể xem lại kiến thức và thử lại Set này vào ngày mai.'}<br><span class="muted">Điều kiện đạt: <b>${Math.max(1,Math.min(qs.length,Number(selectedSet?.passScore)||Math.ceil(qs.length*0.75)))}/${qs.length}</b> câu đúng</span></p><div class="streak-result">🔥 Streak: <b>${streak}</b> ngày ${passed?'<span class="text-success"> · +2 điểm (lần pass đầu tiên của Set)</span>':''}</div><details class="daily-answer-review mt-4 text-start"><summary><b>Xem lại đáp án</b></summary><div class="daily-review-list mt-3">${review}</div></details><button id="dailyBack" class="btn btn-primary mt-3">← Về Daily Set</button></div>`;document.getElementById('dailyBack').onclick=()=>{_closeExamOverlay()}}
 initDailySet();
+
+// ===== Full-screen exam overlay =====
+function _ensureExamOverlay(){
+  let el=document.getElementById('dailyExamOverlay');
+  if(el)return el;
+  el=document.createElement('div');
+  el.id='dailyExamOverlay';
+  el.className='daily-exam-overlay';
+  el.innerHTML=`
+    <div class="daily-exam-top">
+      <button class="daily-exam-close" id="dailyExamClose" type="button" aria-label="Đóng bài làm">×</button>
+      <div class="daily-exam-progress"><span id="dailyExamProgressBar"></span></div>
+      <div class="daily-exam-counter" id="dailyExamCounter">0/0</div>
+    </div>
+    <div class="daily-exam-body" id="dailyExamBody"></div>`;
+  document.body.appendChild(el);
+  el.querySelector('#dailyExamClose').onclick=_closeExamOverlay;
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&el.classList.contains('is-open')){
+      if(window.confirm('Thoát bài làm? Tiến độ chưa nộp sẽ bị mất.'))_closeExamOverlay();
+    }
+  });
+  return el;
+}
+function _openExamOverlay(){
+  const el=_ensureExamOverlay();
+  el.classList.add('is-open');
+  document.body.classList.add('daily-exam-open');
+}
+function _closeExamOverlay(){
+  const el=document.getElementById('dailyExamOverlay');
+  el?.classList.remove('is-open');
+  document.body.classList.remove('daily-exam-open');
+  selectedSet=null;answers={};
+  renderDailySetPage();
+}
+
+// ===== Popup preview khi bấm node Daily =====
+let _dpEl=null;
+function _dpEnsure(){
+  if(_dpEl)return _dpEl;
+  const bd=document.createElement('div');
+  bd.className='daily-popup-backdrop';bd.id='dailyPopupBackdrop';
+  const pp=document.createElement('div');
+  pp.className='daily-popup';pp.id='dailyPopup';
+  pp.innerHTML=`
+    <button class="daily-popup-close" id="dailyPopupClose" aria-label="Đóng">×</button>
+    <div class="daily-popup-mascot">
+      <img src="./img/roach.png" alt="" loading="lazy"
+           onerror="this.parentElement.innerHTML='<span style=&quot;font-size:64px&quot;>🪳</span>'">
+    </div>
+    <div class="daily-popup-eyebrow" id="dailyPopupEyebrow"></div>
+    <h3 class="daily-popup-title" id="dailyPopupTitle"></h3>
+    <p class="daily-popup-meta" id="dailyPopupMeta"></p>
+    <button class="daily-popup-start" id="dailyPopupStart">BẮT ĐẦU</button>
+    <button class="daily-popup-skip" id="dailyPopupSkip">Để sau</button>`;
+  document.body.appendChild(bd);document.body.appendChild(pp);
+  pp.querySelector('#dailyPopupClose').onclick=_dpClose;
+  pp.querySelector('#dailyPopupSkip').onclick=_dpClose;
+  bd.onclick=_dpClose;
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&pp.classList.contains('is-open'))_dpClose();
+  });
+  _dpEl={bd,pp};return _dpEl;
+}
+function _dpClose(){
+  if(!_dpEl)return;
+  _dpEl.bd.classList.remove('is-open');
+  _dpEl.pp.classList.remove('is-open');
+  document.body.classList.remove('daily-popup-open');
+}
+async function _dpOpen(setId){
+  const set=currentSets.find(x=>x.id===String(setId));
+  if(!set)return;
+  const {bd,pp}=_dpEnsure();
+  const passed=await passedSetIds();
+  const done=passed.has(String(setId));
+  const unit=getUnitOfSet(set),daily=getDailyOfSet(set);
+  const total=Array.isArray(set.questions)?set.questions.length:0;
+  const required=Math.max(1,Math.min(total,Number(set.passScore)||Math.ceil(total*0.75)));
+
+  pp.querySelector('#dailyPopupEyebrow').textContent=
+    `UNIT ${String(unit).padStart(2,'0')} · DAILY ${String(daily).padStart(2,'0')}`;
+  pp.querySelector('#dailyPopupTitle').textContent=
+    String(set.title||`Daily ${String(daily).padStart(2,'0')}`);
+  pp.querySelector('#dailyPopupMeta').textContent=done
+    ? `Đã hoàn thành · ${total} câu`
+    : `${total} câu · đạt ${required}/${total}`;
+
+  const start=pp.querySelector('#dailyPopupStart');
+  start.textContent=done?'XEM LẠI':'BẮT ĐẦU';
+  start.onclick=()=>{_dpClose();openSet(setId)};
+
+  requestAnimationFrame(()=>{
+    bd.classList.add('is-open');
+    pp.classList.add('is-open');
+    document.body.classList.add('daily-popup-open');
+  });
+}
