@@ -1564,3 +1564,81 @@ html[data-theme="dark"] .exercise-option.is-wrong   { background:#3b1513 !import
   transform: translateY(3px);
   box-shadow: 0 1px 0 rgba(36,72,207,.35);
 }
+/* ===== FIX DAILY NODE OVAL → PERFECT CIRCLE ===== */
+.daily-node{
+  box-sizing:border-box!important;
+  width:76px!important;
+  min-width:76px!important;
+  max-width:76px!important;
+  height:76px!important;
+  min-height:76px!important;
+  max-height:76px!important;
+  flex:0 0 76px!important;
+  aspect-ratio:1 / 1!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:50%!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  display:grid!important;
+  grid-template-columns:100%!important;   /* chặn grid track tự phình */
+  grid-template-rows:100%!important;
+  place-items:center!important;
+  place-content:center!important;
+  line-height:1!important;
+}
+
+/* Nội dung bên trong không được đẩy nút phình */
+.daily-node-num{
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  line-height:1;
+  font-size:22px;
+  overflow:hidden;
+}
+.daily-node .daily-node-mascot{
+  width:32px!important;
+  height:32px!important;
+  max-width:32px!important;
+  max-height:32px!important;
+  object-fit:contain!important;
+  display:block!important;
+  margin:0!important;
+}
+.daily-node .daily-node-fallback{
+  font-size:28px;
+  line-height:1;
+}
+.daily-node .daily-node-check{
+  font-size:34px;
+  line-height:1;
+  display:block;
+}
+/* Label vẫn absolute ở dưới, không ảnh hưởng box */
+.daily-node .daily-node-label{
+  position:absolute!important;
+  top:calc(100% + 7px);
+  left:50%;
+  transform:translateX(-50%);
+  white-space:nowrap;
+}
+
+/* Mobile: 66px vẫn phải tròn */
+@media (max-width:575.98px){
+  .daily-node{
+    width:66px!important;
+    min-width:66px!important;
+    max-width:66px!important;
+    height:66px!important;
+    min-height:66px!important;
+    max-height:66px!important;
+    flex:0 0 66px!important;
+  }
+  .daily-node-num{font-size:20px}
+  .daily-node .daily-node-mascot{width:28px!important;height:28px!important;max-width:28px!important;max-height:28px!important}
+  .daily-node .daily-node-fallback{font-size:24px}
+  .daily-node .daily-node-check{font-size:30px}
+}
