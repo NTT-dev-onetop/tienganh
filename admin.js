@@ -327,8 +327,8 @@ function renderDailyAdmin(){
     </div>
     <div class="cms-help mb-3"><b>Luồng dùng:</b> upload 1 file Word → web đọc toàn bộ câu → chọn <b>bao nhiêu câu muốn đưa ra</b> → đặt <b>tên Set</b> → đặt <b>điều kiện đạt</b> → tạo Daily. Ví dụ file 20 câu có thể tạo Daily 10/20, sau đó cập nhật thành 15/20 mà không cần upload lại.</div>
     <div class="row g-2 align-items-end">
-      <div class="col-md-2"><label class="fw-bold">Unit</label><select id="dwUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option value="${i+1}">Unit ${String(i+1).padStart(2,'0')}</option>`).join('')}</select></div>
-      <div class="col-md-2"><label class="fw-bold">Daily #</label><select id="dwOrder" class="form-select">${Array.from({length:10},(_,i)=>`<option value="${i+1}">Daily ${String(i+1).padStart(2,'0')}</option>`).join('')}</select></div>
+      <div class="col-md-2"><label class="fw-bold">Unit</label><input id="dwUnit" type="number" min="1" class="form-control" value="1"></div>
+      <div class="col-md-2"><label class="fw-bold">Daily #</label><input id="dwOrder" type="number" min="1" class="form-control" value="1"></div>
       <div class="col-md-4"><label class="fw-bold">Tên Daily Set</label><input id="dwTitle" class="form-control" placeholder="VD: Unit 3 · Music"></div>
       <div class="col-md-2"><label class="fw-bold">Số câu đưa ra</label><input id="dwCount" type="number" min="1" class="form-control" value="1"></div>
       <div class="col-md-2"><label class="fw-bold">Điều kiện đạt</label><input id="dwPass" type="number" min="1" class="form-control" value="1"></div>
@@ -373,8 +373,8 @@ function renderDailyAdmin(){
     <summary class="fw-bold">⚙ Tạo Daily từ ngân hàng câu hỏi thủ công</summary>
     <div class="cms-form mt-3">
       <div class="row g-3">
-        <div class="col-md-2"><label>Unit</label><select id="dUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option value="${i+1}">Unit ${i+1}</option>`).join('')}</select></div>
-        <div class="col-md-2"><label>Daily #</label><select id="dOrder" class="form-select">${Array.from({length:10},(_,i)=>`<option value="${i+1}">Daily ${String(i+1).padStart(2,'0')}</option>`).join('')}</select></div>
+        <div class="col-md-2"><label>Unit</label><input id="dUnit" type="number" min="1" class="form-control" value="1"></div>
+        <div class="col-md-2"><label>Daily #</label><input id="dOrder" type="number" min="1" class="form-control" value="1"></div>
         <div class="col-md-7"><label>Tiêu đề</label><input id="dTitle" class="form-control" placeholder="Daily Set"></div>
         <div class="col-md-2"><label>Điều kiện đạt</label><input id="dPassScore" type="number" min="1" class="form-control" value="1"></div>
         <div class="col-12"><label>Chọn câu hỏi <span id="dSelectedCount" class="badge text-bg-primary">0 câu</span></label><div class="question-picker">${published.map(q=>`<label class="question-pick"><input type="checkbox" value="${esc(q.id)}"><span><b>${esc(q.unit||'')}</b> · ${esc(q.prompt||'').slice(0,120)}</span></label>`).join('')||'<div class="muted">Chưa có câu hỏi đã xuất bản.</div>'}</div></div>
@@ -431,8 +431,8 @@ function openSetEditor(id){
   root.innerHTML=`<div class="cms-form panel">
     <div class="panel-title"><div><div class="eyebrow">✏️ CẬP NHẬT DAILY SET</div><h5>${esc(s.title||`Daily ${String(order).padStart(2,'0')}`)}</h5></div><span class="tag">${total}/${sourceCount} câu</span></div>
     <div class="row g-3 mt-1">
-      <div class="col-md-2"><label>Unit</label><select id="eUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option value="${i+1}" ${i+1===unit?'selected':''}>Unit ${String(i+1).padStart(2,'0')}</option>`).join('')}</select></div>
-      <div class="col-md-2"><label>Daily #</label><select id="eOrder" class="form-select">${Array.from({length:10},(_,i)=>`<option value="${i+1}" ${i+1===order?'selected':''}>Daily ${String(i+1).padStart(2,'0')}</option>`).join('')}</select></div>
+      <div class="col-md-2"><label>Unit</label><input id="eUnit" type="number" min="1" class="form-control" value="${unit}"></div>
+      <div class="col-md-2"><label>Daily #</label><input id="eOrder" type="number" min="1" class="form-control" value="${order}"></div>
       <div class="col-md-5"><label>Tên Set</label><input id="eTitle" class="form-control" value="${esc(s.title||'')}"></div>
       <div class="col-md-2"><label>Số câu đưa ra</label><input id="eCount" type="number" min="1" max="${Math.max(1,sourceCount)}" class="form-control" value="${Math.max(1,total)}"></div>
       <div class="col-md-3"><label>Điều kiện đạt</label><input id="ePass" type="number" min="1" max="${Math.max(1,total)}" class="form-control" value="${pass}"></div>
