@@ -1336,3 +1336,211 @@ html[data-theme="dark"] .mobile-menu-btn{
   color:var(--ink);
   border-color:var(--border);
 }
+
+/* ===== V18.8 · DAILY EXAM + EXERCISE — Duolingo-style option cards ===== */
+
+/* ── 1. Kill red bleed từ `label span{color:var(--danger)}` ── */
+.exercise-option,
+.exercise-option span,
+.exercise-option b,
+.teacher-quiz-option,
+.teacher-quiz-option span,
+.teacher-quiz-option b,
+.question-pick,
+.question-pick span,
+.question-pick b,
+.family-option,
+.family-option span,
+.family-option b {
+  color: var(--ink) !important;
+}
+
+/* ── 2. Option card: to, rõ, có điểm nhấn ── */
+.exercise-option,
+.teacher-quiz-option {
+  display: flex !important;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px !important;
+  background: var(--card-bg) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 14px !important;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15.5px;
+  line-height: 1.4;
+  min-height: 64px;
+  position: relative;
+  transition: border-color 180ms cubic-bezier(.22,1,.36,1),
+              background 180ms cubic-bezier(.22,1,.36,1),
+              box-shadow 180ms cubic-bezier(.22,1,.36,1),
+              transform 180ms cubic-bezier(.22,1,.36,1);
+}
+
+/* ── 3. Radio: custom circle thay vì default ── */
+.exercise-option input[type="radio"],
+.teacher-quiz-option input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  margin: 0;
+  position: relative;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.exercise-option input[type="radio"]:checked,
+.teacher-quiz-option input[type="radio"]:checked {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.exercise-option input[type="radio"]:checked::after,
+.teacher-quiz-option input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+/* ── 4. Nội dung option: badge chữ + text ── */
+.exercise-option > span,
+.teacher-quiz-option > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.exercise-option > span > b,
+.teacher-quiz-option > span > b {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--muted) !important;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: .01em;
+  transition: all 160ms ease;
+}
+
+/* ── 5. Hover ── */
+@media (hover: hover) {
+  .exercise-option:hover,
+  .teacher-quiz-option:hover {
+    border-color: var(--primary) !important;
+    background: var(--primary-soft) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(49,94,251,.10);
+  }
+  .exercise-option:hover > span > b,
+  .teacher-quiz-option:hover > span > b {
+    background: var(--primary);
+    color: #fff !important;
+  }
+}
+
+/* ── 6. Selected ── */
+.exercise-option:has(input:checked),
+.teacher-quiz-option:has(input:checked) {
+  border-color: var(--primary) !important;
+  background: var(--primary-soft) !important;
+  box-shadow: 0 0 0 3px rgba(49,94,251,.14);
+}
+.exercise-option:has(input:checked) > span > b,
+.teacher-quiz-option:has(input:checked) > span > b {
+  background: var(--primary);
+  color: #fff !important;
+}
+
+/* ── 7. Feedback đúng/sai ── */
+.exercise-option.is-correct {
+  border-color: #16a34a !important;
+  background: #ecfdf3 !important;
+}
+.exercise-option.is-correct > span > b {
+  background: #16a34a; color: #fff !important;
+}
+.exercise-option.is-wrong {
+  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+.exercise-option.is-wrong > span > b {
+  background: #dc2626; color: #fff !important;
+}
+
+/* ── 8. Dark mode ── */
+html[data-theme="dark"] .exercise-option > span > b,
+html[data-theme="dark"] .teacher-quiz-option > span > b {
+  background: #1f2937;
+  color: #9ca3af !important;
+}
+html[data-theme="dark"] .exercise-option:has(input:checked) > span > b,
+html[data-theme="dark"] .exercise-option:hover > span > b {
+  background: var(--primary); color: #fff !important;
+}
+html[data-theme="dark"] .exercise-option.is-correct { background:#0c2f26 !important; }
+html[data-theme="dark"] .exercise-option.is-wrong   { background:#3b1513 !important; }
+
+/* ── 9. Daily Exam top bar ── */
+.daily-exam-top {
+  padding: 16px 24px !important;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+.daily-exam-progress {
+  height: 8px !important;
+  background: var(--surface-2) !important;
+  border-radius: 99px;
+}
+.daily-exam-counter {
+  font-size: 13.5px !important;
+  font-weight: 800;
+  color: var(--ink) !important;
+  padding: 6px 14px;
+  background: var(--surface-2);
+  border-radius: 99px;
+  min-width: auto !important;
+}
+
+/* ── 10. Daily Exam body ── */
+.daily-exam-body { padding: 40px 20px 60px !important; }
+.daily-exam-body .daily-question h3 {
+  font-size: clamp(22px, 3.2vw, 30px) !important;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 24px 0 28px !important;
+  color: var(--ink);
+}
+.daily-exam-body .option-grid { gap: 14px !important; }
+
+/* ── 11. Nav buttons ── */
+.daily-exam-body .exercise-nav {
+  gap: 12px !important;
+  margin-top: 36px !important;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.daily-exam-body .exercise-nav .btn {
+  min-height: 56px !important;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 0 32px;
+}
+.daily-exam-body .exercise-nav .btn-primary {
+  background: var(--primary);
+  box-shadow: 0 4px 0 rgba(36,72,207,.35);
+}
+.daily-exam-body .exercise-nav .btn-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(36,72,207,.35);
+}
