@@ -163,24 +163,169 @@ main.container-fluid{margin-left:var(--sidebar);width:calc(100% - var(--sidebar)
 
   .theme-toggle-mobile{border:1px solid var(--border)!important;background:var(--surface-2)!important;color:var(--ink)!important;text-align:left!important}
 
-  /* Teacher export feedback: one focused animation for a high-value action. */
-  #exportStreak{align-items:center;display:inline-flex;gap:8px;justify-content:center;min-width:142px;overflow:hidden;position:relative}
-  #exportStreak.exporting{background:#087f5b;border-color:#087f5b;color:#fff;cursor:wait}
-  #exportStreak.export-done{background:var(--success-soft);border-color:#12b76a;color:#087f5b}
-  #exportStreak::before{background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.08) 28%,rgba(255,255,255,.48) 50%,rgba(255,255,255,.08) 72%,transparent 100%);content:"";height:180%;left:-110%;opacity:0;position:absolute;top:-40%;transform:skewX(-14deg);width:90%;z-index:0}
-  #exportStreak.exporting::before{animation:exportWave 900ms cubic-bezier(.45,0,.55,1) infinite;opacity:1}
-  #exportStreak>*{position:relative;z-index:1}
-  .export-spinner{animation:exportSpin 700ms linear infinite;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;height:15px;width:15px}
-  .export-check{animation:exportCheck 420ms var(--ease-spring) both;font-size:18px;font-weight:900;line-height:1}
-  @keyframes exportSpin{to{transform:rotate(360deg)}}
-  @keyframes exportCheck{from{opacity:0;transform:scale(.5) rotate(-18deg)}to{opacity:1;transform:scale(1) rotate(0)}}
-  @keyframes exportWave{0%{left:-110%;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:120%;opacity:0}}
-  @media(prefers-reduced-motion:reduce){.export-spinner,.export-check{animation:none!important}}
-  /* The admin calm mode has one intentional exception for export feedback. */
-  #admin #exportStreak.exporting .export-spinner{animation:exportSpin 700ms linear infinite!important}
-  #admin #exportStreak.export-done .export-check{animation:exportCheck 420ms var(--ease-spring) both!important}
-  #admin #exportStreak.exporting::before{animation:exportWave 900ms cubic-bezier(.45,0,.55,1) infinite!important}
+  /* ===== EXPORT STREAK · LIQUID DROP ANIMATION ===== */
+#exportStreak{
+  position:relative;
+  overflow:visible !important;   /* cho giọt nước rớt ra ngoài nút */
+  isolation:isolate;
+  min-width:142px;
+  align-items:center;
+  display:inline-flex;
+  gap:8px;
+  justify-content:center;
+  transition:
+    background 320ms cubic-bezier(.22,1,.36,1),
+    border-color 320ms cubic-bezier(.22,1,.36,1),
+    color 320ms cubic-bezier(.22,1,.36,1),
+    transform 220ms cubic-bezier(.34,1.56,.64,1);
+}
 
+/* ---- Sóng nước lăn tăn ở đáy nút khi exporting ---- */
+#exportStreak::before{
+  content:"";
+  position:absolute;
+  left:8%;
+  right:8%;
+  bottom:1px;
+  height:6px;
+  border-radius:50%;
+  background: radial-gradient(closest-side,
+    rgba(120,200,255,.65),
+    rgba(120,200,255,0) 70%);
+  opacity:0;
+  transform:scaleX(.6);
+  transform-origin:center;
+  pointer-events:none;
+  z-index:0;
+  transition:opacity 260ms ease;
+}
+#exportStreak.exporting::before{
+  opacity:1;
+  animation: waterRipple 1600ms ease-in-out infinite;
+}
+@keyframes waterRipple{
+  0%   { transform:scaleX(.6);  opacity:.85; }
+  50%  { transform:scaleX(1.1); opacity:.35; }
+  100% { transform:scaleX(.6);  opacity:.85; }
+}
+
+/* ---- Giọt nước teardrop rớt xuống từ từ ---- */
+#exportStreak::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:calc(100% - 2px);
+  width:10px;
+  height:12px;
+  margin-left:-5px;
+  /* teardrop: tròn trên, thon dưới */
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background:
+    radial-gradient(120% 90% at 35% 25%,
+      rgba(255,255,255,.95) 0%,
+      rgba(255,255,255,.35) 22%,
+      rgba(255,255,255,0)   45%),
+    linear-gradient(180deg,
+      rgba(120,200,255,.95),
+      rgba(56,130,255,.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 2px 6px rgba(56,130,255,.45);
+  opacity:0;
+  transform: translateY(0) scale(.6);
+  transform-origin:center top;
+  pointer-events:none;
+  z-index:1;
+  will-change:transform,opacity;
+}
+#exportStreak.exporting::after{
+  animation: dropFall 2000ms cubic-bezier(.45,.05,.55,.95) infinite;
+}
+@keyframes dropFall{
+  /* 1. Hình thành ở đáy nút */
+  0%   { opacity:0;  transform: translateY(0)    scale(.4); }
+  10%  { opacity:1;  transform: translateY(-2px) scale(.7); }
+  /* 2. Căng tròn */
+  22%  { opacity:1;  transform: translateY(0)    scale(1); }
+  /* 3. Rời nút, rớt xuống từ từ */
+  35%  { opacity:1;  transform: translateY(6px)  scale(.95); }
+  70%  { opacity:.9; transform: translateY(38px) scale(.85); }
+  85%  { opacity:.5; transform: translateY(58px) scale(.7); }
+  /* 4. Tan vào không khí */
+  100% { opacity:0;  transform: translateY(72px) scale(.5); }
+}
+
+/* ---- Nút khi exporting: sáng như mặt nước ---- */
+#exportStreak.exporting{
+  background: linear-gradient(180deg,
+    rgba(70,140,255,.92),
+    rgba(56,110,220,.92)) !important;
+  border-color: rgba(56,110,220,.95) !important;
+  color:#fff !important;
+  cursor:wait;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.35),
+    0 6px 16px -4px rgba(56,130,255,.5);
+}
+
+/* ---- Khi xong: nút nhấp nhô như mặt nước đã lặng ---- */
+#exportStreak.export-done{
+  background:var(--success-soft);
+  border-color:#12b76a;
+  color:#087f5b;
+  animation: waterSettle 620ms cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes waterSettle{
+  0%   { transform: scale(1);    }
+  40%  { transform: scale(1.04); }
+  70%  { transform: scale(.98);  }
+  100% { transform: scale(1);    }
+}
+
+/* ---- Spinner: đổi thành quả cầu nước xoay nhẹ ---- */
+.export-spinner{
+  display:inline-block;
+  width:14px;
+  height:14px;
+  border:0 !important;
+  border-radius:50% !important;
+  background:
+    radial-gradient(circle at 50% 50%,
+      #fff 0%, #fff 30%,
+      transparent 32%,
+      rgba(120,200,255,.9) 55%,
+      rgba(56,130,255,0) 100%);
+  animation: dropletSpin 900ms linear infinite;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 2px 4px rgba(56,130,255,.35);
+}
+@keyframes dropletSpin{ to{ transform:rotate(360deg); } }
+
+/* ---- Checkmark: hiện như nước đọng lại ---- */
+.export-check{
+  display:inline-block;
+  font-size:18px;
+  font-weight:900;
+  line-height:1;
+  animation: waterCheck 520ms cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes waterCheck{
+  0%   { opacity:0; transform:scale(.4) translateY(-4px); filter:blur(2px); }
+  60%  { opacity:1; transform:scale(1.15) translateY(0);  filter:blur(0);   }
+  100% { opacity:1; transform:scale(1); }
+}
+
+/* ---- Reduced motion: không rớt, chỉ đổi màu ---- */
+@media (prefers-reduced-motion: reduce){
+  #exportStreak.exporting::before,
+  #exportStreak.exporting::after,
+  .export-spinner,
+  .export-check,
+  #exportStreak.export-done{ animation:none !important; }
+  #exportStreak.exporting::before{ opacity:.5; }
+  #exportStreak.exporting::after{ display:none; }
+}
 /* More sheet must be completely absent until the user opens it. */
 .more-sheet:not(.is-open){
   opacity:0!important;
