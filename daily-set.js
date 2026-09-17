@@ -4,7 +4,9 @@ function startDailySetCountdown(set) {
   const minutes = getSetDurationMinutes(set);
   if (!minutes) return;
 
-  const endMs = Date.now() + minutes * 60 * 1000;
+  const startedAt=Number(window._dailySetStartedAt||0)||Date.now();
+  window._dailySetStartedAt=startedAt;
+  const endMs = startedAt + minutes * 60 * 1000;
   window._dailySetTimerEnd = endMs;
 
   if (window._dailySetTimerInterval) clearInterval(window._dailySetTimerInterval);
@@ -33,9 +35,9 @@ function startDailySetCountdown(set) {
       el.textContent = '⏱ 00:00';
       el.setAttribute('data-expired', 'true');
 
-      // Do not silently discard answers. The existing submit button can still
-      // invoke submitSet(), which performs the final expiry check.
-      alert('Đã hết thời gian làm bài. Hệ thống sẽ khóa lượt nộp.');
+      const next=document.getElementById('dailyNext');
+      if(next)next.disabled=true;
+      toast('Đã hết thời gian làm bài. Lượt nộp đã bị khóa.','error');
     }
   };
 
@@ -48,11 +50,15 @@ import{onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.5/fireba
 import{auth,db}from"./firebase-services.js";
 import{decodeCorrectIndex}from"./security.js";
 
-let currentUser=null,currentSets=[],selectedSet=null,answers={},submitting=false,stopSets=null,stopProgress=null,_passedCache=null;
+let currentUser=null,currentSets=[],selectedSet=null,answers={},dailyQuestionIndex=0,submitting=false,stopSets=null,stopProgress=null,_passedCache=null;
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=(msg,type='success')=>window.appToast?window.appToast(msg,type):undefined;
 const isPassedValue=v=>v===true||v===1||String(v).toLowerCase()==='true'||String(v).toLowerCase()==='passed';
+const dailyAttemptKey=(uid,setId,date=today())=>`englishNotebook.dailyAttempt.${String(uid||'')}.${String(date)}.${String(setId||'')}`;
+const readDailyAttemptStartedAt=(uid,setId)=>{try{const n=Number(localStorage.getItem(dailyAttemptKey(uid,setId)));return Number.isFinite(n)&&n>0?n:0}catch{return 0}};
+const writeDailyAttemptStartedAt=(uid,setId,startedAt)=>{try{localStorage.setItem(dailyAttemptKey(uid,setId),String(startedAt))}catch{}};
+const clearDailyAttemptStartedAt=(uid,setId)=>{try{localStorage.removeItem(dailyAttemptKey(uid,setId))}catch{}};
 
 function _scheduleDate(value) {
   if (!value) return null;
@@ -161,7 +167,7 @@ function watchSetsRealtime(){
     currentSets.sort((a,b)=>getUnitOfSet(a)-getUnitOfSet(b)||getDailyOfSet(a)-getDailyOfSet(b));
     const live=document.getElementById('dailyLiveStatus');
     if(live){live.textContent='🟢 Cập nhật thời gian thực';live.classList.remove('is-offline')}
-    if(!selectedSet)renderDailySetPage();
+    if(!selectedSet&&!document.querySelector('#daily .daily-node'))renderDailySetPage();
   },e=>{
     console.error('Realtime Daily Set:',e);
     const live=document.getElementById('dailyLiveStatus');
@@ -173,7 +179,7 @@ export async function renderDailySetPage(){
   const root=document.getElementById('daily');if(!root)return;
   if(!currentUser){root.innerHTML='<div class="empty"><div>🔒</div><h3>Đăng nhập để làm Daily Set</h3></div>';return}
   let submissionDocs=[];
-  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e)}
+  try{const snap=await getDocs(query(collection(db,'submissions'),where('uid','==',currentUser.uid)));submissionDocs=snap.docs}catch(e){console.error('Không đọc được lịch sử Daily Set:',e);toast('Không đồng bộ được tiến độ Daily.','error')}
   const passed=new Set();submissionDocs.forEach(d=>{const x=d.data()||{};if(isPassedValue(x.passed)&&x.setId)passed.add(String(x.setId))});
   const progress=getProgressForUid(submissionDocs,currentUser.uid);
   const unitMap=new Map();
@@ -199,11 +205,109 @@ export async function renderDailySetPage(){
     }).join('');
     return `<article class="daily-unit ${unitUnlocked?'unlocked':'locked'} ${isCurrent?'is-current':''}"><header class="daily-unit-head"><div><div class="eyebrow">UNIT ${String(u.unit).padStart(2,'0')}</div><b>${u.passed}/${u.total} daily đã pass</b></div><div class="daily-unit-progress"><span style="width:${unitProg}%"></span></div></header><div class="daily-unit-path">${nodes||'<div class="muted small">Chưa có daily</div>'}</div></article>`;
   }).join('');
-  root.innerHTML=`<div class="head"><div><div class="eyebrow">DAILY ENGLISH · 11T1</div><h2>🎯 Daily Set</h2><p>Học theo lộ trình <b>Unit → Daily</b>. Pass Daily trong Unit để mở Daily kế tiếp; pass hết Unit sẽ mở Unit tiếp theo.</p></div><div class="daily-head-actions"><span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span><div class="daily-streak" id="dailyStreak">🔥 …</div></div></div><div class="daily-progress"><div><b>${totalPassed}/${totalSets}</b> daily đã pass</div><div class="progress"><div class="progress-bar" style="width:${totalSets?Math.round(totalPassed/totalSets*100):0}%"></div></div></div><div class="daily-units">${unitHtml||'<div class="empty"><h4>Chưa có Unit nào</h4><p>Admin hãy tạo Daily Set trong Dashboard.</p></div>'}</div><div id="dailyWork" class="mt-4"></div>`;
+  // ── Dữ liệu cho sidebar phải ──
+  const todayStr = today();
+  const passedToday = submissionDocs.filter(d=>{
+    const x = d.data()||{};
+    return String(x.date||'')===todayStr && isPassedValue(x.passed);
+  }).length;
+  const perfectToday = submissionDocs.filter(d=>{
+    const x = d.data()||{};
+    return String(x.date||'')===todayStr && isPassedValue(x.passed) && Number(x.score)>=Number(x.total);
+  }).length;
+  const todayDone = String(progress.lastCompletedDate||'')===todayStr ? 1 : 0;
+  const currentUnit = unitStats[currentUnitIdx] || unitStats[0];
+  const unitNo = String(currentUnit?.unit || 1).padStart(2,'0');
+
+  root.innerHTML = `
+  <div class="duo-layout">
+    <div class="duo-main">
+      <div class="duo-unit-banner">
+        <div class="duo-unit-info">
+          <div class="duo-unit-eyebrow">UNIT ${unitNo} · LỚP 11T1</div>
+          <div class="duo-unit-title">Daily English · Unit ${currentUnit?.unit || 1}</div>
+        </div>
+        <div class="duo-unit-actions">
+          <span class="live-sync-badge" id="dailyLiveStatus">🟡 Đang đồng bộ…</span>
+          <div class="daily-streak" id="dailyStreak">🔥 …</div>
+        </div>
+      </div>
+
+      <div class="duo-progress-strip">
+        <div class="duo-progress-bar"><span style="width:${totalSets?Math.round(totalPassed/totalSets*100):0}%"></span></div>
+        <div class="duo-progress-label"><b>${totalPassed}/${totalSets}</b>&nbsp;daily đã pass</div>
+      </div>
+
+      <div class="daily-units">${unitHtml||'<div class="empty"><h4>Chưa có Unit nào</h4><p>Admin hãy tạo Daily Set trong Dashboard.</p></div>'}</div>
+      <div id="dailyWork" class="mt-4"></div>
+    </div>
+
+    <aside class="duo-side">
+      <div class="duo-card duo-trial">
+        <div class="duo-trial-emoji">🔥</div>
+        <div>
+          <b style="font-size:15px">Streak ${progress.streak} ngày</b>
+          <div class="duo-muted">Học mỗi ngày để giữ chuỗi</div>
+        </div>
+      </div>
+
+      <div class="duo-card">
+        <div class="duo-card-head"><b>Tiến độ tổng</b></div>
+        <div class="duo-stat">
+          <span class="duo-stat-ic">⭐</span>
+          <div>
+            <div class="duo-stat-value">${totalPassed} / ${totalSets}</div>
+            <div class="duo-muted">Daily Set đã pass</div>
+          </div>
+        </div>
+        <div class="duo-stat">
+          <span class="duo-stat-ic">📚</span>
+          <div>
+            <div class="duo-stat-value">${Number(progress.totalBonus||0)} điểm</div>
+            <div class="duo-muted">Bonus tích lũy</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="duo-card">
+        <div class="duo-card-head"><b>Nhiệm vụ hằng ngày</b></div>
+        <div class="duo-quest">
+          <span class="duo-quest-ic">⚡</span>
+          <div class="duo-quest-body">
+            <div class="duo-quest-title">Hoàn thành 1 Daily hôm nay</div>
+            <div class="duo-quest-track"><span style="width:${Math.min(100,passedToday*100)}%"></span></div>
+            <div class="duo-quest-num">${passedToday} / 1</div>
+          </div>
+        </div>
+        <div class="duo-quest">
+          <span class="duo-quest-ic">🔥</span>
+          <div class="duo-quest-body">
+            <div class="duo-quest-title">Giữ streak hôm nay</div>
+            <div class="duo-quest-track"><span style="width:${todayDone*100}%"></span></div>
+            <div class="duo-quest-num">${todayDone} / 1</div>
+          </div>
+        </div>
+        <div class="duo-quest">
+          <span class="duo-quest-ic">🎯</span>
+          <div class="duo-quest-body">
+            <div class="duo-quest-title">Điểm tuyệt đối 1 Daily</div>
+            <div class="duo-quest-track"><span style="width:${Math.min(100,perfectToday*100)}%"></span></div>
+            <div class="duo-quest-num">${perfectToday} / 1</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>`;
+
   root.querySelectorAll('[data-set-id]:not([disabled])').forEach(b=>b.onclick=()=>_dpOpen(b.dataset.setId));
   window._dailyJustPassedId=null;
   const el=document.getElementById('dailyStreak');if(el)el.textContent=`🔥 ${progress.streak} ngày`;
+
+  // Nếu Daily đang được hiển thị (ví dụ user F5 khi đang ở trang Daily),
+  // tự cuộn tới bài cần làm ngay sau khi render xong.
+  if(!root.classList.contains('d-none')) setTimeout(_scrollToCurrentDailyTarget, 60);
 }
+
 async function openSet(id){
   const set=currentSets.find(x=>x.id===id);if(!set)return;
   const passed=await passedSetIds();
@@ -215,69 +319,89 @@ async function openSet(id){
   // The final submit is checked again below, so an expired attempt cannot be submitted.
   const schedule = getSetScheduleState(set);
   if (schedule.state === 'upcoming') {
-    alert(`Bài chưa mở. Bắt đầu: ${formatScheduleDate(schedule.start)}`);
+    toast(`Bài chưa mở. Bắt đầu: ${formatScheduleDate(schedule.start)}`,'error');
     return;
   }
   if (schedule.state === 'closed') {
-    alert(`Bài đã đóng. Hạn chót: ${formatScheduleDate(schedule.end)}`);
+    toast(`Bài đã đóng. Hạn chót: ${formatScheduleDate(schedule.end)}`,'error');
     return;
   }
-  window._dailySetStartedAt = Date.now();
-  window._dailySetDurationMinutes = getSetDurationMinutes(set);
-  startDailySetCountdown(set);
-
   const questions=Array.isArray(set.questions)?set.questions:[];if(!questions.length){toast('Set này chưa có câu hỏi.','error');return}
   const date=today();
   try{
     const existing=await getDoc(doc(db,'submissions',`${currentUser.uid}_${date}_${id}`));
-    if(existing.exists()){toast('Bạn đã nộp Set này hôm nay.','error');return}
+    if(existing.exists()){clearDailyAttemptStartedAt(currentUser.uid,id);toast('Bạn đã nộp Set này hôm nay.','error');return}
   }catch(e){console.error('Không kiểm tra được submission:',e);toast('Không thể kiểm tra lượt làm.','error');return}
-  selectedSet=set;answers={};submitting=false;_openExamOverlay();renderSetQuestion();
+  const duration=getSetDurationMinutes(set);
+  const storedStartedAt=duration>0?readDailyAttemptStartedAt(currentUser.uid,id):0;
+  const startedAt=storedStartedAt||Date.now();
+  if(duration>0&&Date.now()-startedAt>=duration*60*1000){clearDailyAttemptStartedAt(currentUser.uid,id);toast('Lượt làm này đã hết thời gian. Vui lòng chờ lượt tiếp theo.','error');return}
+  window._dailySetStartedAt=startedAt;
+  window._dailySetDurationMinutes=duration;
+  if(duration>0)writeDailyAttemptStartedAt(currentUser.uid,id,startedAt);
+  startDailySetCountdown(set);
+  selectedSet=set;answers={};dailyQuestionIndex=0;submitting=false;_openExamOverlay();renderSetQuestion();
 }
 function normalizeText(s){return String(s??'').trim().toLowerCase().replace(/[.!?]+$/,'').replace(/\s+/g,' ')}
+function getDailyAnswerValue(q){
+  if(q?.kind==='form'||q?.kind==='rewrite')return document.getElementById('dailyText')?.value||'';
+  return document.querySelector('input[name="dailyAnswer"]:checked')?.value||'';
+}
+function getCurrentDailyScore(){
+  const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];let score=0;
+  qs.forEach((q,i)=>{const val=answers[i];if(val===undefined)return;const ci=decodeCorrectIndex(String(q?.correctCode||''));if(q?.kind==='form'||q?.kind==='rewrite'){if(normalizeText(val)===normalizeText(q?.answer||''))score++;}else if(Number(val)===ci)score++});
+  return score;
+}
+function dailySlide(direction='next'){
+  const current=document.querySelector('.daily-question');
+  if(current&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){current.classList.remove('is-leaving','is-entering-prev');current.classList.add(direction==='prev'?'is-leaving-prev':'is-leaving');setTimeout(renderSetQuestion,180)}else renderSetQuestion();
+}
 function renderSetQuestion(){
   if(!selectedSet)return;
   const ov=document.getElementById('dailyExamOverlay');
   if(!ov||!ov.classList.contains('is-open'))_openExamOverlay();
-  const root=document.getElementById('dailyExamBody');
-  if(!root)return;
-  const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];
-  const i=Object.keys(answers).length;
-  const idx=Math.min(i,qs.length-1);
-  const q=qs[idx];
-  if(!q)return;
-  // Cập nhật thanh tiến độ + đếm câu
-  const bar=document.getElementById('dailyExamProgressBar');
-  if(bar)bar.style.width=Math.round(((idx+1)/qs.length)*100)+'%';
-  const counter=document.getElementById('dailyExamCounter');
-  if(counter)counter.textContent=`${idx+1}/${qs.length}`;
-  const kind=String(q.kind||'mcq');
-  const opts=Array.isArray(q.options)?q.options:[];
-  let body='';
-  if(kind==='form'||kind==='rewrite'){
-    body=`<input id="dailyText" class="form-control form-control-lg" placeholder="${kind==='form'?'Nhập dạng đúng…':'Viết lại câu…'}" autocomplete="off">`;
-  }else{
-    body=`<div class="option-grid">${opts.map((o,j)=>`<label class="exercise-option"><input type="radio" name="dailyAnswer" value="${j}"><span><b>${String.fromCharCode(65+j)}.</b> ${esc(o)}</span></label>`).join('')}</div>`;
-  }
+  const root=document.getElementById('dailyExamBody');if(!root)return;
+  const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];const idx=Math.max(0,Math.min(dailyQuestionIndex,qs.length-1));dailyQuestionIndex=idx;const q=qs[idx];if(!q)return;
+  const bar=document.getElementById('dailyExamProgressBar');if(bar)bar.style.width=Math.round(((idx+1)/qs.length)*100)+'%';
+  const counter=document.getElementById('dailyExamCounter');if(counter)counter.textContent=`${idx+1}/${qs.length} · ${getCurrentDailyScore()}✓`;
+  const kind=String(q.kind||'mcq');const opts=Array.isArray(q.options)?q.options:[];let body='';
+  if(kind==='form'||kind==='rewrite')body=`<input id="dailyText" class="form-control form-control-lg" placeholder="${kind==='form'?'Nhập dạng đúng…':'Viết lại câu…'}" autocomplete="off" value="${esc(answers[idx]||'')}">`;
+  else body=`<div class="option-grid">${opts.map((o,j)=>`<label class="exercise-option"><input type="radio" name="dailyAnswer" value="${j}" ${String(answers[idx])===String(j)?'checked':''}><span><b>${String.fromCharCode(65+j)}.</b> ${esc(o)}</span></label>`).join('')}</div>`;
   root.innerHTML=`<div class="daily-question">
-    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center">
-      <span class="tag">${esc(selectedSet.title||'Daily Set')}</span>
-      <b>Câu ${idx+1}/${qs.length}</b>
-    </div>
-    <h3>${idx+1}. ${esc(q.prompt||'Câu hỏi')}</h3>
-    ${body}
+    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><span class="tag">${esc(selectedSet.title||'Daily Set')}</span><b>Câu ${idx+1}/${qs.length}</b></div>
+    <h3>${idx+1}. ${esc(q.prompt||'Câu hỏi')}</h3>${body}
     <div class="d-flex justify-content-between mt-4 exercise-nav">
-      <button id="dailyCancel" class="btn btn-outline-secondary">← Thoát</button>
+      <button id="dailyPrev" class="btn btn-outline-secondary" ${idx===0?'disabled':''}>← Trước</button>
       <button id="dailyNext" class="btn btn-primary">${idx===qs.length-1?'Nộp bài':'Tiếp →'}</button>
     </div>
   </div>`;
-  document.getElementById('dailyCancel').onclick=()=>{if(window.confirm('Thoát bài làm? Tiến độ chưa nộp sẽ bị mất.'))_closeExamOverlay()};
+  const prev=document.getElementById('dailyPrev');prev?.addEventListener('click',()=>{if(idx>0){dailyQuestionIndex=idx-1;dailySlide('prev')}});
   document.getElementById('dailyNext').onclick=saveCurrentAnswer;
+  const current=document.querySelector('.daily-question');current?.querySelectorAll('input').forEach(input=>input.addEventListener('change',()=>{answers[idx]=getDailyAnswerValue(q);const c=document.getElementById('dailyExamCounter');if(c)c.textContent=`${idx+1}/${qs.length} · ${getCurrentDailyScore()}✓`}));
+  current?.querySelector('#dailyText')?.addEventListener('input',()=>{answers[idx]=getDailyAnswerValue(q);const c=document.getElementById('dailyExamCounter');if(c)c.textContent=`${idx+1}/${qs.length} · ${getCurrentDailyScore()}✓`});
+  let touchStartX=0;current?.addEventListener('touchstart',e=>{touchStartX=e.touches[0]?.clientX||0},{passive:true});current?.addEventListener('touchend',e=>{const endX=e.changedTouches[0]?.clientX||0;const dx=endX-touchStartX;if(Math.abs(dx)<60||submitting)return;if(dx<0)saveCurrentAnswer();else if(idx>0){dailyQuestionIndex=idx-1;dailySlide('prev')}},{passive:true});
 }
 function saveCurrentAnswer(){
   const btn=document.getElementById('dailyNext');if(btn?.disabled)return;if(btn)btn.disabled=true;
-  const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];const idx=Object.keys(answers).length;if(idx<0||idx>=qs.length)return;const q=qs[idx];let val='';if(q.kind==='form'||q.kind==='rewrite')val=document.getElementById('dailyText')?.value||'';else val=document.querySelector('input[name="dailyAnswer"]:checked')?.value||'';if(!String(val).trim()){if(btn)btn.disabled=false;toast('Hãy trả lời câu này trước.','error');return}answers[idx]=val;if(idx===qs.length-1)submitSet();else renderSetQuestion();
+  const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];const idx=dailyQuestionIndex;if(idx<0||idx>=qs.length){if(btn)btn.disabled=false;return}const q=qs[idx];const val=getDailyAnswerValue(q);
+  if(!String(val).trim()){if(btn)btn.disabled=false;toast('Hãy trả lời câu này trước.','error');return}
+  answers[idx]=val;
+  if(idx===qs.length-1){
+    submitSet().catch(e=>{console.error('Lỗi nộp Daily:',e);toast(e?.message||'Không thể nộp bài.','error')}).finally(()=>{
+      if(btn&&s.index===qs.length-1)btn.disabled=false;
+    });
+  }else{dailyQuestionIndex=idx+1;dailySlide('next')}
 }
+function handleDailyExamKeydown(e){
+  const overlay=document.getElementById('dailyExamOverlay');if(!overlay?.classList.contains('is-open')||e.defaultPrevented)return;
+  if(e.key==='Escape')return;
+  const tag=e.target?.tagName?.toLowerCase();if(tag==='input'&&e.target.type==='text'&&e.key!=='Enter')return;
+  const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];const idx=dailyQuestionIndex;const q=qs[idx];
+  if(/^[1-4]$/.test(e.key)&&q&&!(q.kind==='form'||q.kind==='rewrite')){const n=Number(e.key)-1;document.querySelectorAll('input[name="dailyAnswer"]')[n]?.click();e.preventDefault();return}
+  if(/^[a-d]$/i.test(e.key)&&q&&!(q.kind==='form'||q.kind==='rewrite')){const n=e.key.toLowerCase().charCodeAt(0)-97;document.querySelectorAll('input[name="dailyAnswer"]')[n]?.click();e.preventDefault();return}
+  if(e.key==='Enter'){e.preventDefault();document.getElementById('dailyNext')?.click()}
+}
+if(!window.__dailyKeyboardBound){document.addEventListener('keydown',handleDailyExamKeydown);window.__dailyKeyboardBound=true}
 export async function submitSet(){
   if(submitting||!currentUser||!selectedSet)return;
   submitting=true;
@@ -290,8 +414,10 @@ export async function submitSet(){
     if(schedule.state==='upcoming')throw new Error(`Bài chưa mở. Bắt đầu: ${formatScheduleDate(schedule.start)}`);
     if(schedule.state==='closed')throw new Error(`Đã hết hạn nộp bài (${formatScheduleDate(schedule.end)}).`);
     const duration=getSetDurationMinutes(currentSet);
-    if(duration>0&&window._dailySetStartedAt){
-      const elapsed=(Date.now()-window._dailySetStartedAt)/60000;
+    const persistedStartedAt=duration>0?readDailyAttemptStartedAt(currentUser.uid,setId):0;
+    const startedAt=Number(window._dailySetStartedAt||persistedStartedAt||0);
+    if(duration>0&&startedAt){
+      const elapsed=(Date.now()-startedAt)/60000;
       if(elapsed>=duration)throw new Error('Đã hết thời gian làm bài.');
     }
     const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];let score=0;
@@ -316,15 +442,23 @@ export async function submitSet(){
         await setDoc(userRef,{lastCompletedDate:latest.lastCompletedDate,streak:latest.streak,totalSetsCompleted:latest.totalPassed,totalBonusPoints:latest.totalBonus},{merge:true});
       }catch(summaryError){console.warn('Đã lưu submission nhưng chưa cập nhật summary users:',summaryError)}
     }
+    clearDailyAttemptStartedAt(currentUser.uid,setId);
     window._dailySetStartedAt=null;
     if(window._dailySetTimerInterval){clearInterval(window._dailySetTimerInterval);window._dailySetTimerInterval=null;}
     document.getElementById('daily-set-countdown')?.remove();
     if(passed&&firstPass)window._dailyJustPassedId=selectedSet.id;
+    if(!passed&&navigator.vibrate)navigator.vibrate(50);
     rootResult(score,passed,streak);
   }catch(e){console.error('Lỗi nộp Daily Set:',e);toast(e.message||'Không thể nộp bài. Vui lòng thử lại.','error')}
   finally{submitting=false}
 }
+function burstConfetti(){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const pieces=[];const colors=['#58CC02','#FFC800','#1CB0F6','#FF4B4B'];
+  for(let i=0;i<30;i++){const el=document.createElement('div');el.className='confetti';el.style.left='50%';el.style.top='45%';el.style.background=colors[i%colors.length];el.style.setProperty('--tx',`${(Math.random()-.5)*400}px`);el.style.setProperty('--ty',`${-Math.random()*300-100}px`);el.style.animationDelay=`${Math.random()*.2}s`;document.body.appendChild(el);pieces.push(el);setTimeout(()=>el.remove(),1500)}
+}
 function rootResult(score,passed,streak){
+  if(passed)burstConfetti();
   const root=document.getElementById('dailyExamBody');if(!root)return;
   const bar=document.getElementById('dailyExamProgressBar');if(bar)bar.style.width='100%';
   const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];
@@ -347,7 +481,12 @@ function _ensureExamOverlay(){
     </div>
     <div class="daily-exam-body" id="dailyExamBody"></div>`;
   document.body.appendChild(el);
-  el.querySelector('#dailyExamClose').onclick=_closeExamOverlay;
+  el.querySelector('#dailyExamClose').onclick=()=>{
+    const hasAnswers=Object.keys(answers||{}).some(k=>String(answers[k]??'').trim()!=='');
+    if(hasAnswers){
+      if(window.confirm('Thoát bài làm? Tiến độ chưa nộp sẽ bị mất.'))_closeExamOverlay();
+    }else _closeExamOverlay();
+  };
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'&&el.classList.contains('is-open')){
       if(window.confirm('Thoát bài làm? Tiến độ chưa nộp sẽ bị mất.'))_closeExamOverlay();
@@ -367,8 +506,10 @@ function _closeExamOverlay(){
   const el=document.getElementById('dailyExamOverlay');
   el?.classList.remove('is-open');
   document.body.classList.remove('daily-exam-open');
+  if(currentUser&&selectedSet?.id)clearDailyAttemptStartedAt(currentUser.uid,selectedSet.id);
   selectedSet=null;answers={};
   renderDailySetPage();
+  setTimeout(()=>window.__scrollToCurrentDaily?.(),80);
 }
 
 // ===== Popup preview khi bấm node Daily =====
@@ -433,3 +574,38 @@ async function _dpOpen(setId){
     document.body.classList.add('daily-popup-open');
   });
 }
+
+
+// ===== Auto-scroll tới bài Daily cần làm khi mở trang =====
+// Chỉ cuộn, KHÔNG đổi nội dung / logic / dữ liệu.
+let _dailyAutoScrolled = false;
+
+function _scrollToCurrentDailyTarget(){
+  if(_dailyAutoScrolled) return;
+  const root = document.getElementById('daily');
+  if(!root || root.classList.contains('d-none')) return;
+
+  // Ưu tiên: Unit hiện tại → Daily đang mở → Daily chưa disable đầu tiên
+  const target =
+    root.querySelector('.daily-unit.is-current') ||
+    root.querySelector('.daily-node.open:not([disabled])') ||
+    root.querySelector('.daily-node[data-set-id]:not([disabled])');
+  if(!target) return;
+
+  _dailyAutoScrolled = true;
+
+  // 2 frame để chắc chắn layout đã xong, tránh bị scroll của page() ghi đè
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const offset = window.matchMedia('(max-width:991.98px)').matches ? 90 : 40;
+    const y = Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }));
+}
+
+// app.js gọi khi user bấm vào mục "Daily Set"
+window.__scrollToCurrentDaily = function(){
+  _dailyAutoScrolled = false;
+  // Thử 2 mốc: ngay sau khi đổi page, và sau khi mọi rAF/scroll của page() đã chạy
+  setTimeout(_scrollToCurrentDailyTarget, 60);
+  setTimeout(_scrollToCurrentDailyTarget, 280);
+};

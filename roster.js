@@ -7,7 +7,7 @@ const escLocal=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','
 const DEFAULT_ROSTER=[
 'Trần Diễm Linh Giang','Võ Hồ Minh Hằng','Nguyễn Anh Khôi','Huỳnh Nguyễn Ly Lam','Nguyễn Thị Ngọc Mỹ',
 'Lê Bảo Ngọc','Phạm Minh Triết','Phan Trần Huỳnh Hương','Võ Mai Khánh','Nguyễn Trần Thùy Ngân',
-'Nguyễn Thanh Sang','Phạm Nhật Trường','Nguyễn Dương Gia Nghi','Nguyễn Phúc Thịnh','Lê Nguyễn Trung Thực',
+'Nguyễn Thanh Sang','Phạm Nhật Trường','Nguyễn Dương Gia Nghi','Nguyễn Phúc Thịnh','Lê Nguyễn Trung Trực',
 'Nguyễn Ngọc Bích Anh','Nguyễn Thùy Anh','Lê Ngọc Quốc Bảo','Huỳnh Lê Minh Đạt','Lê Minh Đạt',
 'Lê Ngọc Bảo Hân','Trương Thị Kim Hân','Trần Huy Hoàng','Nguyễn Tuấn Huy','Nguyễn Đăng Khoa',
 'Lê Nguyễn Hoàng Nam','Nguyễn Khánh Ngọc','Nguyễn Lê Hồng Ngọc','Nguyễn Vũ Bảo Ngọc','Bùi Ngọc An Nhi',
@@ -61,6 +61,7 @@ export async function initRosterGate(user,role,existingProfile=null){
       if(!mapping.exists()||mapping.data()?.uid===user.uid){
         await setDoc(mappingRef,{uid:user.uid,email:ownerEmail,name:'Nguyễn Trung Trực',rosterId:'s45'},{merge:true});
         await setDoc(doc(db,'users',user.uid),{rosterId:'s45',name:'Nguyễn Trung Trực',className:'11T1',role:'admin'},{merge:true});
+        if(existingProfile){existingProfile.rosterId='s45';existingProfile.name='Nguyễn Trung Trực';existingProfile.className='11T1';existingProfile.role='admin'}
         return true;
       }
     }
@@ -89,6 +90,7 @@ export async function initRosterGate(user,role,existingProfile=null){
         if(mapping.exists()&&mapping.data()?.uid!==user.uid)throw new Error('Tên này đã được đăng ký. Liên hệ thầy.');
         await setDoc(mappingRef,{uid:user.uid,email:String(user.email||'').toLowerCase(),name:String(target.name),rosterId});
         await setDoc(doc(db,'users',user.uid),{rosterId,name:String(target.name),className:'11T1',email:String(user.email||'').trim().toLowerCase()},{merge:true});
+        if(existingProfile){existingProfile.rosterId=rosterId;existingProfile.name=String(target.name);existingProfile.className='11T1';existingProfile.email=String(user.email||'').trim().toLowerCase()}
         bs.hide();resolve();
       }catch(e){
         console.error('Lỗi gắn roster:',e);

@@ -105,7 +105,7 @@ closest:['habitat','natural home','pollution','machine',0],opposite:['protect','
 
 /* ===== Expanded self-study bank v9 ===== */
 (function expandSelfStudyBank(){
-  const add=(u, arr, key)=>{const s=exerciseBank.find(x=>x.unit===u)?.sections;if(!s)return; s[key]=Array.isArray(s[key])?s[key]:[s[key]]; s[key].push(...arr);};
+  const add=(u, arr, key)=>{const s=exerciseBank.find(x=>x.unit===u)?.sections;if(!s)return; const base=s[key]; s[key]=Array.isArray(base)&&((key==='closest'||key==='opposite')&&base.length===5&&typeof base[0]==='string')?[base]:Array.isArray(base)?base:base==null?[]:[base]; s[key].push(...arr);};
   const U={
   'Unit 1':{
     mcq:[

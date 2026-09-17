@@ -1,15 +1,16 @@
-import{collection,query,where,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import{collection,query,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import{db}from"./firebase-services.js";
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const isPublished=v=>v===undefined||v===null||v===true||v===1||String(v).trim().toLowerCase()==='true'||String(v).trim().toLowerCase()==='published';
 let stops=[];
 const clear=()=>{stops.forEach(f=>f&&f());stops=[]};
 export function initTeacherContent(){clear();initQuestions();initListening()}
 export function stopTeacherContent(){clear()}
 function initQuestions(){
   const root=document.getElementById('teacherQuestionList');if(!root)return;
-  const q=query(collection(db,'questionBank'),where('published','==',true));
+  const q=query(collection(db,'questionBank'));
   const stop=onSnapshot(q,snap=>{
-    const rows=[];snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+    const rows=[];snap.forEach(d=>{const x=d.data()||{};if(isPublished(x.published))rows.push({id:d.id,...x})});
     const groups=new Map();
     rows.forEach(x=>{
       const key=String(x.setId||'legacy_'+(x.sourceFile||x.unit||x.id));
@@ -24,4 +25,4 @@ function initQuestions(){
   },e=>{console.error(e);root.innerHTML='<div class="alert alert-danger">Không tải được bài tập giáo viên.</div>'});
   stops.push(stop)
 }
-function initListening(){const root=document.getElementById('teacherListeningList');if(!root)return;const q=query(collection(db,'listeningContent'),where('published','==',true));const stop=onSnapshot(q,snap=>{const rows=[];snap.forEach(d=>rows.push({id:d.id,...d.data()}));rows.sort((a,b)=>String(a.unit||'').localeCompare(String(b.unit||'')));root.innerHTML=rows.length?rows.map(x=>`<article class="teacher-listening"><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(x.unit||'')}</span><span class="tag">🎧 Giáo viên</span></div><h4>${esc(x.title||'')}</h4>${x.audioUrl?`<audio controls preload="none" src="${esc(x.audioUrl)}" class="w-100 mb-3"></audio>`:''}${x.sourceUrl?`<a class="btn btn-sm btn-outline-primary" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener">↗ Mở nguồn</a>`:''}${Array.isArray(x.prompts)&&x.prompts.length?`<div class="mt-3"><b>Gợi ý:</b><ol>${x.prompts.map(p=>`<li>${esc(p)}</li>`).join('')}</ol></div>`:''}</article>`).join(''):'<div class="muted">Chưa có bài Listening giáo viên đăng.</div>'},e=>{console.error(e);root.innerHTML='<div class="alert alert-danger">Không tải được Listening giáo viên.</div>'});stops.push(stop)}
+function initListening(){const root=document.getElementById('teacherListeningList');if(!root)return;const q=query(collection(db,'listeningContent'));const stop=onSnapshot(q,snap=>{const rows=[];snap.forEach(d=>{const x=d.data()||{};if(isPublished(x.published))rows.push({id:d.id,...x})});rows.sort((a,b)=>String(a.unit||'').localeCompare(String(b.unit||'')));root.innerHTML=rows.length?rows.map(x=>`<article class="teacher-listening"><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(x.unit||'')}</span><span class="tag">🎧 Giáo viên</span></div><h4>${esc(x.title||'')}</h4>${x.audioUrl?`<audio controls preload="none" src="${esc(x.audioUrl)}" class="w-100 mb-3"></audio>`:''}${x.sourceUrl?`<a class="btn btn-sm btn-outline-primary" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener">↗ Mở nguồn</a>`:''}${Array.isArray(x.prompts)&&x.prompts.length?`<div class="mt-3"><b>Gợi ý:</b><ol>${x.prompts.map(p=>`<li>${esc(p)}</li>`).join('')}</ol></div>`:''}</article>`).join(''):'<div class="muted">Chưa có bài Listening giáo viên đăng.</div>'},e=>{console.error(e);root.innerHTML='<div class="alert alert-danger">Không tải được Listening giáo viên.</div>'});stops.push(stop)}
