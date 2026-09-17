@@ -57,7 +57,7 @@ async function loadUsers(){
         if(!row)return; // Submission cũ không thuộc roster 45 thì không tạo học sinh thứ 46.
         row.uid=uid;byUid.set(uid,row);
       });
-      const rows=[...new Set([...byRoster.values(),...byUid.values()])].filter(x=>String(x.role||'student')==='student').map(x=>{
+      let rows=[...new Set([...byRoster.values(),...byUid.values()])].filter(x=>String(x.role||'student')==='student').map(x=>{
         const p=progress.get(String(x.uid))||{streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};
         return {...x,streak:p.streak,totalSetsCompleted:p.totalPassed,totalBonusPoints:p.totalBonus,lastCompletedDate:p.lastCompletedDate||x.lastCompletedDate||''};
       });
