@@ -28,3 +28,16 @@ export function isValidToday(date){
   const d=new Date(),local=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   return date===local;
 }
+
+export function safeUrl(rawUrl){
+  if(typeof rawUrl!=='string')return '';
+  const s=rawUrl.trim();
+  if(!s)return '';
+  try{
+    if(/^(https?:|\/|\.\/)/i.test(s)){
+      const parsed=new URL(s,window.location?.origin||'http://localhost');
+      if(parsed.protocol==='http:'||parsed.protocol==='https:')return s;
+    }
+    return '';
+  }catch{return ''}
+}

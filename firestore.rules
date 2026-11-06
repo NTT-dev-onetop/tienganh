@@ -34,11 +34,13 @@ service cloud.firestore {
 
     function isStaff() {
       return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'];
     }
 
     function isAdmin() {
       return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
@@ -58,18 +60,28 @@ service cloud.firestore {
           || (request.resource.data.role == 'admin' && isConfiguredAdminEmail())
         );
 
-      // Only admins may change another user's profile or any role.
-      // A normal user may edit only identity/profile fields needed by
-      // the existing roster flow; privilege/progress fields are protected.
+      // Only admins may change another user's profile.
+      // An owner may update their own profile fields.
+      // Role elevation is permitted ONLY if verified against config/admins or config/teachers.
+      // RosterId cannot be changed once initially claimed.
       allow update: if isAdmin()
         || (
           isOwner(uid)
-          && request.resource.data.role == resource.data.role
-          && request.resource.data.email == resource.data.email
+          && (
+            (request.resource.data.role == resource.data.role && request.resource.data.email == resource.data.email)
+            || (request.resource.data.email == authEmail() && request.resource.data.role == 'admin' && isConfiguredAdminEmail())
+            || (request.resource.data.email == authEmail() && request.resource.data.role == 'teacher' && isConfiguredTeacherEmail())
+          )
+          && (
+            !('rosterId' in resource.data)
+            || resource.data.rosterId == ''
+            || request.resource.data.rosterId == resource.data.rosterId
+          )
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'name',
             'className',
             'rosterId',
+            'role',
             'lastLoginAt'
           ])
         );
@@ -91,13 +103,15 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.rosterId == rosterId;
 
       // A user cannot take over an existing roster mapping.
       allow update: if isStaff()
         || (
           isOwner(request.resource.data.uid)
           && resource.data.uid == request.auth.uid
+          && request.resource.data.rosterId == rosterId
         );
 
       allow delete: if isAdmin();
@@ -126,7 +140,8 @@ service cloud.firestore {
     // =========================================================
     match /config/roster {
       allow read: if isSignedIn();
-      allow create, update, delete: if isStaff();
+      // Only admins may overwrite or alter class roster.
+      allow create, update, delete: if isAdmin();
     }
 
     // =========================================================
@@ -145,15 +160,14 @@ service cloud.firestore {
           || resource.data.uid == request.auth.uid
         );
 
-      // IMPORTANT:
-      // The current client still calculates Daily score before create.
-      // This rule validates shape/range/consistency, but cannot make
-      // client-side scoring server-authoritative. A callable/server
-      // submit function is still required for production-grade scoring.
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid
+        && submissionId == request.auth.uid + '_' + request.resource.data.date + '_' + request.resource.data.setId
         && request.resource.data.setId is string
+        && request.resource.data.setId.size() > 0
+        && request.resource.data.setId.size() <= 64
         && request.resource.data.date is string
+        && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && request.resource.data.score is int
         && request.resource.data.total is int
         && request.resource.data.passScore is int
@@ -202,7 +216,7 @@ service cloud.firestore {
     // =========================================================
     match /audit/{auditId} {
       allow read: if isAdmin();
-      allow create: if isSignedIn()
+      allow create: if isStaff()
         && request.resource.data.uid == request.auth.uid;
       allow update, delete: if isAdmin();
     }

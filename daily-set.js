@@ -388,7 +388,7 @@ function saveCurrentAnswer(){
   answers[idx]=val;
   if(idx===qs.length-1){
     submitSet().catch(e=>{console.error('Lỗi nộp Daily:',e);toast(e?.message||'Không thể nộp bài.','error')}).finally(()=>{
-      if(btn&&s.index===qs.length-1)btn.disabled=false;
+      if(btn&&idx===qs.length-1)btn.disabled=false;
     });
   }else{dailyQuestionIndex=idx+1;dailySlide('next')}
 }
