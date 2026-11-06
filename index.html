@@ -159,6 +159,27 @@
   const syncKeyboard=()=>document.querySelector('.mobile-bottom')?.classList.toggle('keyboard-open',!!isKeyboardOpen());
   window.visualViewport?.addEventListener('resize',syncKeyboard);window.visualViewport?.addEventListener('scroll',syncKeyboard);window.addEventListener('resize',syncKeyboard);syncKeyboard();
 
+  let lastScrollY=window.scrollY;
+  let scrollTicking=false;
+  window.addEventListener('scroll',()=>{
+    if(!scrollTicking){
+      window.requestAnimationFrame(()=>{
+        const curr=window.scrollY;
+        const mb=document.querySelector('.mobile-bottom');
+        if(mb&&!document.body.classList.contains('modal-open')&&!document.body.classList.contains('more-open')){
+          if(curr>lastScrollY&&curr>60){
+            mb.classList.add('nav-hidden');
+          }else if(curr<lastScrollY-6||curr<20){
+            mb.classList.remove('nav-hidden');
+          }
+        }
+        lastScrollY=Math.max(0,curr);
+        scrollTicking=false;
+      });
+      scrollTicking=true;
+    }
+  },{passive:true});
+
   const wireListeningInputs=()=>document.querySelectorAll('.blank-row input').forEach(input=>{
     if(input.dataset.v18Bound)return;input.dataset.v18Bound='1';
     input.addEventListener('focus',()=>setTimeout(()=>input.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'}),80));

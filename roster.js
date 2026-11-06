@@ -462,6 +462,11 @@ export async function initRosterGate(user, role, existingProfile = null) {
       keyboard: false
     });
     if (!bsModal) throw new Error('Bootstrap Modal chưa sẵn sàng.');
+    const mobileNav = document.querySelector('.mobile-bottom');
+    if (mobileNav) mobileNav.classList.add('d-none');
+    modal.addEventListener('hidden.bs.modal', () => {
+      if (mobileNav) mobileNav.classList.remove('d-none');
+    }, { once: true });
     bsModal.show();
 
     return await new Promise((resolve, reject) => {
