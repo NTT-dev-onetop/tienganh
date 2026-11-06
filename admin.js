@@ -3,7 +3,7 @@ import{collection,doc,getDoc,setDoc,updateDoc,deleteDoc,getDocs,query,where,onSn
 import{db}from"./firebase-services.js";
 import{encodeCorrectIndex,decodeCorrectIndex}from"./security.js";
 import{getCurrentRole,isStaffRole,OWNER_EMAIL,invalidateRoleCaches}from"./roles.js";
-import{invalidateRosterCache}from"./roster.js";
+import{invalidateRosterCache,readRoster,removeDiacritics}from"./roster.js";
 import{normalizeExerciseItem}from"./exercises.js";
 import{progressFromSubmissionDocs}from"./progress.js"; 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -23,68 +23,258 @@ async function loadUsers(){
   if(stopUsersProgress){stopUsersProgress();stopUsersProgress=null}
   let stopUsers=()=>{},stopSubmissions=()=>{};
   try{
-    let latestUsers=[],latestSubmissions=[],latestRoster=[];let renderTimer=null;let sortKey='rosterIndex',sortDir=1,streakFilter='all';
+    let latestUsers=[],latestSubmissions=[],latestRosterData={'11T1':[],'11.1':[]};
+    let renderTimer=null;
+    let sortKey='stt',sortDir=1,streakFilter='all',classFilter='all',searchQuery='';
     const normName=v=>String(v??'').trim().replace(/\s+/g,' ').toLowerCase();
+
     const render=()=>{
       const progress=progressFromSubmissionDocs(latestSubmissions);
       const byUid=new Map();
       const byRoster=new Map();
+      const byNameAndClass=new Map();
       const byName=new Map();
-      // Roster là thứ tự chuẩn của lớp: học sinh chưa đăng nhập vẫn được hiển thị với streak 0.
-      latestRoster.forEach((x,i)=>{
-        const row={uid:'',name:String(x.name||'Học sinh'),className:'11T1',role:'student',rosterId:String(x.id||`s${String(i+1).padStart(2,'0')}`),rosterIndex:i};
-        byRoster.set(row.rosterId,row);byName.set(normName(row.name),row);
+
+      const allRosterStudents=[
+        ...(latestRosterData['11T1']||[]),
+        ...(latestRosterData['11.1']||[])
+      ];
+
+      allRosterStudents.forEach((x,i)=>{
+        const row={
+          uid:'',
+          name:String(x.name||'Học sinh'),
+          className:String(x.className||'11T1'),
+          role:'student',
+          rosterId:String(x.id||`s${String(i+1).padStart(2,'0')}`),
+          legacyId:x.legacyId||'',
+          stt:Number(x.stt||i+1),
+          rosterIndex:i
+        };
+        byRoster.set(row.rosterId,row);
+        if(row.legacyId)byRoster.set(row.legacyId,row);
+        byNameAndClass.set(`${normName(row.name)}_${row.className}`,row);
+        byName.set(normName(row.name),row);
       });
+
       latestUsers.forEach(x=>{
         const userRole=String(x.role||'student');
-        const isOwnerStudent=userRole==='admin'&&String(x.rosterId||'')==='s45';
+        const isOwnerStudent=userRole==='admin'&&(String(x.rosterId||'')==='s45'||String(x.rosterId||'')==='11T1_s45');
         if((userRole==='admin'&&!isOwnerStudent)||userRole==='teacher'||x.rosterId==='__teacher_dat__')return;
         const uid=String(x.uid||'');
         const rosterId=String(x.rosterId||'');
+        const userClass=String(x.className||'11T1');
         const nameKey=normName(x.name||'');
-        let row=(rosterId&&byRoster.get(rosterId))||(nameKey&&byName.get(nameKey));
+
+        let row=(rosterId&&byRoster.get(rosterId))
+          ||(nameKey&&byNameAndClass.get(`${nameKey}_${userClass}`))
+          ||(nameKey&&byName.get(nameKey));
+
         if(row){
-          Object.assign(row,x,{uid:uid||row.uid,name:String(x.name||row.name),className:String(x.className||row.className||'11T1'),role:'student',rosterId:rosterId||row.rosterId});
-        }else return; // Chỉ hiển thị học sinh thuộc roster 45; không tạo dòng ngoài danh sách.
+          Object.assign(row,x,{
+            uid:uid||row.uid,
+            name:String(x.name||row.name),
+            className:String(x.className||row.className||'11T1'),
+            role:'student',
+            rosterId:rosterId||row.rosterId
+          });
+        }else return;
         if(uid)byUid.set(uid,row);
       });
-      // Submission legacy có thể tồn tại trước khi user document được tạo.
+
       latestSubmissions.forEach(d=>{
         const x=d.data?d.data():(d||{}),uid=String(x.uid||'');if(!uid)return;
         if(byUid.has(uid))return;
         const nameKey=normName(x.name||'');
         const row=nameKey&&byName.get(nameKey);
-        if(!row)return; // Submission cũ không thuộc roster 45 thì không tạo học sinh thứ 46.
+        if(!row)return;
         row.uid=uid;byUid.set(uid,row);
       });
-      let rows=[...new Set([...byRoster.values(),...byUid.values()])].filter(x=>String(x.role||'student')==='student').map(x=>{
+
+      let allRows=[...new Set([...byRoster.values(),...byUid.values()])].filter(x=>String(x.role||'student')==='student').map(x=>{
         const p=progress.get(String(x.uid))||{streak:0,totalPassed:0,totalBonus:0,lastCompletedDate:''};
-        return {...x,streak:p.streak,totalSetsCompleted:p.totalPassed,totalBonusPoints:p.totalBonus,lastCompletedDate:p.lastCompletedDate||x.lastCompletedDate||''};
+        return {
+          ...x,
+          streak:p.streak,
+          totalSetsCompleted:p.totalPassed,
+          totalBonusPoints:p.totalBonus,
+          lastCompletedDate:p.lastCompletedDate||x.lastCompletedDate||''
+        };
       });
+
+      const count11T1=allRows.filter(x=>x.className==='11T1').length;
+      const count11_1=allRows.filter(x=>x.className==='11.1').length;
+
+      let rows=allRows;
+      if(classFilter!=='all'){
+        rows=rows.filter(x=>x.className===classFilter);
+      }
       rows=rows.filter(x=>streakFilter==='zero'?Number(x.streak||0)===0:streakFilter==='active'?Number(x.streak||0)>0:true);
-      const value=(x,k)=>k==='name'?String(x.name||''):k==='lastCompletedDate'?String(x.lastCompletedDate||''):Number(x[k]||0);
-      rows.sort((a,b)=>{const av=value(a,sortKey),bv=value(b,sortKey);const cmp=typeof av==='string'?av.localeCompare(bv,'vi'):av-bv;return cmp*sortDir||Number(a.rosterIndex??999999)-Number(b.rosterIndex??999999)});
+
+      if(searchQuery){
+        const q=removeDiacritics(searchQuery);
+        rows=rows.filter(x=>{
+          const n=removeDiacritics(x.name||'');
+          const stt=String(x.stt||'');
+          return n.includes(q)||stt===q;
+        });
+      }
+
+      const value=(x,k)=>k==='name'?String(x.name||''):k==='className'?String(x.className||''):k==='lastCompletedDate'?String(x.lastCompletedDate||''):Number(x[k]||0);
+      rows.sort((a,b)=>{
+        const av=value(a,sortKey),bv=value(b,sortKey);
+        const cmp=typeof av==='string'?av.localeCompare(bv,'vi'):av-bv;
+        return cmp*sortDir||Number(a.stt??9999)-Number(b.stt??9999);
+      });
+
       const th=(key,label)=>`<th><button type="button" class="btn btn-sm btn-link p-0 text-reset text-decoration-none admin-sort" data-sort="${key}">${label}${sortKey===key?(sortDir===1?' ↑':' ↓'):''}</button></th>`;
-      r.innerHTML=`<div class="admin-progress-toolbar d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3"><div><b>Tiến độ học sinh</b><span class="tag ms-2">${rows.length}/45</span></div><div class="d-flex gap-2 flex-wrap"><select id="studentStreakFilter" class="form-select form-select-sm" style="width:auto"><option value="all">Tất cả streak</option><option value="active" ${streakFilter==='active'?'selected':''}>Streak &gt; 0</option><option value="zero" ${streakFilter==='zero'?'selected':''}>Streak = 0</option></select></div></div><div class="table-responsive"><table class="table align-middle"><thead><tr>${th('rosterIndex','STT')}${th('name','Tên')}<th>Lớp</th>${th('totalBonusPoints','Bonus')}${th('streak','🔥 Streak')}${th('totalSetsCompleted','Set pass')}${th('lastCompletedDate','Gần nhất')}</tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.name||x.email||'')}</td><td>${esc(x.className||'11T1')}</td><td>${Number(x.totalBonusPoints||0)}</td><td>${Number(x.streak||0)}</td><td>${Number(x.totalSetsCompleted||0)}</td><td>${esc(x.lastCompletedDate||'—')}</td></tr>`).join('')||'<tr><td colspan="7">Chưa có học sinh.</td></tr>'}</tbody></table></div>`;
+
+      r.innerHTML=`
+        <div class="admin-progress-toolbar d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+          <div>
+            <b>Tiến độ học sinh</b>
+            <span class="tag ms-2">${rows.length} học sinh</span>
+            <span class="text-muted small ms-1">(11T1: ${count11T1} · 11.1: ${count11_1})</span>
+          </div>
+          <div class="d-flex gap-2 flex-wrap align-items-center">
+            <input type="text" id="adminStudentSearch" class="form-control form-control-sm" placeholder="Tìm tên / STT..." style="width:150px" value="${esc(searchQuery)}">
+            <select id="studentClassFilter" class="form-select form-select-sm" style="width:auto">
+              <option value="all" ${classFilter==='all'?'selected':''}>Tất cả lớp (11T1 & 11.1)</option>
+              <option value="11T1" ${classFilter==='11T1'?'selected':''}>Lớp 11T1</option>
+              <option value="11.1" ${classFilter==='11.1'?'selected':''}>Lớp 11.1</option>
+            </select>
+            <select id="studentStreakFilter" class="form-select form-select-sm" style="width:auto">
+              <option value="all" ${streakFilter==='all'?'selected':''}>Tất cả streak</option>
+              <option value="active" ${streakFilter==='active'?'selected':''}>Streak &gt; 0</option>
+              <option value="zero" ${streakFilter==='zero'?'selected':''}>Streak = 0</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                ${th('stt','STT')}
+                ${th('name','Họ và tên')}
+                ${th('className','Lớp')}
+                ${th('totalBonusPoints','Bonus')}
+                ${th('streak','🔥 Streak')}
+                ${th('totalSetsCompleted','Set pass')}
+                ${th('lastCompletedDate','Gần nhất')}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((x,i)=>`
+                <tr>
+                  <td><b>#${String(x.stt||i+1).padStart(2,'0')}</b></td>
+                  <td>
+                    <span class="fw-medium">${esc(x.name||x.email||'')}</span>
+                    ${!x.uid?'<span class="badge bg-secondary-subtle text-muted ms-1" style="font-size:10px">Chưa liên kết Google</span>':''}
+                  </td>
+                  <td><span class="badge ${x.className==='11T1'?'bg-primary':'bg-info text-dark'}">${esc(x.className||'11T1')}</span></td>
+                  <td>${Number(x.totalBonusPoints||0)}</td>
+                  <td><b>${Number(x.streak||0)}</b></td>
+                  <td>${Number(x.totalSetsCompleted||0)}</td>
+                  <td>${esc(x.lastCompletedDate||'—')}</td>
+                </tr>
+              `).join('')||'<tr><td colspan="7" class="text-center py-3 text-muted">Không tìm thấy học sinh phù hợp.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+
       r.querySelectorAll('[data-sort]').forEach(btn=>btn.onclick=()=>{const key=btn.dataset.sort;if(sortKey===key)sortDir*=-1;else{sortKey=key;sortDir=1}render()});
+      r.querySelector('#studentClassFilter')?.addEventListener('change',e=>{classFilter=e.target.value;render()});
       r.querySelector('#studentStreakFilter')?.addEventListener('change',e=>{streakFilter=e.target.value;render()});
+      const searchBox=r.querySelector('#adminStudentSearch');
+      if(searchBox){
+        searchBox.addEventListener('input',e=>{searchQuery=e.target.value.trim();render();const el=r.querySelector('#adminStudentSearch');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length)}});
+      }
     };
+
     const scheduleRender=()=>{clearTimeout(renderTimer);renderTimer=setTimeout(render,0)};
-    const rosterSnap=await getDoc(doc(db,'config','roster'));
-    latestRoster=rosterSnap.exists()&&Array.isArray(rosterSnap.data()?.students)?rosterSnap.data().students:DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
+    latestRosterData=await readRoster(true);
     stopUsers=onSnapshot(collection(db,'users'),snap=>{latestUsers=[];snap.forEach(d=>latestUsers.push({uid:d.id,...d.data()}));scheduleRender()},e=>{console.error('Realtime users:',e);r.innerHTML='<div class="alert alert-danger">Không đồng bộ được danh sách học sinh.</div>'});
     stopSubmissions=onSnapshot(collection(db,'submissions'),snap=>{latestSubmissions=snap.docs.filter(d=>isPassedValue(d.data()?.passed));scheduleRender()},e=>{console.error('Realtime submissions:',e);r.innerHTML='<div class="alert alert-danger">Không đồng bộ được tiến độ bài làm.</div>'});
     stopUsersProgress=()=>{stopUsers();stopSubmissions();clearTimeout(renderTimer)};
     render();
   }catch(e){stopUsers();stopSubmissions();r.innerHTML='<div class="alert alert-danger">Không tải được học sinh.</div>';console.error(e)}
 }
+
 async function saveAdmins(){if(!admin())return;try{const lines=String(document.getElementById('adminEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error('Có email admin không hợp lệ.');const ownerEmail=OWNER_EMAIL;const emails=[...new Set([ownerEmail,...lines])];await setDoc(doc(db,'config','admins'),{emails,updatedAt:serverTimestamp()},{merge:true});invalidateRoleCaches();toast('Đã lưu danh sách admin.');await loadTeachers()}catch(e){console.error(e);toast(e.message||'Không thể lưu admin.','error')}}
 
 async function loadTeachers(){const r=document.getElementById('adminAdmins');if(!r||!admin())return;let adminEmails=[],teacherEmails=[];try{const a=await getDoc(doc(db,'config','admins'));adminEmails=a.exists()&&Array.isArray(a.data()?.emails)?a.data().emails.map(x=>String(x).trim().toLowerCase()).filter(Boolean):[];const t=await getDoc(doc(db,'config','teachers'));teacherEmails=t.exists()&&Array.isArray(t.data()?.emails)?t.data().emails.map(x=>String(x).trim().toLowerCase()).filter(Boolean):[];r.innerHTML=`<div class="cms-form"><h6>👑 Admin</h6><textarea id="adminEmails" class="form-control" rows="3">${esc(adminEmails.join('\n'))}</textarea><div class="small muted mt-2">Admin có toàn quyền và có thể bổ nhiệm giáo viên.</div><button id="saveAdmins" class="btn btn-dark mt-2">Lưu Admin</button><hr class="my-4"><h6>👨‍🏫 Giáo viên</h6><textarea id="teacherEmails" class="form-control" rows="4" placeholder="thayco@example.com">${esc(teacherEmails.join('\n'))}</textarea><div class="small muted mt-2">Mỗi dòng một Gmail. Giáo viên có quyền quản lý nội dung, Daily Set và xuất tiến độ; không có quyền quản trị hệ thống.</div><button id="saveTeachers" class="btn btn-success mt-2">Lưu danh sách giáo viên</button></div>`;document.getElementById('saveAdmins').onclick=saveAdmins;document.getElementById('saveTeachers').onclick=saveTeachers}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được danh sách quản trị viên.</div>'}}
 async function saveTeachers(){if(!admin())return;try{const lines=String(document.getElementById('teacherEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error('Có email giáo viên không hợp lệ.');const admins=(await getDoc(doc(db,'config','admins'))).data()?.emails||[];const cleanAdmins=new Set([String(OWNER_EMAIL).trim().toLowerCase(),...admins.map(x=>String(x).trim().toLowerCase())]);const teachers=[...new Set(lines.filter(x=>!cleanAdmins.has(x)))];await setDoc(doc(db,'config','teachers'),{emails:teachers,updatedAt:serverTimestamp()});invalidateRoleCaches();toast('Đã lưu danh sách giáo viên.');await loadTeachers()}catch(e){console.error(e);toast(e.message||'Không thể lưu giáo viên.','error')}}
 
-async function loadRoster(){const r=document.getElementById('adminRoster');if(!r)return;try{const snap=await getDoc(doc(db,'config','roster'));const students=snap.exists()&&Array.isArray(snap.data()?.students)&&snap.data().students.length?snap.data().students:DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));r.innerHTML=`<textarea id="rosterNames" class="form-control" rows="10" placeholder="Mỗi dòng một tên">${esc(students.map(x=>String(x.name||'')).join('\n'))}</textarea><div class="small muted mt-2">Roster lớp · đã nạp sẵn danh sách lớp, chỉ cần sửa nếu danh sách thay đổi.</div><button id="saveRoster" class="btn btn-success mt-2">Lưu roster</button>`;document.getElementById('saveRoster').onclick=saveRoster}catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được roster.</div>'}}
-async function saveRoster(){if(!admin())return;try{const lines=String(document.getElementById('rosterNames')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(lines.length<1)throw new Error('Roster phải có ít nhất 1 tên.');if(lines.length!==45&&!window.confirm(`Lớp hiện có ${lines.length} HS (khác mặc định 45). Vẫn lưu?`))return;await setDoc(doc(db,'config','roster'),{students:lines.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}))});invalidateRosterCache();toast(`Đã lưu roster ${lines.length} HS.`)}catch(e){toast(e.message||'Không thể lưu roster.','error')}}
+async function loadRoster(){
+  const r=document.getElementById('adminRoster');if(!r)return;
+  try{
+    const rosterData=await readRoster(true);
+    const s11T1=rosterData['11T1']||[];
+    const s11_1=rosterData['11.1']||[];
+    r.innerHTML=`
+      <div class="cms-form">
+        <div class="d-flex gap-2 mb-3">
+          <button type="button" class="btn btn-sm btn-outline-primary active" id="btnTabRoster11T1">🏫 Lớp 11T1 (${s11T1.length} HS)</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="btnTabRoster11_1">🏫 Lớp 11.1 (${s11_1.length} HS)</button>
+        </div>
+        <div id="paneRoster11T1">
+          <label class="form-label fw-bold">Danh sách học sinh lớp 11T1 (Mỗi dòng một tên):</label>
+          <textarea id="rosterNames11T1" class="form-control font-monospace" rows="10" placeholder="Mỗi dòng một tên">${esc(s11T1.map(x=>String(x.name||'')).join('\n'))}</textarea>
+          <div class="small muted mt-2">Đã nạp sẵn danh sách lớp 11T1. Sửa và bấm Lưu khi có thay đổi danh sách.</div>
+          <button id="saveRoster11T1" class="btn btn-success mt-2">💾 Lưu Roster Lớp 11T1</button>
+        </div>
+        <div id="paneRoster11_1" class="d-none">
+          <label class="form-label fw-bold">Danh sách học sinh lớp 11.1 (Mỗi dòng một tên):</label>
+          <textarea id="rosterNames11_1" class="form-control font-monospace" rows="10" placeholder="Mỗi dòng một tên">${esc(s11_1.map(x=>String(x.name||'')).join('\n'))}</textarea>
+          <div class="small muted mt-2">Dán danh sách học sinh lớp 11.1 vào đây. Học sinh sẽ thấy ngay trong bảng chọn danh tính.</div>
+          <button id="saveRoster11_1" class="btn btn-success mt-2">💾 Lưu Roster Lớp 11.1</button>
+        </div>
+      </div>
+    `;
+    const tab11T1=document.getElementById('btnTabRoster11T1');
+    const tab11_1=document.getElementById('btnTabRoster11_1');
+    const pane11T1=document.getElementById('paneRoster11T1');
+    const pane11_1=document.getElementById('paneRoster11_1');
+    tab11T1.onclick=()=>{
+      tab11T1.classList.add('active');tab11_1.classList.remove('active');
+      pane11T1.classList.remove('d-none');pane11_1.classList.add('d-none');
+    };
+    tab11_1.onclick=()=>{
+      tab11_1.classList.add('active');tab11T1.classList.remove('active');
+      pane11_1.classList.remove('d-none');pane11T1.classList.add('d-none');
+    };
+    document.getElementById('saveRoster11T1').onclick=()=>saveRosterClass('11T1');
+    document.getElementById('saveRoster11_1').onclick=()=>saveRosterClass('11.1');
+  }catch(e){console.error(e);r.innerHTML='<div class="alert alert-danger">Không tải được roster.</div>'}
+}
+
+async function saveRosterClass(className){
+  if(!admin())return;
+  try{
+    const textareaId=className==='11T1'?'rosterNames11T1':'rosterNames11_1';
+    const lines=String(document.getElementById(textareaId)?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    if(lines.length<1)throw new Error(`Roster lớp ${className} phải có ít nhất 1 tên.`);
+    if(className==='11T1'&&lines.length!==45&&!window.confirm(`Lớp 11T1 hiện có ${lines.length} HS (khác mặc định 45). Vẫn lưu?`))return;
+    const students=lines.map((name,i)=>({
+      id:`${className}_s${String(i+1).padStart(2,'0')}`,
+      name,
+      className,
+      stt:i+1
+    }));
+    const patch={updatedAt:serverTimestamp()};
+    if(className==='11T1'){
+      patch.students_11T1=students;
+      patch.students=students;
+    }else{
+      patch.students_11_1=students;
+    }
+    await setDoc(doc(db,'config','roster'),patch,{merge:true});
+    invalidateRosterCache();
+    toast(`Đã lưu roster lớp ${className} (${lines.length} HS).`);
+    await loadRoster();
+  }catch(e){toast(e.message||'Không thể lưu roster.','error')}
+}
 
 function bindCmsTabs(){document.querySelectorAll('[data-cms]').forEach(b=>b.onclick=()=>{const id=b.dataset.cms;document.querySelectorAll('.cms-tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.cms-pane').forEach(x=>x.classList.toggle('d-none',x.id!==`cms-${id}`));})}
 
@@ -517,37 +707,80 @@ function concatBytes(parts){const total=parts.reduce((n,p)=>n+p.length,0),out=ne
 function zipStore(files){const enc=new TextEncoder(),local=[],central=[];let offset=0;for(const file of files){const name=enc.encode(file.name),data=typeof file.data==='string'?enc.encode(file.data):file.data,crc=crc32(data);const head=concatBytes([new Uint8Array([0x50,0x4b,0x03,0x04,20,0,0,0,0,0,0,0,0,0]),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);local.push(head);const ch=concatBytes([new Uint8Array([0x50,0x4b,0x01,0x02,20,0,20,0,0,0,0,0,0,0,0,0]),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]);central.push(ch);offset+=head.length}const cd=concatBytes(central),allLocal=concatBytes(local);const end=concatBytes([new Uint8Array([0x50,0x4b,0x05,0x06,0,0,0,0]),u16(files.length),u16(files.length),u32(cd.length),u32(allLocal.length),u16(0)]);return concatBytes([allLocal,cd,end])}
 function wRun(text,bold=false,size=22){return `<w:r><w:rPr>${bold?'<w:b/>':''}<w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:t xml:space="preserve">${xmlEsc(text)}</w:t></w:r>`}
 function wCell(text,width,bold=false,align='left'){return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="B7C0CE"/><w:left w:val="single" w:sz="4" w:space="0" w:color="B7C0CE"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="B7C0CE"/><w:right w:val="single" w:sz="4" w:space="0" w:color="B7C0CE"/></w:tcBorders></w:tcPr><w:p><w:pPr><w:jc w:val="${align}"/><w:spacing w:before="0" w:after="0"/></w:pPr>${wRun(text,bold,20)}</w:p></w:tc>`}
-function wRow(a,b,c,header=false){return `<w:tr>${wCell(a,900,header,'center')}${wCell(b,6500,header,'left')}${wCell(c,1200,header,'center')}</w:tr>`}
-function downloadDOCX(filename,rows){const table=wRow('STT','Học sinh','🔥 Streak',true)+rows.map(r=>wRow(String(r[0]),String(r[1]),String(r[2]),false)).join('');const documentXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr>${wRun('DANH SÁCH HỌC SINH 11T1',true,30)}</w:p><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr>${wRun('Theo dõi Daily Set · Cập nhật Streak',false,20)}</w:p><w:tbl><w:tblPr><w:tblW w:w="8600" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="6" w:color="7A8699"/><w:left w:val="single" w:sz="6" w:color="7A8699"/><w:bottom w:val="single" w:sz="6" w:color="7A8699"/><w:right w:val="single" w:sz="6" w:color="7A8699"/><w:insideH w:val="single" w:sz="4" w:color="B7C0CE"/><w:insideV w:val="single" w:sz="4" w:color="B7C0CE"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="900"/><w:gridCol w:w="6500"/><w:gridCol w:w="1200"/></w:tblGrid>${table}</w:tbl><w:p><w:pPr><w:spacing w:before="240"/></w:pPr>${wRun(`Tổng số: ${rows.length} học sinh`,true,20)}</w:p><w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/></w:sectPr></w:body></w:document>`;const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;const wordRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;const files=[{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rels},{name:'word/document.xml',data:documentXml},{name:'word/_rels/document.xml.rels',data:wordRels}];const bytes=zipStore(files);const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function wRow3(a,b,c,header=false){return `<w:tr>${wCell(a,900,header,'center')}${wCell(b,6500,header,'left')}${wCell(c,1200,header,'center')}</w:tr>`}
+function wRow4(a,b,c,d,header=false){return `<w:tr>${wCell(a,800,header,'center')}${wCell(b,5000,header,'left')}${wCell(c,1400,header,'center')}${wCell(d,1400,header,'center')}</w:tr>`}
+function downloadDOCX(filename,rows,title='DANH SÁCH HỌC SINH KHỐI 11',hasClassCol=false){
+  const table=hasClassCol
+    ? wRow4('STT','Học sinh','Lớp','🔥 Streak',true)+rows.map(r=>wRow4(String(r[0]),String(r[1]),String(r[2]),String(r[3]),false)).join('')
+    : wRow3('STT','Học sinh','🔥 Streak',true)+rows.map(r=>wRow3(String(r[0]),String(r[1]),String(r[2]),false)).join('');
+  const grid=hasClassCol
+    ? `<w:tblGrid><w:gridCol w:w="800"/><w:gridCol w:w="5000"/><w:gridCol w:w="1400"/><w:gridCol w:w="1400"/></w:tblGrid>`
+    : `<w:tblGrid><w:gridCol w:w="900"/><w:gridCol w:w="6500"/><w:gridCol w:w="1200"/></w:tblGrid>`;
+  const documentXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr>${wRun(title,true,30)}</w:p><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr>${wRun('Theo dõi Daily Set · Cập nhật Streak',false,20)}</w:p><w:tbl><w:tblPr><w:tblW w:w="8600" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="6" w:color="7A8699"/><w:left w:val="single" w:sz="6" w:color="7A8699"/><w:bottom w:val="single" w:sz="6" w:color="7A8699"/><w:right w:val="single" w:sz="6" w:color="7A8699"/><w:insideH w:val="single" w:sz="4" w:color="B7C0CE"/><w:insideV w:val="single" w:sz="4" w:color="B7C0CE"/></w:tblBorders></w:tblPr>${grid}${table}</w:tbl><w:p><w:pPr><w:spacing w:before="240"/></w:pPr>${wRun(`Tổng số: ${rows.length} học sinh`,true,20)}</w:p><w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/></w:sectPr></w:body></w:document>`;
+  const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const wordRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
+  const files=[{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rels},{name:'word/document.xml',data:documentXml},{name:'word/_rels/document.xml.rels',data:wordRels}];
+  const bytes=zipStore(files);
+  const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 
 async function exportStudentsStreak(){
   if(!staff())return false;
   try{
-    const [userSnap,subSnap,rosterSnap]=await Promise.all([
+    const [userSnap,subSnap,rosterData]=await Promise.all([
       getDocs(collection(db,'users')),
       getDocs(collection(db,'submissions')),
-      getDoc(doc(db,'config','roster'))
+      readRoster(true)
     ]);
     const normName=v=>String(v??'').trim().replace(/\s+/g,' ').toLowerCase();
-    const roster=rosterSnap.exists()&&Array.isArray(rosterSnap.data()?.students)?rosterSnap.data().students:DEFAULT_ROSTER.map((name,i)=>({id:`s${String(i+1).padStart(2,'0')}`,name}));
     const progress=progressFromSubmissionDocs(subSnap.docs);
-    const usersByUid=new Map(),usersByRoster=new Map(),usersByName=new Map();
+    const usersByUid=new Map(),usersByRoster=new Map(),usersByNameAndClass=new Map(),usersByName=new Map();
+
     userSnap.forEach(d=>{
-      const x=d.data()||{}, email=String(x.email||'').trim().toLowerCase(), userRole=String(x.role||'student');
-      const isOwnerStudent=userRole==='admin'&&String(x.rosterId||'')==='s45';
+      const x=d.data()||{}, userRole=String(x.role||'student');
+      const isOwnerStudent=userRole==='admin'&&(String(x.rosterId||'')==='s45'||String(x.rosterId||'')==='11T1_s45');
       if((userRole==='admin'&&!isOwnerStudent)||userRole==='teacher'||x.rosterId==='__teacher_dat__')return;
-      const row={uid:d.id,...x};usersByUid.set(d.id,row);
+      const row={uid:d.id,...x};
+      usersByUid.set(d.id,row);
       if(x.rosterId)usersByRoster.set(String(x.rosterId),row);
-      if(x.name)usersByName.set(normName(x.name),row);
+      if(x.name){
+        usersByNameAndClass.set(`${normName(x.name)}_${x.className||'11T1'}`,row);
+        usersByName.set(normName(x.name),row);
+      }
     });
-    const ordered=roster.map((r,i)=>{
-      const user=usersByRoster.get(String(r.id||''))||usersByName.get(normName(r.name));
+
+    const classFilter=document.getElementById('studentClassFilter')?.value||'all';
+    let targetStudents=[];
+    if(classFilter==='11T1'){
+      targetStudents=rosterData['11T1']||[];
+    }else if(classFilter==='11.1'){
+      targetStudents=rosterData['11.1']||[];
+    }else{
+      targetStudents=[...(rosterData['11T1']||[]),...(rosterData['11.1']||[])];
+    }
+
+    const hasClassCol=(classFilter==='all');
+    const docTitle=classFilter==='11T1'?'DANH SÁCH HỌC SINH LỚP 11T1':classFilter==='11.1'?'DANH SÁCH HỌC SINH LỚP 11.1':'DANH SÁCH HỌC SINH KHỐI 11 (11T1 & 11.1)';
+    const filename=classFilter==='11T1'?'english-notebook-danh-sach-streak-11T1.docx':classFilter==='11.1'?'english-notebook-danh-sach-streak-11.1.docx':'english-notebook-danh-sach-streak-khoi11.docx';
+
+    const ordered=targetStudents.map((r,i)=>{
+      const user=usersByRoster.get(String(r.id||''))
+        ||(r.legacyId&&usersByRoster.get(String(r.legacyId)))
+        ||usersByNameAndClass.get(`${normName(r.name)}_${r.className}`)
+        ||usersByName.get(normName(r.name));
       const uid=String(user?.uid||'');
       const p=uid?(progress.get(uid)||{streak:0}):{streak:0};
-      return [i+1,String(r.name||user?.name||'Học sinh'),Number(p.streak||0)];
+      const stt=r.stt||i+1;
+      const name=String(r.name||user?.name||'Học sinh');
+      const streak=Number(p.streak||0);
+      return hasClassCol ? [stt,name,r.className||'11T1',streak] : [stt,name,streak];
     });
-    downloadDOCX('english-notebook-danh-sach-streak.docx',ordered);
-    toast(`Đã xuất Word: ${ordered.length} học sinh.`);
+
+    downloadDOCX(filename,ordered,docTitle,hasClassCol);
+    toast(`Đã xuất Word: ${ordered.length} học sinh (${classFilter==='all'?'Cả 2 lớp':classFilter}).`);
     return true;
   }catch(e){console.error('Export streak Word:',e);toast('Không thể xuất Word.','error');return false}
 }
