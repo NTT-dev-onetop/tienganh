@@ -607,6 +607,7 @@ function renderTeacherExercises(rows) {
         </div>
         <div class="d-flex gap-2 align-items-center">
           ${staff ? `
+            <button class="btn btn-sm btn-outline-primary" data-te-edit-set="${esc(set.id)}">✏️ Sửa</button>
             <button class="btn btn-sm btn-outline-danger" data-te-del-set="${esc(set.id)}">🗑 Xóa</button>
           ` : ''}
           <button class="btn btn-primary" data-start-set="${esc(set.id)}">▶ Làm bài</button>
@@ -732,6 +733,14 @@ function renderTeacherExercises(rows) {
       };
     });
 
+    root.querySelectorAll('[data-te-edit-set]').forEach(b => {
+      b.onclick = () => {
+        const setId = b.dataset.teEditSet;
+        const set = groups.get(setId);
+        if (set) openExerciseModal(set);
+      };
+    });
+
     root.querySelectorAll('[data-te-del-set]').forEach(b => {
       b.onclick = async () => {
         const setId = b.dataset.teDelSet;
@@ -748,74 +757,88 @@ function renderTeacherExercises(rows) {
   }
 }
 
-function renderExerciseForm() {
+function renderExerciseForm(data = null) {
+  const x = data || {};
+  const isEdit = !!x.id;
   const units = ['Unit 1','Unit 2','Unit 3','Unit 4','Unit 5','Unit 6','Unit 7','Unit 8','Unit 9','Unit 10','Review 1','Review 2','Review 3','Review 4'];
+  const firstItem = x.items?.[0] || x;
+  const currentKind = String(x.kind || firstItem.kind || (x.passage ? 'reading' : 'mcq'));
+  const promptVal = firstItem.prompt || '';
+  const optionsVal = Array.isArray(firstItem.options) ? firstItem.options.join('\n') : '';
+  const correctVal = firstItem.correctIndex ?? 0;
+  const answerVal = firstItem.answer || '';
+  const explainVal = firstItem.explain || '';
+  const passageVal = x.passage || firstItem.passage || '';
+  const isReading = currentKind === 'reading' || !!passageVal;
+  const isText = currentKind === 'form' || currentKind === 'rewrite';
 
   return `
   <div class="teacher-form-card">
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="mb-0 text-primary">📝 Thêm bài tập mới (Trắc nghiệm / Đọc hiểu / Điền từ)</h5>
+      <h5 class="mb-0 text-primary">📝 ${isEdit ? 'Chỉnh sửa bài tập' : 'Thêm bài tập mới (Trắc nghiệm / Đọc hiểu / Điền từ)'}</h5>
       <button type="button" class="btn-close" id="btnCloseExerciseForm" aria-label="Đóng"></button>
     </div>
     <div class="row g-3">
       <div class="col-md-4">
         <label class="form-label fw-bold">Unit *</label>
-        <select id="teUnit" class="form-select">${units.map(u => `<option value="${u}">${u}</option>`).join('')}</select>
+        <select id="teUnit" class="form-select">${units.map(u => `<option value="${u}" ${x.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select>
       </div>
       <div class="col-md-4">
         <label class="form-label fw-bold">Dạng bài tập *</label>
         <select id="teKind" class="form-select">
-          <option value="mcq">Trắc nghiệm 4 lựa chọn (MCQ)</option>
-          <option value="reading">📖 Đọc hiểu (Reading Comprehension)</option>
-          <option value="two">Trắc nghiệm Đúng/Sai (2 lựa chọn)</option>
-          <option value="form">Điền dạng đúng của từ (Word form)</option>
-          <option value="rewrite">Viết lại câu (Sentence rewrite)</option>
+          <option value="mcq" ${currentKind === 'mcq' ? 'selected' : ''}>Trắc nghiệm 4 lựa chọn (MCQ)</option>
+          <option value="reading" ${isReading ? 'selected' : ''}>📖 Đọc hiểu (Reading Comprehension)</option>
+          <option value="two" ${currentKind === 'two' ? 'selected' : ''}>Trắc nghiệm Đúng/Sai (2 lựa chọn)</option>
+          <option value="form" ${currentKind === 'form' ? 'selected' : ''}>Điền dạng đúng của từ (Word form)</option>
+          <option value="rewrite" ${currentKind === 'rewrite' ? 'selected' : ''}>Viết lại câu (Sentence rewrite)</option>
         </select>
       </div>
       <div class="col-md-4">
         <label class="form-label fw-bold">Tên bộ bài tập / Tiêu đề *</label>
-        <input id="teTitle" class="form-control" placeholder="vd. Reading Practice - Eco Tourism">
+        <input id="teTitle" class="form-control" placeholder="vd. Reading Practice - Eco Tourism" value="${esc(x.title || '')}">
       </div>
 
       <!-- READING PASSAGE (NẾU LÀ ĐỌC HIỂU) -->
-      <div class="col-12 d-none" id="teReadingBox">
+      <div class="col-12 ${isReading ? '' : 'd-none'}" id="teReadingBox">
         <label class="form-label fw-bold text-success">📖 Đoạn văn bài đọc (Reading Passage) *</label>
-        <textarea id="tePassage" class="form-control" rows="6" placeholder="Dán toàn bộ đoạn văn đọc hiểu vào đây..."></textarea>
+        <textarea id="tePassage" class="form-control" rows="6" placeholder="Dán toàn bộ đoạn văn đọc hiểu vào đây...">${esc(passageVal)}</textarea>
       </div>
 
       <!-- STANDARD MCQ FIELDS -->
       <div class="col-12" id="tePromptBox">
         <label class="form-label fw-bold" id="tePromptLabel">Câu hỏi *</label>
-        <textarea id="tePrompt" class="form-control" rows="3" placeholder="Nhập câu hỏi..."></textarea>
+        <textarea id="tePrompt" class="form-control" rows="3" placeholder="Nhập câu hỏi...">${esc(promptVal)}</textarea>
       </div>
 
-      <div class="col-md-8" id="teOptionsBox">
+      <div class="col-md-8" id="teOptionsBox" style="${isText ? 'display:none;' : ''}">
         <label class="form-label fw-bold">Các lựa chọn (Mỗi dòng một đáp án A, B, C, D)</label>
-        <textarea id="teOptions" class="form-control" rows="4" placeholder="Đáp án A\nĐáp án B\nĐáp án C\nĐáp án D"></textarea>
+        <textarea id="teOptions" class="form-control" rows="4" placeholder="Đáp án A\nĐáp án B\nĐáp án C\nĐáp án D">${esc(optionsVal)}</textarea>
       </div>
 
       <div class="col-md-4" id="teCorrectBox">
-        <label class="form-label fw-bold">Đáp án đúng</label>
-        <select id="teCorrect" class="form-select">
-          <option value="0">A</option>
-          <option value="1">B</option>
-          <option value="2">C</option>
-          <option value="3">D</option>
-        </select>
-        <div class="mt-3" id="teAnswerBox" style="display:none;">
+        <div id="teCorrectSelectWrap" style="${isText ? 'display:none;' : ''}">
+          <label class="form-label fw-bold">Đáp án đúng</label>
+          <select id="teCorrect" class="form-select">
+            <option value="0" ${Number(correctVal) === 0 ? 'selected' : ''}>A</option>
+            <option value="1" ${Number(correctVal) === 1 ? 'selected' : ''}>B</option>
+            <option value="2" ${Number(correctVal) === 2 ? 'selected' : ''}>C</option>
+            <option value="3" ${Number(correctVal) === 3 ? 'selected' : ''}>D</option>
+          </select>
+        </div>
+        <div class="mt-2" id="teAnswerBox" style="${isText ? '' : 'display:none;'}">
           <label class="form-label fw-bold">Đáp án chữ mẫu</label>
-          <input id="teAnswer" class="form-control" placeholder="vd. was developed">
+          <input id="teAnswer" class="form-control" placeholder="vd. was developed" value="${esc(answerVal)}">
         </div>
       </div>
 
       <div class="col-12">
         <label class="form-label fw-bold">Giải thích chi tiết (sau khi học sinh nộp bài)</label>
-        <textarea id="teExplain" class="form-control" rows="2" placeholder="Giải thích vì sao chọn đáp án này..."></textarea>
+        <textarea id="teExplain" class="form-control" rows="2" placeholder="Giải thích vì sao chọn đáp án này...">${esc(explainVal)}</textarea>
       </div>
 
       <div class="col-12">
         <div class="form-check form-switch">
-          <input id="tePublished" class="form-check-input" type="checkbox" checked>
+          <input id="tePublished" class="form-check-input" type="checkbox" ${x.published === false ? '' : 'checked'}>
           <label class="form-check-label fw-bold">Đã xuất bản (học sinh thấy và làm được ngay)</label>
         </div>
       </div>
@@ -823,15 +846,15 @@ function renderExerciseForm() {
 
     <div class="d-flex gap-2 justify-content-end mt-4">
       <button type="button" id="btnCancelExercise" class="btn btn-outline-secondary">Hủy</button>
-      <button type="button" id="btnSaveExercise" class="btn btn-primary px-4">💾 Đăng bài tập</button>
+      <button type="button" id="btnSaveExercise" class="btn btn-primary px-4">💾 ${isEdit ? 'Lưu thay đổi' : 'Đăng bài tập'}</button>
     </div>
   </div>`;
 }
 
-function openExerciseModal() {
+function openExerciseModal(editData = null) {
   const container = document.getElementById('teacherExerciseFormContainer');
   if (!container) return;
-  container.innerHTML = renderExerciseForm();
+  container.innerHTML = renderExerciseForm(editData);
   container.classList.remove('d-none');
   container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -842,33 +865,33 @@ function openExerciseModal() {
   const kindSelect = document.getElementById('teKind');
   const readingBox = document.getElementById('teReadingBox');
   const optionsBox = document.getElementById('teOptionsBox');
-  const correctBox = document.getElementById('teCorrectBox');
+  const correctWrap = document.getElementById('teCorrectSelectWrap');
   const answerBox = document.getElementById('teAnswerBox');
-  const correctSelect = document.getElementById('teCorrect');
 
   kindSelect?.addEventListener('change', () => {
     const k = kindSelect.value;
     if (k === 'reading') {
-      readingBox.classList.remove('d-none');
-      optionsBox.style.display = 'block';
-      correctSelect.style.display = 'block';
-      answerBox.style.display = 'none';
+      readingBox?.classList.remove('d-none');
+      if (optionsBox) optionsBox.style.display = 'block';
+      if (correctWrap) correctWrap.style.display = 'block';
+      if (answerBox) answerBox.style.display = 'none';
     } else if (k === 'form' || k === 'rewrite') {
-      readingBox.classList.add('d-none');
-      optionsBox.style.display = 'none';
-      correctSelect.style.display = 'none';
-      answerBox.style.display = 'block';
+      readingBox?.classList.add('d-none');
+      if (optionsBox) optionsBox.style.display = 'none';
+      if (correctWrap) correctWrap.style.display = 'none';
+      if (answerBox) answerBox.style.display = 'block';
     } else if (k === 'two') {
-      readingBox.classList.add('d-none');
-      optionsBox.style.display = 'block';
-      correctSelect.style.display = 'block';
-      answerBox.style.display = 'none';
-      document.getElementById('teOptions').value = 'True\nFalse';
+      readingBox?.classList.add('d-none');
+      if (optionsBox) optionsBox.style.display = 'block';
+      if (correctWrap) correctWrap.style.display = 'block';
+      if (answerBox) answerBox.style.display = 'none';
+      const optEl = document.getElementById('teOptions');
+      if (optEl && !optEl.value.trim()) optEl.value = 'True\nFalse';
     } else {
-      readingBox.classList.add('d-none');
-      optionsBox.style.display = 'block';
-      correctSelect.style.display = 'block';
-      answerBox.style.display = 'none';
+      readingBox?.classList.add('d-none');
+      if (optionsBox) optionsBox.style.display = 'block';
+      if (correctWrap) correctWrap.style.display = 'block';
+      if (answerBox) answerBox.style.display = 'none';
     }
   });
 
@@ -895,7 +918,8 @@ function openExerciseModal() {
     }
 
     try {
-      const setId = 'set_' + Date.now();
+      const setId = editData?.id || editData?.items?.[0]?.setId || ('set_' + Date.now());
+      const editItemId = editData?.items?.[0]?.id || (editData?.id && !editData.id.startsWith('set_') ? editData.id : null);
       const payload = {
         unit,
         kind,
@@ -909,12 +933,16 @@ function openExerciseModal() {
         setId,
         published: !!published,
         author: auth?.currentUser?.email || '',
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
 
-      await setDoc(doc(collection(db, 'questionBank')), payload);
-      showToast('Đã đăng bài tập thành công!');
+      if (editItemId) {
+        await updateDoc(doc(db, 'questionBank', editItemId), payload);
+        showToast('Đã cập nhật bài tập thành công!');
+      } else {
+        await setDoc(doc(collection(db, 'questionBank')), { ...payload, createdAt: serverTimestamp() });
+        showToast('Đã đăng bài tập thành công!');
+      }
       closeForm();
     } catch (e) {
       console.error(e);
@@ -923,12 +951,38 @@ function openExerciseModal() {
   });
 }
 
-
 // =========================================================
 // 4. BIND GLOBAL BUTTONS
 // =========================================================
+let teacherButtonsBound = false;
 function bindGlobalTeacherButtons() {
-  document.getElementById('btnOpenAddVocab')?.addEventListener('click', () => openVocabModal());
-  document.getElementById('btnOpenAddListening')?.addEventListener('click', () => openListeningModal());
-  document.getElementById('btnOpenAddExercise')?.addEventListener('click', () => openExerciseModal());
+  if (teacherButtonsBound) return;
+  teacherButtonsBound = true;
+
+  document.getElementById('btnOpenAddVocab')?.addEventListener('click', () => {
+    const box = document.getElementById('teacherVocabFormContainer');
+    if (box && !box.classList.contains('d-none') && box.innerHTML) {
+      box.classList.add('d-none');
+    } else {
+      openVocabModal();
+    }
+  });
+
+  document.getElementById('btnOpenAddListening')?.addEventListener('click', () => {
+    const box = document.getElementById('teacherListeningFormContainer');
+    if (box && !box.classList.contains('d-none') && box.innerHTML) {
+      box.classList.add('d-none');
+    } else {
+      openListeningModal();
+    }
+  });
+
+  document.getElementById('btnOpenAddExercise')?.addEventListener('click', () => {
+    const box = document.getElementById('teacherExerciseFormContainer');
+    if (box && !box.classList.contains('d-none') && box.innerHTML) {
+      box.classList.add('d-none');
+    } else {
+      openExerciseModal();
+    }
+  });
 }
