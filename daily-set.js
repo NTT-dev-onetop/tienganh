@@ -363,7 +363,7 @@ function renderSetQuestion(){
   const root=document.getElementById('dailyExamBody');if(!root)return;
   const qs=Array.isArray(selectedSet.questions)?selectedSet.questions:[];const idx=Math.max(0,Math.min(dailyQuestionIndex,qs.length-1));dailyQuestionIndex=idx;const q=qs[idx];if(!q)return;
   const bar=document.getElementById('dailyExamProgressBar');if(bar)bar.style.width=Math.round(((idx+1)/qs.length)*100)+'%';
-  const counter=document.getElementById('dailyExamCounter');if(counter)counter.textContent=`${idx+1}/${qs.length} · ${getCurrentDailyScore()}✓`;
+  const counter=document.getElementById('dailyExamCounter');if(counter)counter.textContent=`${idx+1}/${qs.length}`;
   const kind=String(q.kind||'mcq');const opts=Array.isArray(q.options)?q.options:[];let body='';
   if(kind==='form'||kind==='rewrite')body=`<input id="dailyText" class="form-control form-control-lg" placeholder="${kind==='form'?'Nhập dạng đúng…':'Viết lại câu…'}" autocomplete="off" value="${esc(answers[idx]||'')}">`;
   else body=`<div class="option-grid">${opts.map((o,j)=>`<label class="exercise-option"><input type="radio" name="dailyAnswer" value="${j}" ${String(answers[idx])===String(j)?'checked':''}><span><b>${String.fromCharCode(65+j)}.</b> ${esc(o)}</span></label>`).join('')}</div>`;
@@ -377,8 +377,8 @@ function renderSetQuestion(){
   </div>`;
   const prev=document.getElementById('dailyPrev');prev?.addEventListener('click',()=>{if(idx>0){dailyQuestionIndex=idx-1;dailySlide('prev')}});
   document.getElementById('dailyNext').onclick=saveCurrentAnswer;
-  const current=document.querySelector('.daily-question');current?.querySelectorAll('input').forEach(input=>input.addEventListener('change',()=>{answers[idx]=getDailyAnswerValue(q);const c=document.getElementById('dailyExamCounter');if(c)c.textContent=`${idx+1}/${qs.length} · ${getCurrentDailyScore()}✓`}));
-  current?.querySelector('#dailyText')?.addEventListener('input',()=>{answers[idx]=getDailyAnswerValue(q);const c=document.getElementById('dailyExamCounter');if(c)c.textContent=`${idx+1}/${qs.length} · ${getCurrentDailyScore()}✓`});
+  const current=document.querySelector('.daily-question');current?.querySelectorAll('input').forEach(input=>input.addEventListener('change',()=>{answers[idx]=getDailyAnswerValue(q);const c=document.getElementById('dailyExamCounter');if(c)c.textContent=`${idx+1}/${qs.length}`;}));
+  current?.querySelector('#dailyText')?.addEventListener('input',()=>{answers[idx]=getDailyAnswerValue(q);const c=document.getElementById('dailyExamCounter');if(c)c.textContent=`${idx+1}/${qs.length}`;});
   let touchStartX=0;current?.addEventListener('touchstart',e=>{touchStartX=e.touches[0]?.clientX||0},{passive:true});current?.addEventListener('touchend',e=>{const endX=e.changedTouches[0]?.clientX||0;const dx=endX-touchStartX;if(Math.abs(dx)<60||submitting)return;if(dx<0)saveCurrentAnswer();else if(idx>0){dailyQuestionIndex=idx-1;dailySlide('prev')}},{passive:true});
 }
 function saveCurrentAnswer(){
