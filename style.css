@@ -2623,3 +2623,70 @@ html[data-theme="dark"] body.is-staff .nav-link[data-page="admin"].active {
   color: #fff !important;
 }
 
+/* ===== TEACHER CONTENT MANAGEMENT UI ===== */
+.teacher-action-banner {
+  border-left: 4px solid var(--primary);
+  background: var(--surface-2, #f8faff);
+}
+.teacher-vocab-card {
+  border-left: 4px solid #f59e0b !important;
+}
+.teacher-reading-passage {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 22px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #1e293b;
+  margin-bottom: 16px;
+  white-space: pre-line;
+}
+html[data-theme="dark"] .teacher-reading-passage {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+.teacher-listening-item {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+}
+.listening-blank-input {
+  display: inline-block;
+  min-width: 140px;
+  max-width: 220px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 4px;
+  text-align: center;
+}
+.listening-blank-input.correct {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #065f46;
+}
+.listening-blank-input.wrong {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+}
+.teacher-form-card {
+  border: 2px solid rgba(13, 110, 253, 0.35);
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 10px 30px rgba(13, 110, 253, 0.08);
+}
+html[data-theme="dark"] .teacher-form-card {
+  background: #111827;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+
