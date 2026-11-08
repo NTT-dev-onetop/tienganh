@@ -17,28 +17,63 @@
   <a class="navbar-brand" href="#" data-page="home"><span class="brand-mark">📘</span>English Notebook</a>
   <div class="navbar-collapse">
     <div class="navbar-nav">
+      <div class="nav-section" data-teacher-only>Quản trị giáo viên</div>
+      <button class="nav-link d-none" data-page="admin" data-admin-nav><span class="nav-icon">⚙</span>Khu vực Giáo viên</button>
+
       <div class="nav-section">Điểm hằng ngày</div>
       <button class="nav-link" data-page="daily"><span class="nav-icon">🎯</span>Daily Set</button>
-      <div class="nav-section">Tổng quan</div>
-      <button class="nav-link active" data-page="home"><span class="nav-icon">⌂</span>Tổng quan</button>
-      <div class="nav-section">Ghi & lưu</div>
-      <button class="nav-link" data-page="capture"><span class="nav-icon">＋</span>Ghi bài</button>
-      <button class="nav-link" data-page="mistakes"><span class="nav-icon">×</span>Câu sai</button>
-      <button class="nav-link" data-page="vocab"><span class="nav-icon">Aa</span>Từ vựng</button>
-      <button class="nav-link" data-page="grammar"><span class="nav-icon">ƒ</span>Cấu trúc</button>
+
+      <div class="nav-section" data-student-only>Tổng quan</div>
+      <button class="nav-link active" data-page="home" data-student-only><span class="nav-icon">⌂</span>Tổng quan</button>
+
+      <div class="nav-section" data-student-only>Ghi & lưu</div>
+      <button class="nav-link" data-page="capture" data-student-only><span class="nav-icon">＋</span>Ghi bài</button>
+      <button class="nav-link" data-page="mistakes" data-student-only><span class="nav-icon">×</span>Câu sai</button>
+      <button class="nav-link" data-page="vocab" data-student-only><span class="nav-icon">Aa</span>Từ vựng</button>
+      <button class="nav-link" data-page="grammar" data-student-only><span class="nav-icon">ƒ</span>Cấu trúc</button>
+
       <div class="nav-section">Luyện tập</div>
       <button class="nav-link" data-page="knowledge"><span class="nav-icon">📚</span>Kiến thức giáo viên</button><button class="nav-link" data-page="textbook"><span class="nav-icon">▦</span>Ôn theo Unit</button>
       <button class="nav-link" data-page="exercises"><span class="nav-icon">✓</span>Bài tập</button>
       <button class="nav-link" data-page="listening"><span class="nav-icon">◖</span>Listening</button>
-      <button class="nav-link" data-page="review"><span class="nav-icon">↯</span>Ôn nhanh</button><button class="nav-link profile-nav" data-page="profile"><span class="nav-icon">👤</span>Hồ sơ <span class="nav-badge">ME</span></button><button class="nav-link d-none" data-page="admin" data-admin-nav><span class="nav-icon">⚙</span>Dashboard</button>
+      <button class="nav-link" data-page="review" data-student-only><span class="nav-icon">↯</span>Ôn nhanh</button><button class="nav-link profile-nav" data-page="profile" data-student-only><span class="nav-icon">👤</span>Hồ sơ <span class="nav-badge">ME</span></button>
+
+      <div class="nav-section" data-teacher-only>Xem trước</div>
+      <button class="nav-link" data-page="home" data-teacher-only><span class="nav-icon">⌂</span>Trang chủ học sinh</button>
     </div>
     <div class="nav-spacer"></div>
     <div class="user-block"><div class="avatar" id="avatar">U</div><div class="user-meta"><strong id="userName">Tài khoản</strong><span id="user">Đang đăng nhập</span></div><button id="themeToggle" class="btn btn-outline-secondary btn-sm theme-toggle" type="button" aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện">🌙</button><button id="logout" class="btn btn-outline-secondary btn-sm" aria-label="Đăng xuất">↪</button></div>
   </div>
 </div></nav>
 <header class="mobile-topbar" aria-hidden="true"></header>
-<nav class="mobile-bottom" aria-label="Điều hướng nhanh"><button data-page="home"><span class="mb-icon">⌂</span>Trang chủ</button><button data-page="daily"><span class="mb-icon">🎯</span>Daily</button><button data-page="exercises"><span class="mb-icon">✓</span>Luyện</button><button data-page="mistakes"><span class="mb-icon">×</span>Câu sai</button><button class="mobile-more-trigger" id="mobileMoreTrigger" type="button" aria-controls="moreSheet" aria-expanded="false"><span class="mb-icon">•••</span>More</button></nav>
-<div class="more-sheet" id="moreSheet" aria-hidden="true"><div class="more-handle" aria-hidden="true"></div><div class="more-sheet-head"><strong>📚 Tất cả mục học</strong><button class="more-sheet-close" id="moreSheetClose" type="button" aria-label="Đóng menu">×</button></div><div class="more-grid"><button data-page="capture">＋ Ghi bài</button><button data-page="vocab">Aa Từ vựng</button><button data-page="grammar">ƒ Cấu trúc</button><button data-page="knowledge">📚 Kiến thức học tập giáo viên</button><button data-page="textbook">▦ Ôn theo Unit</button><button data-page="listening">◖ Listening</button><button data-page="review">↯ Ôn nhanh</button><button data-page="profile">👤 Hồ sơ</button><button data-page="admin" data-admin-nav class="d-none">⚙ Dashboard</button></div><div class="more-sheet-extra"><button id="themeToggleMobile" class="theme-toggle-mobile" type="button" aria-label="Đổi giao diện">🌙 Đổi giao diện</button></div></div><div class="more-backdrop" id="moreBackdrop"></div>
+<nav class="mobile-bottom" aria-label="Điều hướng nhanh">
+  <button data-page="home" data-student-only><span class="mb-icon">⌂</span>Trang chủ</button>
+  <button data-page="admin" data-admin-nav class="d-none"><span class="mb-icon">⚙</span>Giáo viên</button>
+  <button data-page="daily"><span class="mb-icon">🎯</span>Daily</button>
+  <button data-page="exercises"><span class="mb-icon">✓</span>Luyện</button>
+  <button data-page="mistakes" data-student-only><span class="mb-icon">×</span>Câu sai</button>
+  <button data-page="home" data-teacher-only><span class="mb-icon">⌂</span>Học sinh</button>
+  <button class="mobile-more-trigger" id="mobileMoreTrigger" type="button" aria-controls="moreSheet" aria-expanded="false"><span class="mb-icon">•••</span>More</button>
+</nav>
+<div class="more-sheet" id="moreSheet" aria-hidden="true">
+  <div class="more-handle" aria-hidden="true"></div>
+  <div class="more-sheet-head"><strong id="moreSheetTitle">📚 Tất cả mục học</strong><button class="more-sheet-close" id="moreSheetClose" type="button" aria-label="Đóng menu">×</button></div>
+  <div class="more-grid">
+    <button data-page="capture" data-student-only>＋ Ghi bài</button>
+    <button data-page="vocab" data-student-only>Aa Từ vựng</button>
+    <button data-page="grammar" data-student-only>ƒ Cấu trúc</button>
+    <button data-page="knowledge">📚 Kiến thức học tập giáo viên</button>
+    <button data-page="textbook">▦ Ôn theo Unit</button>
+    <button data-page="listening">◖ Listening</button>
+    <button data-page="review" data-student-only>↯ Ôn nhanh</button>
+    <button data-page="profile" data-student-only>👤 Hồ sơ</button>
+    <button data-page="admin" data-admin-nav class="d-none">⚙ Khu vực Giáo viên</button>
+  </div>
+  <div class="more-sheet-extra">
+    <button id="themeToggleMobile" class="theme-toggle-mobile" type="button" aria-label="Đổi giao diện">🌙 Đổi giao diện</button>
+  </div>
+</div>
+<div class="more-backdrop" id="moreBackdrop"></div>
 <main class="container-fluid px-3 px-lg-5 py-4">
 <section id="home" class="page">
   <div class="hero">
@@ -46,10 +81,17 @@
       <div class="eyebrow">PERSONAL ENGLISH NOTEBOOK · KHỐI 11 (11T1 & 11.1)</div>
       <h2>Học xong ghi lại.<br>Quên đâu, vá đó.</h2>
     
-      <div class="d-flex gap-2 flex-wrap"><button class="btn btn-warning btn-lg hero-primary" data-page="capture">＋ Ghi thứ vừa học</button><button class="btn btn-link btn-lg hero-secondary" data-page="review">↯ Ôn phần yếu</button></div><p class="hero-meta" id="heroMeta">Hôm nay: 0 ghi chú · 0 câu sai chưa xử lý</p>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-warning btn-lg hero-primary" data-page="capture" data-student-only>＋ Ghi thứ vừa học</button>
+        <button class="btn btn-link btn-lg hero-secondary" data-page="review" data-student-only>↯ Ôn phần yếu</button>
+        <button class="btn btn-primary btn-lg hero-primary" data-page="admin" data-teacher-only>⚙ Mở Khu vực Giáo viên</button>
+        <button class="btn btn-outline-primary btn-lg hero-secondary" data-page="daily" data-teacher-only>🎯 Quản lý Daily Set</button>
+      </div>
+      <p class="hero-meta" id="heroMeta" data-student-only>Hôm nay: 0 ghi chú · 0 câu sai chưa xử lý</p>
+      <p class="hero-meta text-primary fw-bold" data-teacher-only>Chế độ giáo viên: Quản lý học sinh 11T1 & 11.1, Daily Sets và Ngân hàng bài tập.</p>
     </div><div class="hero-icon" aria-hidden="true">✍️</div>
   </div>
-  <div class="quick-grid">
+  <div class="quick-grid" data-student-only>
     <div class="stat"><span>📚</span><div><b id="total">0</b><small>Tổng ghi chú</small></div></div>
     <div class="stat"><span>Aa</span><div><b id="vocabTotal">0</b><small>Từ vựng cá nhân</small></div></div>
     <div class="stat"><span>×</span><div><b id="mistakeTotal">0</b><small>Câu sai chưa xử lý</small></div></div>
@@ -59,15 +101,17 @@
     <div class="panel">
       <div class="panel-title"><div><div class="eyebrow">TIẾP TỤC</div><h5>Mở đúng chỗ bạn cần</h5></div></div>
       <div class="home-action-grid">
-        <button class="home-action" data-page="capture"><div><strong>＋ Ghi bài vừa học</strong><span>Từ mới · cấu trúc · câu sai</span></div><b>→</b></button>
-        <button class="home-action" data-page="mistakes"><div><strong>× Xử lý câu sai</strong><span>Chỉ xem lỗi chưa hiểu</span></div><b>→</b></button>
+        <button class="home-action" data-page="capture" data-student-only><div><strong>＋ Ghi bài vừa học</strong><span>Từ mới · cấu trúc · câu sai</span></div><b>→</b></button>
+        <button class="home-action" data-page="mistakes" data-student-only><div><strong>× Xử lý câu sai</strong><span>Chỉ xem lỗi chưa hiểu</span></div><b>→</b></button>
+        <button class="home-action" data-page="admin" data-teacher-only><div><strong>⚙ Khu vực Giáo viên</strong><span>Quản lý học sinh 11T1 & 11.1, xuất báo cáo</span></div><b>→</b></button>
+        <button class="home-action" data-page="daily" data-teacher-only><div><strong>🎯 Quản lý Daily Set</strong><span>Kiểm tra đề bài hôm nay</span></div><b>→</b></button>
         <button class="home-action" data-page="textbook"><div><strong>▦ Ôn theo Unit</strong><span>Từ vựng Global Success 11</span></div><b>→</b></button>
         <button class="home-action" data-page="listening"><div><strong>◖ Listening</strong><span>Nghe & điền 6 chỗ trống</span></div><b>→</b></button>
       </div>
     </div>
-    <div class="panel"><div class="panel-title"><div><div class="eyebrow">NEEDS ATTENTION</div><h5>Hôm nay nên xem gì?</h5></div></div><div id="attention"></div></div>
+    <div class="panel" data-student-only><div class="panel-title"><div><div class="eyebrow">NEEDS ATTENTION</div><h5>Hôm nay nên xem gì?</h5></div></div><div id="attention"></div></div>
   </div>
-  <div class="panel mt-3"><div class="panel-title"><div><div class="eyebrow">RECENT</div><h5>Mới ghi gần đây</h5></div><button class="btn btn-sm btn-outline-primary" data-page="capture">＋ Thêm</button></div><div id="recent"></div></div>
+  <div class="panel mt-3" data-student-only><div class="panel-title"><div><div class="eyebrow">RECENT</div><h5>Mới ghi gần đây</h5></div><button class="btn btn-sm btn-outline-primary" data-page="capture">＋ Thêm</button></div><div id="recent"></div></div>
 </section>
 
 <section id="profile" class="page d-none"><div class="head"><div><div class="eyebrow">MY PROFILE</div><h2>👤 Hồ sơ của tôi</h2><p>Thông tin tài khoản, lớp và tiến độ Daily Set.</p></div></div><div class="profile-grid"><div class="panel profile-card-main"><div class="profile-avatar" id="profileAvatar">U</div><div><h3 id="profileDisplayName">Tài khoản</h3><p id="profileEmail" class="muted mb-2"></p><span id="profileRole" class="tag">Học sinh</span></div><button id="profileEdit" class="btn btn-outline-primary ms-auto">✏️ Sửa tên</button></div><div class="profile-stats"><div class="stat"><span>🔥</span><div><b id="profileStreak">0</b><small>Chuỗi ngày</small></div></div><div class="stat"><span>⭐</span><div><b id="profileBonus">0</b><small>Bonus points</small></div></div><div class="stat"><span>🎯</span><div><b id="profileSets">0</b><small>Set đã pass</small></div></div><div class="stat"><span>📅</span><div><b id="profileLast">—</b><small>Lần hoàn thành gần nhất</small></div></div></div><div class="panel"><div class="panel-title"><div><div class="eyebrow">THÔNG TIN</div><h5>Thông tin lớp</h5></div></div><div class="profile-info-grid"><div><small class="muted">Họ tên</small><strong id="profileNameInfo">—</strong></div><div><small class="muted">Lớp</small><strong id="profileClass">11T1</strong></div><div><small class="muted">Vai trò</small><strong id="profileRoleText">student</strong></div><div><small class="muted">Email Google</small><strong id="profileEmailInfo">—</strong></div></div></div></div></section><section id="capture" class="page d-none"><div class="head"><div><div class="eyebrow">CAPTURE AFTER CLASS</div><h2>Ghi bài vừa học</h2><p>Chọn đúng loại ghi chú trước, rồi chỉ nhập những gì bạn thực sự cần nhớ.</p></div></div>

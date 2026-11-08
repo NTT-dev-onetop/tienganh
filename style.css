@@ -2590,3 +2590,36 @@ body.modal-open .more-backdrop,
     max-height: 270px !important;
   }
 }
+
+/* ===== ROLE-BASED NAVIGATION (OPTION B) ===== */
+body.is-staff [data-student-only] {
+  display: none !important;
+}
+body:not(.is-staff) [data-teacher-only] {
+  display: none !important;
+}
+body:not(.is-staff) [data-admin-nav] {
+  display: none !important;
+}
+body.is-staff .nav-link[data-page="admin"] {
+  color: var(--primary) !important;
+  font-weight: 700;
+  background: rgba(13, 110, 253, 0.08);
+}
+body.is-staff .nav-link[data-page="admin"].active {
+  background: var(--primary-soft) !important;
+  color: var(--primary) !important;
+}
+body.is-staff .mobile-bottom button[data-page="admin"] {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+html[data-theme="dark"] body.is-staff .nav-link[data-page="admin"] {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8 !important;
+}
+html[data-theme="dark"] body.is-staff .nav-link[data-page="admin"].active {
+  background: rgba(56, 189, 248, 0.22) !important;
+  color: #fff !important;
+}
+

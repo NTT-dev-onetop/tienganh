@@ -39,7 +39,9 @@ new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function page(id){
-  if(id==='admin'&&!isStaffRole(getCurrentRole()))id='home';
+  const staff=isStaffRole(getCurrentRole());
+  if(id==='admin'&&!staff)id='home';
+  if(staff&&['capture','mistakes','vocab','grammar','review','profile'].includes(id))id='admin';
   const updatePage=()=>{
     document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));
     const target=$(id);target?.classList.remove('d-none');
@@ -70,20 +72,39 @@ onAuthStateChanged(auth,async u=>{
     try{
       let profile=await ensureUserDoc(u);
       let role=getCurrentRole();
+      const isStaff=isStaffRole(role);
+      document.body.classList.toggle('is-staff',isStaff);
+      document.body.classList.toggle('is-student',!isStaff);
       $('auth').classList.add('d-none');
       $('app').classList.remove('d-none');
       $('user').textContent=u.email||'';
-      $('userName').textContent=profile?.name||u.displayName||'Tài khoản';
+      $('userName').textContent=(profile?.name||u.displayName||'Tài khoản') + (isStaff ? ' (Giáo viên)' : '');
       setAvatarElement($('avatar'),profile?.name||u.displayName||u.email||'U',u.photoURL);
+      
       let adminNav=document.querySelectorAll('[data-admin-nav]');
-      adminNav.forEach(x=>x.classList.toggle('d-none',!isStaffRole(role)));
+      adminNav.forEach(x=>x.classList.toggle('d-none',!isStaff));
+      let studentNav=document.querySelectorAll('[data-student-only]');
+      studentNav.forEach(x=>x.classList.toggle('d-none',isStaff));
+      let teacherNav=document.querySelectorAll('[data-teacher-only]');
+      teacherNav.forEach(x=>x.classList.toggle('d-none',!isStaff));
+
+      const moreTitle=document.getElementById('moreSheetTitle');
+      if(moreTitle) moreTitle.textContent = isStaff ? '⚙ Menu giáo viên' : '📚 Tất cả mục học';
 
       const gate=await initRosterGate(u,role,profile);
       if(!gate){await signOut(auth);return}
 
       // Roster linking does not change role (admin/teacher come from config),
       // so we keep the role from the first ensureUserDoc and skip the redundant second read.
-      if(isStaffRole(role))await loadAdminForUser(u);
+      if(isStaff){
+        await loadAdminForUser(u);
+        const curPage=document.querySelector('.page:not(.d-none)')?.id;
+        if(!curPage || ['home','capture','mistakes','vocab','grammar','review','profile'].includes(curPage)){
+          page('admin');
+        }
+      } else {
+        page('home');
+      }
       initKnowledge();
       initTeacherContent();
       if(!profile?.name)showNameModal(u,null);
@@ -96,6 +117,11 @@ onAuthStateChanged(auth,async u=>{
       await signOut(auth);
     }
   }else{
+    document.body.classList.remove('is-staff');
+    document.body.classList.remove('is-student');
+    document.querySelectorAll('[data-admin-nav]').forEach(x=>x.classList.add('d-none'));
+    document.querySelectorAll('[data-teacher-only]').forEach(x=>x.classList.add('d-none'));
+    document.querySelectorAll('[data-student-only]').forEach(x=>x.classList.remove('d-none'));
     stopAdminListeners();
     clearCurrentRole();
     $('auth').classList.remove('d-none');
