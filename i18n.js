@@ -253,7 +253,19 @@ const DICT = {
 
     'theme.light': 'Giao diện sáng',
     'theme.dark': 'Giao diện tối',
-    'logout.label': 'Đăng xuất'
+    'logout.label': 'Đăng xuất',
+
+    'settings.btn': 'Cài đặt',
+    'settings.title': 'Cài đặt hiển thị & tài khoản',
+    'settings.heading': 'Cài đặt',
+    'settings.openAria': 'Mở cài đặt ngôn ngữ, giao diện và tài khoản',
+    'settings.closeAria': 'Đóng bảng cài đặt',
+    'settings.sec.language': 'Ngôn ngữ',
+    'settings.sec.appearance': 'Giao diện',
+    'settings.theme.light': 'Sáng',
+    'settings.theme.dark': 'Tối',
+    'settings.glass.label': 'Hiệu ứng kính mờ Minimal Frost',
+    'settings.glass.desc': 'Nền chiều sâu + kính mờ nhiều tầng. Mặc định tắt để tối ưu pin & FPS.'
   },
   en: {
     'app.title': 'English Notebook — Capture → Practice → Master',
@@ -507,7 +519,19 @@ const DICT = {
 
     'theme.light': 'Light mode',
     'theme.dark': 'Dark mode',
-    'logout.label': 'Sign out'
+    'logout.label': 'Sign out',
+
+    'settings.btn': 'Settings',
+    'settings.title': 'Display & Account Settings',
+    'settings.heading': 'Settings',
+    'settings.openAria': 'Open language, appearance, and account settings',
+    'settings.closeAria': 'Close settings panel',
+    'settings.sec.language': 'Language',
+    'settings.sec.appearance': 'Appearance',
+    'settings.theme.light': 'Light',
+    'settings.theme.dark': 'Dark',
+    'settings.glass.label': 'Minimal Frost Liquid Glass',
+    'settings.glass.desc': 'Ambient depth + layered frosted glass. Off by default for battery & FPS.'
   }
 };
 
@@ -531,28 +555,12 @@ export function t(key) {
 
 export function syncLangButtons() {
   const lang = getLang();
-  const isEn = lang === 'en';
-  const ids = ['langToggle', 'langToggleTeacher'];
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = isEn ? 'EN' : 'VI';
-    el.setAttribute('aria-label', isEn ? 'Switch language to Vietnamese' : 'Chuyển sang tiếng Anh (English)');
-    el.title = isEn ? 'English (click for Tiếng Việt)' : 'Tiếng Việt (bấm đổi sang English)';
-    el.dataset.lang = lang;
+  document.querySelectorAll('[data-set-lang]').forEach(btn => {
+    const active = btn.dataset.setLang === lang;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-pressed', String(active));
   });
-  const mobile = document.getElementById('langToggleMobile');
-  if (mobile) {
-    mobile.textContent = isEn ? '🌐 English' : '🌐 Tiếng Việt';
-    mobile.setAttribute('aria-label', isEn ? 'Switch language to Vietnamese' : 'Chuyển sang tiếng Anh');
-  }
-  ['logout', 'logoutTeacher'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.title = t('logout.label');
-    el.setAttribute('aria-label', t('logout.label'));
-  });
-  window.__syncThemeLabel?.();
+  window.__syncSettingsUI?.();
 }
 
 export function applyTranslations() {
@@ -593,14 +601,11 @@ export function toggleLang() {
 
 export function initI18n() {
   applyTranslations();
-  const bind = (id) => {
-    const el = document.getElementById(id);
-    if (el && !el.dataset.i18nBound) {
-      el.dataset.i18nBound = '1';
-      el.addEventListener('click', toggleLang);
-    }
-  };
-  bind('langToggle');
-  bind('langToggleMobile');
-  bind('langToggleTeacher');
+  document.querySelectorAll('[data-set-lang]').forEach(btn => {
+    if (btn.dataset.i18nBound) return;
+    btn.dataset.i18nBound = '1';
+    btn.addEventListener('click', () => {
+      if (btn.dataset.setLang !== getLang()) setLang(btn.dataset.setLang);
+    });
+  });
 }

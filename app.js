@@ -11,8 +11,10 @@ import{getProgressForUid}from"./progress.js";
 import{safeUrl}from"./security.js";
 import{hardenConsole}from"./logger.js";
 import{initI18n,tr}from"./i18n.js";
+import{initSettings,syncSettingsUser,closeSettings}from"./settings.js";
 hardenConsole();
 initI18n();
+initSettings({onSignOut:()=>signOut(auth)});
 const provider=new GoogleAuthProvider();
 const $=id=>document.getElementById(id);let user=null,unsub=null,data={vocab:[],grammar:[],mistakes:[]},reviewQueue=[],reviewIndex=0,currentBaseName='',currentIsStaff=false;
 const appMain=document.querySelector('main.container-fluid');
@@ -81,7 +83,7 @@ document.querySelectorAll('[data-t-page]').forEach(b=>b.onclick=()=>{page(b.data
 const mobileMenuToggle=document.getElementById('mobileMenuToggle');mobileMenuToggle?.setAttribute('aria-label',tr('Mở menu','Open menu'));
 mobileMenuToggle?.addEventListener('click',()=>{const menu=document.getElementById('mobileMenu');const open=menu?.classList.toggle('open');mobileMenuToggle.setAttribute('aria-expanded',open?'true':'false');mobileMenuToggle.setAttribute('aria-label',open?tr('Đóng menu','Close menu'):tr('Mở menu','Open menu'))});
 document.addEventListener('click',e=>{const pageBtn=e.target.closest?.('[data-page]');if(pageBtn?.closest('.empty')){page(pageBtn.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false');return}const menu=document.getElementById('mobileMenu');if(menu?.classList.contains('open')&&!e.target.closest('#mobileMenu')&&!e.target.closest('#mobileMenuToggle')){menu.classList.remove('open');mobileMenuToggle?.setAttribute('aria-expanded','false')}});
-$('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){console.error('Lỗi đăng nhập:',e);$('authErr').textContent=window.appErrorMsg?window.appErrorMsg(e,'Đăng nhập thất bại. Vui lòng thử lại.','Sign-in failed. Please try again.'):tr('Đăng nhập thất bại. Vui lòng thử lại.','Sign-in failed. Please try again.');$('authErr').classList.remove('d-none')}};$('logout').onclick=()=>signOut(auth);if($('logoutTeacher'))$('logoutTeacher').onclick=()=>signOut(auth);
+$('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){console.error('Lỗi đăng nhập:',e);$('authErr').textContent=window.appErrorMsg?window.appErrorMsg(e,'Đăng nhập thất bại. Vui lòng thử lại.','Sign-in failed. Please try again.'):tr('Đăng nhập thất bại. Vui lòng thử lại.','Sign-in failed. Please try again.');$('authErr').classList.remove('d-none')}};
 
 // ===== FAST AUTH BOOTSTRAP =====
 // Fixes the login delay:
@@ -96,9 +98,18 @@ function syncShellLanguageLabels(){
   }
   if(user&&$('teacherName'))$('teacherName').textContent=baseName;
   if(user&&$('teacherEmail'))$('teacherEmail').textContent=user.email||'';
+  const role=getCurrentRole();
+  const roleText=role==='admin'?'Admin':currentIsStaff?tr('Giáo viên','Teacher'):tr('Học sinh','Student');
   if($('teacherRoleBadge')){
-    const role=getCurrentRole();
     $('teacherRoleBadge').textContent=role==='admin'?'Admin':tr('Giáo viên','Teacher');
+  }
+  if(user){
+    syncSettingsUser({
+      name:baseName,
+      email:user.email||'',
+      photoURL:user.photoURL||'',
+      roleLabel:roleText
+    });
   }
   const moreTitle=document.getElementById('moreSheetTitle');
   if(moreTitle) moreTitle.textContent = currentIsStaff ? tr('⚙ Menu giáo viên','⚙ Teacher Menu') : tr('📚 Tất cả mục học','📚 All Study Sections');
@@ -172,6 +183,8 @@ onAuthStateChanged(auth,async u=>{
     document.querySelectorAll('[data-student-only]').forEach(x=>x.classList.remove('d-none'));
     stopAdminListeners();
     clearCurrentRole();
+    closeSettings({restoreFocus:false});
+    syncSettingsUser({});
     $('auth').classList.remove('d-none');
     $('app').classList.add('d-none');
     if(unsub){unsub();unsub=null}
