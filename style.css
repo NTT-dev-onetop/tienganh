@@ -4268,7 +4268,7 @@ html[data-theme="dark"] .settings-mobile-left > i {
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition: background-color 110ms cubic-bezier(.22, 1, .36, 1), border-color 110ms ease, color 110ms ease;
 }
 .settings-preset-btn:hover:not(:disabled) {
   border-color: #93c5fd;
@@ -4451,7 +4451,7 @@ html[data-theme="dark"] .settings-mobile-left > i {
   color: #b42318;
   background: #fff5f4;
   border: 1px solid #fecdca;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition: background-color 110ms cubic-bezier(.22, 1, .36, 1), border-color 110ms ease, color 110ms ease;
 }
 .settings-logout-btn:hover {
   background: #fee4e2;
@@ -4755,9 +4755,7 @@ html[data-glass="on"]:not([data-theme="dark"]) .modal-content,
 html[data-glass="on"]:not([data-theme="dark"]) .daily-popup,
 html[data-glass="on"]:not([data-theme="dark"]) .more-sheet,
 html[data-glass="on"]:not([data-theme="dark"]) .mobile-bottom {
-  background:
-    radial-gradient(280px circle at var(--gl-vx, 30%) var(--gl-vy, 20%), rgba(255, 255, 255, calc(var(--gl-sheen, 0.25) * 0.65)) 0%, transparent 65%),
-    linear-gradient(155deg, rgba(255, 255, 255, var(--gl-l1, 0.72)) 0%, rgba(244, 248, 255, var(--gl-l2, 0.58)) 100%) !important;
+  background: linear-gradient(155deg, rgba(255, 255, 255, var(--gl-l1, 0.72)) 0%, rgba(244, 248, 255, var(--gl-l2, 0.58)) 100%) !important;
   -webkit-backdrop-filter: blur(var(--gl-blur, 20px)) saturate(var(--gl-sat, 195%)) brightness(var(--gl-bright-light, 1.04)) !important;
   backdrop-filter: blur(var(--gl-blur, 20px)) saturate(var(--gl-sat, 195%)) brightness(var(--gl-bright-light, 1.04)) !important;
   border-color: rgba(255, 255, 255, var(--gl-rim-l, 0.82)) !important;
@@ -4771,9 +4769,7 @@ html[data-glass="on"]:not([data-theme="dark"]) .mobile-bottom {
 html[data-glass="on"]:not([data-theme="dark"]) .settings-panel,
 html[data-glass="on"]:not([data-theme="dark"]) .app-dialog,
 html[data-glass="on"]:not([data-theme="dark"]) .modal-content {
-  background:
-    radial-gradient(280px circle at var(--gl-mx, 80%) var(--gl-my, 15%), rgba(255, 255, 255, calc(var(--gl-sheen, 0.28) * 0.90)) 0%, transparent 65%),
-    linear-gradient(155deg, rgba(255, 255, 255, var(--gl-pl1, 0.80)) 0%, rgba(242, 247, 255, var(--gl-pl2, 0.68)) 100%) !important;
+  background: linear-gradient(155deg, rgba(255, 255, 255, var(--gl-pl1, 0.80)) 0%, rgba(242, 247, 255, var(--gl-pl2, 0.68)) 100%) !important;
   border-color: rgba(255, 255, 255, 0.94) !important;
   box-shadow:
     inset 1px 1.5px 0 rgba(255, 255, 255, 1),
@@ -4817,9 +4813,7 @@ html[data-theme="dark"][data-glass="on"] .modal-content,
 html[data-theme="dark"][data-glass="on"] .daily-popup,
 html[data-theme="dark"][data-glass="on"] .more-sheet,
 html[data-theme="dark"][data-glass="on"] .mobile-bottom {
-  background:
-    radial-gradient(280px circle at var(--gl-vx, 30%) var(--gl-vy, 20%), rgba(255, 255, 255, calc(var(--gl-sheen, 0.16) * 0.28)) 0%, transparent 65%),
-    linear-gradient(155deg, rgba(22, 32, 54, var(--gl-d1, 0.66)) 0%, rgba(12, 19, 36, var(--gl-d2, 0.56)) 100%) !important;
+  background: linear-gradient(155deg, rgba(22, 32, 54, var(--gl-d1, 0.66)) 0%, rgba(12, 19, 36, var(--gl-d2, 0.56)) 100%) !important;
   -webkit-backdrop-filter: blur(var(--gl-blur, 22px)) saturate(var(--gl-sat, 195%)) brightness(var(--gl-bright-dark, 1.06)) !important;
   backdrop-filter: blur(var(--gl-blur, 22px)) saturate(var(--gl-sat, 195%)) brightness(var(--gl-bright-dark, 1.06)) !important;
   border-color: rgba(255, 255, 255, var(--gl-rim-d, 0.22)) !important;
@@ -4833,9 +4827,7 @@ html[data-theme="dark"][data-glass="on"] .mobile-bottom {
 html[data-theme="dark"][data-glass="on"] .settings-panel,
 html[data-theme="dark"][data-glass="on"] .app-dialog,
 html[data-theme="dark"][data-glass="on"] .modal-content {
-  background:
-    radial-gradient(280px circle at var(--gl-mx, 80%) var(--gl-my, 15%), rgba(255, 255, 255, calc(var(--gl-sheen, 0.20) * 0.36)) 0%, transparent 65%),
-    linear-gradient(155deg, rgba(24, 35, 60, var(--gl-pd1, 0.76)) 0%, rgba(13, 20, 38, var(--gl-pd2, 0.66)) 100%) !important;
+  background: linear-gradient(155deg, rgba(24, 35, 60, var(--gl-pd1, 0.76)) 0%, rgba(13, 20, 38, var(--gl-pd2, 0.66)) 100%) !important;
   border-color: rgba(255, 255, 255, calc(0.20 + var(--gl-t, 0.5) * 0.16)) !important;
   box-shadow:
     inset 1px 1.5px 0 rgba(255, 255, 255, calc(0.26 + var(--gl-t, 0.5) * 0.22)),
@@ -4934,6 +4926,53 @@ html[data-glass="on"] .hero {
 
 html[data-glass="on"] .table thead th {
   background: rgba(148, 163, 184, 0.12) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-glass="on"]:not([data-theme="dark"]) .stat:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .panel:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .vocab-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .grammar-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .mistake-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .exercise-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .listening-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .review-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .knowledge-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .admin-kpi-card:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .admin-class-card:hover {
+    border-color: rgba(147, 197, 253, 0.85) !important;
+    box-shadow:
+      inset 0 1.5px 0 rgba(255, 255, 255, 1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.45),
+      0 18px 40px -10px rgba(37, 99, 235, 0.16) !important;
+  }
+  html[data-glass="on"]:not([data-theme="dark"]) .home-action:hover,
+  html[data-glass="on"]:not([data-theme="dark"]) .exercise-option:hover {
+    background: rgba(255, 255, 255, 0.78) !important;
+    border-color: rgba(96, 165, 250, 0.55) !important;
+  }
+  html[data-theme="dark"][data-glass="on"] .stat:hover,
+  html[data-theme="dark"][data-glass="on"] .panel:hover,
+  html[data-theme="dark"][data-glass="on"] .vocab-card:hover,
+  html[data-theme="dark"][data-glass="on"] .grammar-card:hover,
+  html[data-theme="dark"][data-glass="on"] .mistake-card:hover,
+  html[data-theme="dark"][data-glass="on"] .exercise-card:hover,
+  html[data-theme="dark"][data-glass="on"] .listening-card:hover,
+  html[data-theme="dark"][data-glass="on"] .review-card:hover,
+  html[data-theme="dark"][data-glass="on"] .knowledge-card:hover,
+  html[data-theme="dark"][data-glass="on"] .admin-kpi-card:hover,
+  html[data-theme="dark"][data-glass="on"] .admin-class-card:hover {
+    border-color: rgba(147, 197, 253, 0.42) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.42),
+      inset 0 0 0 1px rgba(147, 197, 253, 0.18),
+      0 20px 46px -10px rgba(0, 0, 0, 0.62) !important;
+  }
+  html[data-theme="dark"][data-glass="on"] .home-action:hover,
+  html[data-theme="dark"][data-glass="on"] .exercise-option:hover {
+    background: rgba(30, 41, 59, 0.76) !important;
+    border-color: rgba(96, 165, 250, 0.45) !important;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {

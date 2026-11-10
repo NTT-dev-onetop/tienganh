@@ -14,8 +14,6 @@ let onSignOutHandler = null;
 let lastUserMeta = null;
 let lensMapDataUrl = '';
 let lastActiveLevel = DEFAULT_GLASS_LEVEL;
-let pointerRaf = 0;
-let pendingPointer = null;
 
 function readStorage(key) {
   try {
@@ -282,7 +280,6 @@ function applyLiquidOptics() {
 
   const rimLight = (0.64 + 0.36 * t).toFixed(3);
   const rimDark = (0.18 + 0.30 * t).toFixed(3);
-  const sheenOpacity = (0.20 + 0.40 * t).toFixed(3);
   const ambientOpacity = (0.62 + 0.38 * t).toFixed(3);
   const prismEdge = t > 0.28 ? Math.min(1, (t - 0.28) / 0.72).toFixed(3) : '0';
   const elevateShadow = (0.07 + 0.15 * t).toFixed(3);
@@ -303,7 +300,6 @@ function applyLiquidOptics() {
   root.style.setProperty('--gl-pd2', darkPanel2);
   root.style.setProperty('--gl-rim-l', rimLight);
   root.style.setProperty('--gl-rim-d', rimDark);
-  root.style.setProperty('--gl-sheen', sheenOpacity);
   root.style.setProperty('--gl-ambient', ambientOpacity);
   root.style.setProperty('--gl-prism', prismEdge);
   root.style.setProperty('--gl-shadow-a', elevateShadow);
@@ -774,29 +770,6 @@ function getFocusableControls(container) {
     .filter(el => el.offsetParent !== null || getComputedStyle(el).position === 'fixed');
 }
 
-function updatePointerSpecular() {
-  pointerRaf = 0;
-  if (!pendingPointer) return;
-  const { x, y } = pendingPointer;
-  pendingPointer = null;
-
-  const panel = document.getElementById('settingsPanel');
-  if (panel && isOpenState) {
-    const pr = panel.getBoundingClientRect();
-    const px = Math.max(0, Math.min(pr.width, x - pr.left));
-    const py = Math.max(0, Math.min(pr.height, y - pr.top));
-    panel.style.setProperty('--gl-mx', `${Math.round(px)}px`);
-    panel.style.setProperty('--gl-my', `${Math.round(py)}px`);
-  }
-
-  const vw = Math.max(1, window.innerWidth);
-  const vh = Math.max(1, window.innerHeight);
-  const vx = ((x / vw) * 100).toFixed(1);
-  const vy = ((y / vh) * 100).toFixed(1);
-  document.documentElement.style.setProperty('--gl-vx', `${vx}%`);
-  document.documentElement.style.setProperty('--gl-vy', `${vy}%`);
-}
-
 export function initSettings({ onSignOut } = {}) {
   if (typeof onSignOut === 'function') {
     onSignOutHandler = onSignOut;
@@ -900,14 +873,6 @@ export function initSettings({ onSignOut } = {}) {
       closeSettings();
     }
     touchDraggingFromHead = false;
-  }, { passive: true });
-
-  window.addEventListener('pointermove', e => {
-    if (getGlass() !== 'on' || capabilityCache?.reducedMotion) return;
-    pendingPointer = { x: e.clientX, y: e.clientY };
-    if (!pointerRaf) {
-      pointerRaf = requestAnimationFrame(updatePointerSpecular);
-    }
   }, { passive: true });
 
   document.addEventListener('keydown', e => {
