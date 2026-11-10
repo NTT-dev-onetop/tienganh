@@ -44,6 +44,16 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function userHasUnclaimedRosterFor(rosterId) {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+          !('rosterId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rosterId == ''
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rosterId == rosterId
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rosterId == ('11T1_' + rosterId)
+        );
+    }
+
     // =========================================================
     // USERS
     // =========================================================
@@ -63,7 +73,7 @@ service cloud.firestore {
       // Only admins may change another user's profile.
       // An owner may update their own profile fields.
       // Role elevation is permitted ONLY if verified against config/admins or config/teachers.
-      // RosterId cannot be changed once initially claimed.
+      // RosterId and className cannot be changed once initially claimed.
       allow update: if isAdmin()
         || (
           isOwner(uid)
@@ -75,7 +85,14 @@ service cloud.firestore {
           && (
             !('rosterId' in resource.data)
             || resource.data.rosterId == ''
-            || request.resource.data.rosterId == resource.data.rosterId
+            || (
+              request.resource.data.rosterId == resource.data.rosterId
+              && (
+                !('className' in resource.data)
+                || resource.data.className == ''
+                || request.resource.data.className == resource.data.className
+              )
+            )
           )
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'name',
@@ -102,9 +119,13 @@ service cloud.firestore {
     match /users_by_roster/{rosterId} {
       allow read: if isSignedIn();
 
-      allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.rosterId == rosterId;
+      allow create: if isStaff()
+        || (
+          isSignedIn()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.rosterId == rosterId
+          && userHasUnclaimedRosterFor(rosterId)
+        );
 
       // A user cannot take over an existing roster mapping.
       allow update: if isStaff()

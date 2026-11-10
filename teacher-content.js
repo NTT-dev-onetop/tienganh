@@ -11,6 +11,7 @@ import {
 import { db, auth } from "./firebase-services.js";
 import { safeUrl } from "./security.js";
 import { getCurrentRole, isStaffRole } from "./roles.js";
+import { tr } from "./i18n.js";
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
 const isPublished = v => v === undefined || v === null || v === true || v === 1 || String(v).trim().toLowerCase() === 'true' || String(v).trim().toLowerCase() === 'published';
@@ -33,6 +34,12 @@ export function initTeacherContent() {
   initListening();
   initQuestions();
   bindGlobalTeacherButtons();
+  const onLang = () => {
+    renderTeacherListeningBoard(teacherListeningList);
+    renderTeacherExercises(teacherQuestionList);
+  };
+  window.addEventListener('app:lang-change', onLang);
+  stops.push(() => window.removeEventListener('app:lang-change', onLang));
 }
 
 export function stopTeacherContent() {
@@ -43,8 +50,10 @@ export function stopTeacherContent() {
 function parseYouTubeEmbed(urlOrId) {
   if (!urlOrId) return '';
   const str = String(urlOrId).trim();
-  const match = str.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-  if (match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+  const match = str.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:[?&/#]|$)/i);
+  if (match && match[1] && /^[a-zA-Z0-9_-]{11}$/.test(match[1])) {
+    return `https://www.youtube.com/embed/${match[1]}`;
+  }
   if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return `https://www.youtube.com/embed/${str}`;
   return '';
 }
@@ -177,8 +186,8 @@ function openVocabModal(id = null) {
       }
       closeForm();
     } catch (err) {
-      console.error(err);
-      showToast('Không thể lưu từ vựng: ' + err.message, 'error');
+      console.error('Save teacher vocab:', err);
+      showToast(tr('Không thể lưu từ vựng. Vui lòng thử lại.', 'Could not save vocabulary item.'), 'error');
     }
   });
 }
@@ -186,12 +195,13 @@ function openVocabModal(id = null) {
 window.__editTeacherVocab = openVocabModal;
 window.__deleteTeacherVocab = async (id) => {
   if (!isStaff()) return;
-  if (!confirm('Bạn có chắc chắn muốn xóa từ vựng này khỏi Unit không?')) return;
+  if (!confirm(tr('Bạn có chắc chắn muốn xóa từ vựng này khỏi Unit không?', 'Delete this vocabulary item from the unit?'))) return;
   try {
     await deleteDoc(doc(db, 'teacherVocab', id));
-    showToast('Đã xóa từ vựng thành công.');
+    showToast(tr('Đã xóa từ vựng thành công.', 'Vocabulary item deleted.'));
   } catch (err) {
-    showToast('Xóa thất bại: ' + err.message, 'error');
+    console.error('Delete teacher vocab:', err);
+    showToast(tr('Xóa từ vựng thất bại.', 'Could not delete vocabulary item.'), 'error');
   }
 };
 
@@ -245,17 +255,17 @@ function renderTeacherListeningBoard(list) {
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
         <div class="d-flex gap-2 align-items-center flex-wrap">
           <span class="tag fw-bold">${esc(item.unit || 'Unit')}</span>
-          <span class="tag ${item.published ? 'tag-published' : 'tag-draft'}">${item.published ? 'Đã xuất bản' : 'Bản nháp'}</span>
-          <span class="tag">🎧 ${isBlanks ? 'Điền chỗ trống' : 'Trắc nghiệm nghe'}</span>
+          <span class="tag ${item.published ? 'tag-published' : 'tag-draft'}">${item.published ? tr('Đã xuất bản', 'Published') : tr('Bản nháp', 'Draft')}</span>
+          <span class="tag">🎧 ${isBlanks ? tr('Điền chỗ trống', 'Gap fill') : tr('Trắc nghiệm nghe', 'Listening MCQ')}</span>
         </div>
         ${staff ? `
         <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-outline-primary" data-tl-edit="${esc(item.id)}">✏️ Sửa</button>
-          <button class="btn btn-sm btn-outline-danger" data-tl-del="${esc(item.id)}">🗑 Xóa</button>
+          <button class="btn btn-sm btn-outline-primary" data-tl-edit="${esc(item.id)}">✏️ ${tr('Sửa', 'Edit')}</button>
+          <button class="btn btn-sm btn-outline-danger" data-tl-del="${esc(item.id)}">🗑 ${tr('Xóa', 'Delete')}</button>
         </div>` : ''}
       </div>
 
-      <h4 class="mt-2 mb-3">${esc(item.title || 'Bài nghe')}</h4>
+      <h4 class="mt-2 mb-3">${esc(item.title || tr('Bài nghe', 'Listening task'))}</h4>
 
       <!-- AUDIO PLAYER / YOUTUBE -->
       ${ytEmbed ? `
@@ -266,26 +276,25 @@ function renderTeacherListeningBoard(list) {
         <audio controls preload="none" src="${esc(safeAudio)}" class="w-100"></audio>
       </div>` : ''}
 
-      ${safeSource ? `<div class="mb-3"><a class="btn btn-sm btn-outline-secondary" href="${esc(safeSource)}" target="_blank" rel="noopener noreferrer">↗ Mở nguồn / Bài viết tham khảo</a></div>` : ''}
+      ${safeSource ? `<div class="mb-3"><a class="btn btn-sm btn-outline-secondary" href="${esc(safeSource)}" target="_blank" rel="noopener noreferrer">↗ ${tr('Mở nguồn / Bài viết tham khảo', 'Open source / reference')}</a></div>` : ''}
 
       <!-- INTERACTIVE EXERCISE -->
       <div class="teacher-listening-exercise p-3 bg-light rounded-3 mb-3">
-        <h6 class="fw-bold mb-3">📝 Nhiệm vụ nghe:</h6>
+        <h6 class="fw-bold mb-3">📝 ${tr('Nhiệm vụ nghe:', 'Listening task:')}</h6>
         ${isBlanks ? `
         <div class="listening-blanks-container d-grid gap-3">
           ${prompts.map((p, i) => {
             const parts = p.split(/_{3,}|\[blank\]/i);
-            const ans = answers[i] || '';
             return `
             <div class="listening-prompt-row">
               <b>${i + 1}.</b> 
               ${parts.length > 1 ? `
                 ${esc(parts[0])}
-                <input type="text" class="listening-blank-input" data-ans="${esc(ans)}" data-idx="${i}" placeholder="điền từ...">
+                <input type="text" class="listening-blank-input" data-idx="${i}" placeholder="${tr('điền từ...', 'type answer...')}">
                 ${esc(parts[1] || '')}
               ` : `
                 ${esc(p)}
-                <div class="mt-1"><input type="text" class="listening-blank-input w-100" data-ans="${esc(ans)}" data-idx="${i}" placeholder="Đáp án..."></div>
+                <div class="mt-1"><input type="text" class="listening-blank-input w-100" data-idx="${i}" placeholder="${tr('Đáp án...', 'Answer...')}"></div>
               `}
               <span class="listening-feedback ms-2" id="fb-${esc(item.id)}-${i}"></span>
             </div>`;
@@ -311,9 +320,9 @@ function renderTeacherListeningBoard(list) {
         </div>` : ''}
 
         <div class="d-flex align-items-center gap-3 flex-wrap mt-3 pt-2 border-top">
-          <button class="btn btn-primary" data-tl-submit="${esc(item.id)}">🚀 Nộp bài & Chấm điểm</button>
+          <button class="btn btn-primary" data-tl-submit="${esc(item.id)}">🚀 ${tr('Nộp bài & Chấm điểm', 'Submit & Grade')}</button>
           <span id="score-${esc(item.id)}" class="fw-bold"></span>
-          ${item.transcript ? `<button class="btn btn-outline-info btn-sm ms-auto" data-tl-toggle-trans="${esc(item.id)}">👁️ Lời thoại (Transcript)</button>` : ''}
+          ${item.transcript ? `<button class="btn btn-outline-info btn-sm ms-auto" data-tl-toggle-trans="${esc(item.id)}">👁️ ${tr('Lời thoại (Transcript)', 'Transcript')}</button>` : ''}
         </div>
 
         ${item.transcript ? `
@@ -329,50 +338,53 @@ function renderTeacherListeningBoard(list) {
   root.querySelectorAll('[data-tl-submit]').forEach(btn => {
     btn.onclick = () => {
       const id = btn.dataset.tlSubmit;
-      const card = root.querySelector(`[data-tl-id="${id}"]`);
+      const card = root.querySelector(`[data-tl-id="${CSS.escape(id)}"]`);
       if (!card) return;
       const item = list.find(x => x.id === id);
       if (!item) return;
 
       const isBlanks = (item.kind || 'blanks') === 'blanks';
       const isMcq = (item.kind || '') === 'mcq';
+      const itemAnswers = Array.isArray(item.answers) ? item.answers : [];
       let score = 0;
       const total = item.prompts?.length || 0;
 
       if (isBlanks) {
-        card.querySelectorAll('.listening-blank-input').forEach((input, i) => {
-          const expected = String(input.dataset.ans || '').trim().toLowerCase();
+        card.querySelectorAll('.listening-blank-input').forEach((input, idx) => {
+          const blankIdx = Number(input.dataset.idx ?? idx);
+          const rawExpected = String(itemAnswers[blankIdx] ?? '');
+          const expected = rawExpected.trim().toLowerCase();
           const userVal = input.value.trim().toLowerCase();
-          const fb = card.querySelector(`#fb-${CSS.escape(id)}-${i}`);
+          const fb = card.querySelector(`#fb-${CSS.escape(id)}-${blankIdx}`);
           if (userVal && userVal === expected) {
             input.classList.remove('wrong');
             input.classList.add('correct');
-            if (fb) fb.innerHTML = '<span class="text-success fw-bold">✓ Đúng</span>';
+            if (fb) fb.innerHTML = `<span class="text-success fw-bold">✓ ${tr('Đúng', 'Correct')}</span>`;
             score++;
           } else {
             input.classList.remove('correct');
             input.classList.add('wrong');
-            if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× Sai (Đáp án: ${esc(input.dataset.ans)})</span>`;
+            if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× ${tr('Sai', 'Wrong')} (${tr('Đáp án', 'Answer')}: ${esc(rawExpected)})</span>`;
           }
         });
       } else if (isMcq) {
         (item.prompts || []).forEach((_, i) => {
           const checked = card.querySelector(`input[name="lmcq-${CSS.escape(id)}-${i}"]:checked`);
           const fb = card.querySelector(`#fb-${CSS.escape(id)}-${i}`);
-          const expectedIdx = Number(item.answers?.[i] ?? 0);
+          const expectedIdx = Number(itemAnswers[i] ?? 0);
           if (checked && Number(checked.value) === expectedIdx) {
             score++;
-            if (fb) fb.innerHTML = '<span class="text-success fw-bold">✓ Đúng</span>';
+            if (fb) fb.innerHTML = `<span class="text-success fw-bold">✓ ${tr('Đúng', 'Correct')}</span>`;
           } else {
             const letter = String.fromCharCode(65 + expectedIdx);
-            if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× Sai (Đáp án: ${letter})</span>`;
+            if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× ${tr('Sai', 'Wrong')} (${tr('Đáp án', 'Answer')}: ${letter})</span>`;
           }
         });
       }
 
       const scoreEl = card.querySelector(`#score-${CSS.escape(id)}`);
       if (scoreEl) {
-        scoreEl.innerHTML = `<span class="badge ${score === total ? 'bg-success' : 'bg-primary'} fs-6">${score}/${total} điểm</span>`;
+        scoreEl.innerHTML = `<span class="badge ${score === total ? 'bg-success' : 'bg-primary'} fs-6">${score}/${total} ${tr('điểm', 'pts')}</span>`;
       }
     };
   });
@@ -392,12 +404,13 @@ function renderTeacherListeningBoard(list) {
     });
     root.querySelectorAll('[data-tl-del]').forEach(btn => {
       btn.onclick = async () => {
-        if (!confirm('Bạn có chắc muốn xóa bài Listening này không?')) return;
+        if (!confirm(tr('Bạn có chắc muốn xóa bài Listening này không?', 'Delete this listening task?'))) return;
         try {
           await deleteDoc(doc(db, 'listeningContent', btn.dataset.tlDel));
-          showToast('Đã xóa bài Listening.');
+          showToast(tr('Đã xóa bài Listening.', 'Listening task deleted.'));
         } catch (e) {
-          showToast('Xóa thất bại: ' + e.message, 'error');
+          console.error('Delete teacher listening:', e);
+          showToast(tr('Xóa bài Listening thất bại.', 'Could not delete listening task.'), 'error');
         }
       };
     });
@@ -495,15 +508,23 @@ function openListeningModal(id = null) {
     const published = document.getElementById('tlPublished')?.checked;
 
     if (!title) {
-      showToast('Vui lòng nhập tiêu đề bài nghe.', 'error');
+      showToast(tr('Vui lòng nhập tiêu đề bài nghe.', 'Please enter a listening title.'), 'error');
+      return;
+    }
+    if (audioUrl && !safeUrl(audioUrl) && !parseYouTubeEmbed(audioUrl)) {
+      showToast(tr('Link Audio / YouTube không hợp lệ (chỉ hỗ trợ https:// hoặc mã video YouTube).', 'Invalid Audio / YouTube link (only https:// or YouTube ID supported).'), 'error');
+      return;
+    }
+    if (sourceUrl && !safeUrl(sourceUrl)) {
+      showToast(tr('Link nguồn tham khảo không hợp lệ (phải là https://).', 'Invalid reference URL (must start with https://).'), 'error');
       return;
     }
     if (!prompts.length || !answers.length) {
-      showToast('Vui lòng nhập ít nhất 1 câu hỏi và 1 đáp án.', 'error');
+      showToast(tr('Vui lòng nhập ít nhất 1 câu hỏi và 1 đáp án.', 'Please enter at least 1 prompt and 1 answer.'), 'error');
       return;
     }
     if (prompts.length !== answers.length) {
-      showToast(`Số câu hỏi (${prompts.length}) không khớp với số đáp án (${answers.length}).`, 'error');
+      showToast(tr(`Số câu hỏi (${prompts.length}) không khớp với số đáp án (${answers.length}).`, `Prompt count (${prompts.length}) does not match answer count (${answers.length}).`), 'error');
       return;
     }
 
@@ -523,15 +544,15 @@ function openListeningModal(id = null) {
       };
       if (id) {
         await updateDoc(doc(db, 'listeningContent', id), payload);
-        showToast('Đã cập nhật bài Listening thành công!');
+        showToast(tr('Đã cập nhật bài Listening thành công!', 'Listening task updated!'));
       } else {
         await setDoc(doc(collection(db, 'listeningContent')), { ...payload, createdAt: serverTimestamp() });
-        showToast('Đã đăng bài Listening mới!');
+        showToast(tr('Đã đăng bài Listening mới!', 'New listening task published!'));
       }
       closeForm();
     } catch (e) {
-      console.error(e);
-      showToast('Không thể lưu bài Listening: ' + e.message, 'error');
+      console.error('Save teacher listening:', e);
+      showToast(tr('Không thể lưu bài Listening. Vui lòng thử lại.', 'Could not save listening task.'), 'error');
     }
   });
 }
@@ -723,12 +744,13 @@ function renderTeacherExercises(rows) {
   if (staff) {
     root.querySelectorAll('[data-te-del-q]').forEach(b => {
       b.onclick = async () => {
-        if (!confirm('Xóa câu hỏi này?')) return;
+        if (!confirm(tr('Xóa câu hỏi này?', 'Delete this question?'))) return;
         try {
           await deleteDoc(doc(db, 'questionBank', b.dataset.teDelQ));
-          showToast('Đã xóa câu hỏi.');
+          showToast(tr('Đã xóa câu hỏi.', 'Question deleted.'));
         } catch (e) {
-          showToast('Xóa thất bại: ' + e.message, 'error');
+          console.error('Delete teacher question:', e);
+          showToast(tr('Xóa câu hỏi thất bại.', 'Could not delete question.'), 'error');
         }
       };
     });
@@ -745,12 +767,13 @@ function renderTeacherExercises(rows) {
       b.onclick = async () => {
         const setId = b.dataset.teDelSet;
         const set = groups.get(setId);
-        if (!confirm(`Bạn có chắc muốn xóa toàn bộ bộ bài tập "${set?.title}" (${set?.items.length} câu)?`)) return;
+        if (!confirm(tr(`Bạn có chắc muốn xóa toàn bộ bộ bài tập "${set?.title}" (${set?.items.length} câu)?`, `Delete the entire exercise set "${set?.title}" (${set?.items.length} questions)?`))) return;
         try {
           await Promise.all(set.items.map(item => deleteDoc(doc(db, 'questionBank', item.id))));
-          showToast('Đã xóa bộ bài tập.');
+          showToast(tr('Đã xóa bộ bài tập.', 'Exercise set deleted.'));
         } catch (e) {
-          showToast('Xóa thất bại: ' + e.message, 'error');
+          console.error('Delete teacher exercise set:', e);
+          showToast(tr('Xóa bộ bài tập thất bại.', 'Could not delete exercise set.'), 'error');
         }
       };
     });
@@ -909,12 +932,28 @@ function openExerciseModal(editData = null) {
     const published = document.getElementById('tePublished')?.checked;
 
     if (!prompt) {
-      showToast('Vui lòng nhập câu hỏi.', 'error');
+      showToast(tr('Vui lòng nhập câu hỏi.', 'Please enter a question prompt.'), 'error');
       return;
     }
     if (kind === 'reading' && !passage) {
-      showToast('Dạng bài đọc hiểu yêu cầu phải có đoạn văn (Reading passage).', 'error');
+      showToast(tr('Dạng bài đọc hiểu yêu cầu phải có đoạn văn (Reading passage).', 'Reading comprehension requires a reading passage.'), 'error');
       return;
+    }
+    if (kind === 'form' || kind === 'rewrite') {
+      if (!answer) {
+        showToast(tr('Vui lòng nhập đáp án chữ mẫu.', 'Please enter a sample text answer.'), 'error');
+        return;
+      }
+    } else {
+      const minOpts = kind === 'two' ? 2 : 2;
+      if (options.length < minOpts) {
+        showToast(tr(`Vui lòng nhập ít nhất ${minOpts} lựa chọn đáp án.`, `Please provide at least ${minOpts} options.`), 'error');
+        return;
+      }
+      if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= options.length) {
+        showToast(tr(`Đáp án đúng (${String.fromCharCode(65 + (correctIndex || 0))}) vượt quá số lựa chọn hiện có (${options.length}).`, `Selected answer index exceeds the ${options.length} provided options.`), 'error');
+        return;
+      }
     }
 
     try {
@@ -938,15 +977,15 @@ function openExerciseModal(editData = null) {
 
       if (editItemId) {
         await updateDoc(doc(db, 'questionBank', editItemId), payload);
-        showToast('Đã cập nhật bài tập thành công!');
+        showToast(tr('Đã cập nhật bài tập thành công!', 'Exercise updated!'));
       } else {
         await setDoc(doc(collection(db, 'questionBank')), { ...payload, createdAt: serverTimestamp() });
-        showToast('Đã đăng bài tập thành công!');
+        showToast(tr('Đã đăng bài tập thành công!', 'Exercise published!'));
       }
       closeForm();
     } catch (e) {
-      console.error(e);
-      showToast('Không thể lưu bài tập: ' + e.message, 'error');
+      console.error('Save teacher exercise:', e);
+      showToast(tr('Không thể lưu bài tập. Vui lòng thử lại.', 'Could not save exercise.'), 'error');
     }
   });
 }

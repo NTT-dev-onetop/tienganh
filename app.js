@@ -9,8 +9,12 @@ import{auth,db}from"./firebase-services.js";
 import{normalizeExerciseItem}from"./exercises.js";
 import{getProgressForUid}from"./progress.js";
 import{safeUrl}from"./security.js";
+import{hardenConsole}from"./logger.js";
+import{initI18n,tr}from"./i18n.js";
+hardenConsole();
+initI18n();
 const provider=new GoogleAuthProvider();
-const $=id=>document.getElementById(id);let user=null,unsub=null,data={vocab:[],grammar:[],mistakes:[]},reviewQueue=[],reviewIndex=0;
+const $=id=>document.getElementById(id);let user=null,unsub=null,data={vocab:[],grammar:[],mistakes:[]},reviewQueue=[],reviewIndex=0,currentBaseName='',currentIsStaff=false;
 const appMain=document.querySelector('main.container-fluid');
 const reviewPage=$('review');
 if(appMain&&reviewPage&&reviewPage.parentElement!==appMain)appMain.appendChild(reviewPage);
@@ -41,7 +45,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function page(id){
   const staff=isStaffRole(getCurrentRole());
   if(id==='admin'&&!staff)id='home';
-  if(staff&&['capture','mistakes','vocab','grammar','review','profile'].includes(id))id='admin';
+  if(staff&&['home','capture','mistakes','vocab','grammar','review','profile'].includes(id))id='admin';
   const updatePage=()=>{
     document.querySelectorAll('.page').forEach(x=>x.classList.add('d-none'));
     const target=$(id);target?.classList.remove('d-none');
@@ -59,13 +63,23 @@ document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.datase
 const mobileMenuToggle=document.getElementById('mobileMenuToggle');mobileMenuToggle?.setAttribute('aria-label','Mở menu');
 mobileMenuToggle?.addEventListener('click',()=>{const menu=document.getElementById('mobileMenu');const open=menu?.classList.toggle('open');mobileMenuToggle.setAttribute('aria-expanded',open?'true':'false');mobileMenuToggle.setAttribute('aria-label',open?'Đóng menu':'Mở menu')});
 document.addEventListener('click',e=>{const pageBtn=e.target.closest?.('[data-page]');if(pageBtn?.closest('.empty')){page(pageBtn.dataset.page);document.getElementById('mobileMenu')?.classList.remove('open');document.getElementById('mobileMenuToggle')?.setAttribute('aria-expanded','false');return}const menu=document.getElementById('mobileMenu');if(menu?.classList.contains('open')&&!e.target.closest('#mobileMenu')&&!e.target.closest('#mobileMenuToggle')){menu.classList.remove('open');mobileMenuToggle?.setAttribute('aria-expanded','false')}});
-$('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){$('authErr').textContent=e.message;$('authErr').classList.remove('d-none')}};$('logout').onclick=()=>signOut(auth);
+$('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){console.error('Lỗi đăng nhập:',e);const code=String(e?.code||'');$('authErr').textContent=(code==='auth/popup-closed-by-user'||code==='auth/cancelled-popup-request')?tr('Bạn đã đóng cửa sổ đăng nhập.','Sign-in popup was closed.'):tr('Đăng nhập thất bại. Vui lòng thử lại.','Sign-in failed. Please try again.');$('authErr').classList.remove('d-none')}};$('logout').onclick=()=>signOut(auth);
 
 // ===== FAST AUTH BOOTSTRAP =====
 // Fixes the login delay:
 //  - ensureUserDoc runs admins + teachers lookups in parallel and only writes when needed.
 //  - We DO NOT call ensureUserDoc twice anymore.
 //  - initRosterGate reuses the profile from ensureUserDoc instead of re-reading users/{uid}.
+function syncShellLanguageLabels(){
+  if(user&&$('userName')){
+    const baseName=currentBaseName||user.displayName||tr('Tài khoản','Account');
+    $('userName').textContent=baseName+(currentIsStaff?tr(' (Giáo viên)',' (Teacher)'):'');
+  }
+  const moreTitle=document.getElementById('moreSheetTitle');
+  if(moreTitle) moreTitle.textContent = currentIsStaff ? tr('⚙ Menu giáo viên','⚙ Teacher Menu') : tr('📚 Tất cả mục học','📚 All Study Sections');
+}
+window.addEventListener('app:lang-change',syncShellLanguageLabels);
+
 onAuthStateChanged(auth,async u=>{
   user=u;
   if(u){
@@ -73,13 +87,15 @@ onAuthStateChanged(auth,async u=>{
       let profile=await ensureUserDoc(u);
       let role=getCurrentRole();
       const isStaff=isStaffRole(role);
+      currentIsStaff=isStaff;
+      currentBaseName=profile?.name||u.displayName||'Tài khoản';
       document.body.classList.toggle('is-staff',isStaff);
       document.body.classList.toggle('is-student',!isStaff);
       $('auth').classList.add('d-none');
       $('app').classList.remove('d-none');
       $('user').textContent=u.email||'';
-      $('userName').textContent=(profile?.name||u.displayName||'Tài khoản') + (isStaff ? ' (Giáo viên)' : '');
-      setAvatarElement($('avatar'),profile?.name||u.displayName||u.email||'U',u.photoURL);
+      syncShellLanguageLabels();
+      setAvatarElement($('avatar'),currentBaseName||u.email||'U',u.photoURL);
       
       let adminNav=document.querySelectorAll('[data-admin-nav]');
       adminNav.forEach(x=>x.classList.toggle('d-none',!isStaff));
@@ -88,11 +104,11 @@ onAuthStateChanged(auth,async u=>{
       let teacherNav=document.querySelectorAll('[data-teacher-only]');
       teacherNav.forEach(x=>x.classList.toggle('d-none',!isStaff));
 
-      const moreTitle=document.getElementById('moreSheetTitle');
-      if(moreTitle) moreTitle.textContent = isStaff ? '⚙ Menu giáo viên' : '📚 Tất cả mục học';
-
       const gate=await initRosterGate(u,role,profile);
       if(!gate){await signOut(auth);return}
+      currentBaseName=profile?.name||currentBaseName;
+      syncShellLanguageLabels();
+      if($('profileClass')&&profile?.className)$('profileClass').textContent=String(profile.className);
 
       // Roster linking does not change role (admin/teacher come from config),
       // so we keep the role from the first ensureUserDoc and skip the redundant second read.
@@ -112,11 +128,13 @@ onAuthStateChanged(auth,async u=>{
       renderProfile();
     }catch(e){
       console.error('Lỗi khởi tạo phiên đăng nhập:',e);
-      $('authErr').textContent='Không thể khởi tạo tài khoản. Vui lòng thử lại.';
+      $('authErr').textContent=tr('Không thể khởi tạo tài khoản. Vui lòng thử lại.','Could not initialize account. Please try again.');
       $('authErr').classList.remove('d-none');
       await signOut(auth);
     }
   }else{
+    currentIsStaff=false;
+    currentBaseName='';
     document.body.classList.remove('is-staff');
     document.body.classList.remove('is-student');
     document.querySelectorAll('[data-admin-nav]').forEach(x=>x.classList.add('d-none'));
@@ -135,8 +153,9 @@ onAuthStateChanged(auth,async u=>{
 function setAvatarElement(el,name,photoURL){
   if(!el)return;
   el.replaceChildren();
-  if(photoURL){
-    const img=document.createElement('img');img.src=photoURL;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';el.appendChild(img);
+  const safe=safeUrl(photoURL);
+  if(safe){
+    const img=document.createElement('img');img.src=safe;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';el.appendChild(img);
   }else el.textContent=String(name||'U').trim().charAt(0).toUpperCase()||'U';
 }
 async function renderProfile(){
@@ -175,7 +194,7 @@ $('profileEdit')?.addEventListener('click',e=>showNameModal(user,e.currentTarget
 function showNameModal(u,triggerEl=null){
   if(!u||!u.uid||document.getElementById('nameModal'))return;
   const currentClass=document.getElementById('profileClass')?.textContent?.trim()||'11T1';
-  const wrap=document.createElement('div');wrap.className='modal fade';wrap.id='nameModal';wrap.tabIndex=-1;wrap.setAttribute('aria-hidden','true');wrap.innerHTML=`<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Hoàn tất hồ sơ</h5></div><div class="modal-body"><p class="muted">Nhập họ tên để hiển thị trong lớp ${esc(currentClass)}.</p><input id="profileName" class="form-control form-control-lg" maxlength="80" placeholder="Nguyễn Văn A"><div id="profileErr" class="alert alert-danger d-none mt-3"></div></div><div class="modal-footer"><button id="profileSave" class="btn btn-primary">Lưu hồ sơ</button></div></div></div>`;document.body.appendChild(wrap);const modal=window.bootstrap?.Modal?.getOrCreateInstance(wrap,{backdrop:'static',keyboard:false});if(!modal){wrap.remove();toast('Bootstrap Modal chưa sẵn sàng.','error');return}const mobileNav=document.querySelector('.mobile-bottom');if(mobileNav)mobileNav.classList.add('d-none');modal.show();wrap.addEventListener('shown.bs.modal',()=>wrap.querySelector('#profileName')?.focus(),{once:true});wrap.addEventListener('hidden.bs.modal',()=>{if(mobileNav)mobileNav.classList.remove('d-none');triggerEl?.focus?.();wrap.remove()},{once:true});wrap.querySelector('#profileSave').onclick=async()=>{const name=wrap.querySelector('#profileName')?.value.trim();const err=wrap.querySelector('#profileErr');if(name.length<2){err.textContent='Họ tên quá ngắn.';err.classList.remove('d-none');return}const btn=wrap.querySelector('#profileSave');btn.disabled=true;try{await setDoc(doc(db,'users',u.uid),{name,className:currentClass},{merge:true});$('userName').textContent=name;setAvatarElement($('avatar'),name,u.photoURL);modal.hide();setTimeout(()=>wrap.remove(),250);renderProfile();toast('Đã lưu hồ sơ.')}catch(e){console.error('Lỗi lưu hồ sơ:',e);err.textContent='Không thể lưu hồ sơ.';err.classList.remove('d-none');btn.disabled=false}}}
+  const wrap=document.createElement('div');wrap.className='modal fade';wrap.id='nameModal';wrap.tabIndex=-1;wrap.setAttribute('aria-hidden','true');wrap.innerHTML=`<div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Hoàn tất hồ sơ</h5></div><div class="modal-body"><p class="muted">Nhập họ tên để hiển thị trong lớp ${esc(currentClass)}.</p><input id="profileName" class="form-control form-control-lg" maxlength="80" placeholder="Nguyễn Văn A"><div id="profileErr" class="alert alert-danger d-none mt-3"></div></div><div class="modal-footer"><button id="profileSave" class="btn btn-primary">Lưu hồ sơ</button></div></div></div>`;document.body.appendChild(wrap);const modal=window.bootstrap?.Modal?.getOrCreateInstance(wrap,{backdrop:'static',keyboard:false});if(!modal){wrap.remove();toast('Bootstrap Modal chưa sẵn sàng.','error');return}const mobileNav=document.querySelector('.mobile-bottom');if(mobileNav)mobileNav.classList.add('d-none');modal.show();wrap.addEventListener('shown.bs.modal',()=>wrap.querySelector('#profileName')?.focus(),{once:true});wrap.addEventListener('hidden.bs.modal',()=>{if(mobileNav)mobileNav.classList.remove('d-none');triggerEl?.focus?.();wrap.remove()},{once:true});wrap.querySelector('#profileSave').onclick=async()=>{const name=wrap.querySelector('#profileName')?.value.trim();const err=wrap.querySelector('#profileErr');if(name.length<2){err.textContent='Họ tên quá ngắn.';err.classList.remove('d-none');return}const btn=wrap.querySelector('#profileSave');btn.disabled=true;try{await setDoc(doc(db,'users',u.uid),{name},{merge:true});currentBaseName=name;syncShellLanguageLabels();setAvatarElement($('avatar'),name,u.photoURL);modal.hide();setTimeout(()=>wrap.remove(),250);renderProfile();toast('Đã lưu hồ sơ.')}catch(e){console.error('Lỗi lưu hồ sơ:',e);err.textContent='Không thể lưu hồ sơ.';err.classList.remove('d-none');btn.disabled=false}}}
 const base=()=>collection(db,'users',user.uid,'english_notes');
 function renderVocabSkeleton(){const r=$('vocabList');if(r&&!data.vocab.length)r.innerHTML=Array.from({length:6},()=>'<div class="col-md-6 col-xl-4"><div class="loading-skeleton"></div></div>').join('')}
 function listen(){renderVocabSkeleton();unsub=onSnapshot(base(),snap=>{data={vocab:[],grammar:[],mistakes:[]};snap.forEach(d=>{const x={id:d.id,...d.data()};if(data[x.type]&&!pendingDeletes.has(x.id))data[x.type].push(x)});pendingCreates.forEach(x=>{if(data[x.type]&&!data[x.type].some(y=>y.id===x.id))data[x.type].unshift(x)});data.vocab.sort(sortDate);data.grammar.sort(sortDate);data.mistakes.sort((a,b)=>(Number(b.priority||1)-Number(a.priority||1))||sortDate(a,b));renderHome();renderVocab();renderGrammar();renderMistakes();renderTextbookGrammar()})}
@@ -807,7 +826,7 @@ function listeningTests(unit){return getListeningBank().filter(x=>x.unit===unit)
 function renderListeningTests(){const u=$('listeningUnit')?.value;if(!u||!$('listeningTest'))return;const tests=listeningTests(u);$('listeningTest').innerHTML=tests.map((x,i)=>`<option value="${i}">Đề ${i+1} · ${esc(x.title)}</option>`).join('')}
 function listeningNormalize(v){return String(v??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[“”"'.,!?;:()\-]/g,' ').replace(/\s+/g,' ').trim()}
 function listeningAnswerOK(given,answer){const a=listeningNormalize(given),b=listeningNormalize(answer);if(!a)return false;if(a===b)return true;const al=a.replace(/\b(a|an|the)\b/g,'').replace(/\s+/g,' ').trim(),bl=b.replace(/\b(a|an|the)\b/g,'').replace(/\s+/g,' ').trim();return al===bl}
-function renderListeningCard(){const s=listeningSession;if(!s)return;const item=s.item;const src=getListeningSources()[s.unit];let player='';if(src?.type==='youtube'){const start=Number(src.start||0);const safePage=safeUrl(src.page);player=`<div class="ratio ratio-16x9 original-video"><iframe src="https://www.youtube.com/embed/${src.id}?rel=0&start=${start}" title="${esc(src.label)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><div class="d-flex flex-wrap gap-2 mt-2"><a class="btn btn-sm btn-outline-primary" href="https://www.youtube.com/watch?v=${encodeURIComponent(src.id)}&t=${start}s" target="_blank" rel="noopener noreferrer">↗ Mở audio gốc</a>${safePage?`<a class="btn btn-sm btn-outline-secondary" href="${esc(safePage)}" target="_blank" rel="noopener noreferrer">📖 Xem bài Listening</a>`:''}</div>`}else{const safeSrcPage=safeUrl(src?.page||item.sourcePage);player=`<div class="source-listening-box"><b>🎧 Nguồn Listening gốc</b>${safeSrcPage?`<a class="btn btn-outline-primary ms-2" href="${esc(safeSrcPage)}" target="_blank" rel="noopener noreferrer">Mở nguồn</a>`:''}</div>`}$('listeningArea').innerHTML=`<div class="listening-top"><span class="tag">${esc(s.unit)}</span><b>6 chỗ trống</b><div class="listening-progress"><span style="width:${s.submitted?100:0}%"></span></div></div><div class="listening-card"><div class="listening-label">LISTENING · ORIGINAL TEXTBOOK AUDIO</div><div class="listening-title">${esc(item.title)}</div>${player}<div class="listen-note mt-3"><b>Nghe bài gốc</b> → nghe bài gốc → điền 6 chỗ trống. Câu hỏi được chuyển sang đúng format bài kiểm tra ở trường.</div><div class="blank-list">${item.prompts.map((p,i)=>`<div class="blank-row"><div class="blank-num">${i+1}</div><div class="flex-grow-1"><div class="small mb-1">${esc(p)}</div><input id="listenBlank${i}" autocomplete="off" spellcheck="false" placeholder="Điền đáp án..."></div></div>`).join('')}</div><div id="listeningFeedback"></div><div class="listening-actions"><button id="listenBack" class="btn btn-outline-secondary">← Chọn Unit khác</button><button id="submitListening" class="btn btn-primary">Nộp bài</button></div></div>`;bindListeningCard()} 
+function renderListeningCard(){const s=listeningSession;if(!s)return;const item=s.item;const src=getListeningSources()[s.unit];let player='';if(src?.type==='youtube'){const start=Math.max(0,Math.floor(Number(src.start||0)));const rawId=String(src.id||'').trim();const safeId=/^[a-zA-Z0-9_-]{11}$/.test(rawId)?rawId:encodeURIComponent(rawId);const safePage=safeUrl(src.page);player=`<div class="ratio ratio-16x9 original-video"><iframe src="https://www.youtube.com/embed/${safeId}?rel=0&start=${start}" title="${esc(src.label)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><div class="d-flex flex-wrap gap-2 mt-2"><a class="btn btn-sm btn-outline-primary" href="https://www.youtube.com/watch?v=${safeId}&t=${start}s" target="_blank" rel="noopener noreferrer">↗ Mở audio gốc</a>${safePage?`<a class="btn btn-sm btn-outline-secondary" href="${esc(safePage)}" target="_blank" rel="noopener noreferrer">📖 Xem bài Listening</a>`:''}</div>`}else{const safeSrcPage=safeUrl(src?.page||item.sourcePage);player=`<div class="source-listening-box"><b>🎧 Nguồn Listening gốc</b>${safeSrcPage?`<a class="btn btn-outline-primary ms-2" href="${esc(safeSrcPage)}" target="_blank" rel="noopener noreferrer">Mở nguồn</a>`:''}</div>`}$('listeningArea').innerHTML=`<div class="listening-top"><span class="tag">${esc(s.unit)}</span><b>6 chỗ trống</b><div class="listening-progress"><span style="width:${s.submitted?100:0}%"></span></div></div><div class="listening-card"><div class="listening-label">LISTENING · ORIGINAL TEXTBOOK AUDIO</div><div class="listening-title">${esc(item.title)}</div>${player}<div class="listen-note mt-3"><b>Nghe bài gốc</b> → nghe bài gốc → điền 6 chỗ trống. Câu hỏi được chuyển sang đúng format bài kiểm tra ở trường.</div><div class="blank-list">${item.prompts.map((p,i)=>`<div class="blank-row"><div class="blank-num">${i+1}</div><div class="flex-grow-1"><div class="small mb-1">${esc(p)}</div><input id="listenBlank${i}" autocomplete="off" spellcheck="false" placeholder="Điền đáp án..."></div></div>`).join('')}</div><div id="listeningFeedback"></div><div class="listening-actions"><button id="listenBack" class="btn btn-outline-secondary">← Chọn Unit khác</button><button id="submitListening" class="btn btn-primary">Nộp bài</button></div></div>`;bindListeningCard()} 
 function bindListeningCard(){const s=listeningSession;if(!s)return;$('submitListening').onclick=()=>checkListening();$('listenBack').onclick=()=>{$('listeningArea').classList.add('d-none');$('listeningSetup').classList.remove('d-none')};$('listeningArea').querySelectorAll('input').forEach((el,i)=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(i<5)$(`listenBlank${i+1}`)?.focus();else checkListening()}}))}
 function renderListeningCounterOnly(){const el=document.querySelector('.listen-count');if(el&&listeningSession)el.textContent=`Lần nghe: ${listeningSession.plays}/2`}
 async function checkListening(){const s=listeningSession;if(!s||s.submitted)return;const btn=$('submitListening');if(btn.dataset.busy==='1')return;btn.dataset.busy='1';btn.disabled=true;const answers=s.item.blanks.map((_,i)=>$(`listenBlank${i}`)?.value.trim()||'');const results=answers.map((x,i)=>listeningAnswerOK(x,s.item.blanks[i]));const score=results.filter(Boolean).length;s.submitted=true;s.score=score;const fb=$('listeningFeedback');const safeSourcePage=safeUrl(s.item.sourcePage);fb.innerHTML=`<div class="listening-feedback ${score===6?'correct':'wrong'}"><b>${score===6?'✓ Hoàn hảo':'🎯 Kết quả: '+score+'/6'}</b><div class="mt-1">${results.map((ok,i)=>`<div>${i+1}. ${ok?'✓ Đúng':'✗ Sai'} ${ok?'':`· Đáp án: <span class="listening-answer">${esc(s.item.blanks[i])}</span>`}</div>`).join('')}</div></div><div class="listening-transcript"><b>📜 Bài gốc & transcript</b><div class="mt-2">${safeSourcePage?`<a href="${esc(safeSourcePage)}" target="_blank" rel="noopener noreferrer">Mở nguồn Listening của ${esc(s.unit)}</a>`:''}</div></div>`;document.querySelector('.listening-progress span').style.width='100%';document.querySelectorAll('.blank-row input').forEach((el,i)=>{el.disabled=true;el.classList.toggle('is-correct',results[i])});btn.innerHTML='✓ Đã nộp';if(score<6&&user){await Promise.all(results.map((ok,i)=>ok?null:addNote('mistakes',{unit:s.unit,question:`Listening: ${s.item.title} — chỗ trống ${i+1}`,answer:s.item.blanks[i],mistakeType:'Listening',why:'Chưa nghe ra từ/cụm từ trong bài nghe.',rule:`Nghe lại từ khóa trong ngữ cảnh: ${s.item.blanks[i]}`,priority:2,resolved:false,resolvedDate:'',source:'listening'}).catch(e=>console.error('Không lưu được lỗi Listening:',e))));toast('Các chỗ sai đã được ghim vào Sổ câu sai.','error')}else toast('Đã chấm bài Listening.');}

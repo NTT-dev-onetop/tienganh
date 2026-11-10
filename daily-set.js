@@ -347,11 +347,6 @@ function getDailyAnswerValue(q){
   if(q?.kind==='form'||q?.kind==='rewrite')return document.getElementById('dailyText')?.value||'';
   return document.querySelector('input[name="dailyAnswer"]:checked')?.value||'';
 }
-function getCurrentDailyScore(){
-  const qs=Array.isArray(selectedSet?.questions)?selectedSet.questions:[];let score=0;
-  qs.forEach((q,i)=>{const val=answers[i];if(val===undefined)return;const ci=decodeCorrectIndex(String(q?.correctCode||''));if(q?.kind==='form'||q?.kind==='rewrite'){if(normalizeText(val)===normalizeText(q?.answer||''))score++;}else if(Number(val)===ci)score++});
-  return score;
-}
 function dailySlide(direction='next'){
   const current=document.querySelector('.daily-question');
   if(current&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){current.classList.remove('is-leaving','is-entering-prev');current.classList.add(direction==='prev'?'is-leaving-prev':'is-leaving');setTimeout(renderSetQuestion,180)}else renderSetQuestion();

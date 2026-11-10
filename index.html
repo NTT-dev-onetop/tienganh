@@ -11,66 +11,78 @@
   <link rel="icon" type="image/webp" href="./img/logo1.webp">
 </head>
 <body>
-<div id="auth" class="auth"><div class="auth-card"><div class="logo">📘</div><h1>English Notebook</h1><p>Biến những gì học thêm thành một cuốn sổ tiếng Anh riêng của bạn.</p><button id="login" class="btn btn-dark w-100 py-3"><i class="bi bi-google me-2"></i>Đăng nhập Google</button><div id="authErr" class="alert alert-danger d-none mt-3"></div></div></div>
+<div id="auth" class="auth"><div class="auth-card"><div class="logo">📘</div><h1>English Notebook</h1><p data-i18n="auth.subtitle">Biến những gì học thêm thành một cuốn sổ tiếng Anh riêng của bạn.</p><button id="login" class="btn btn-dark w-100 py-3"><i class="bi bi-google me-2"></i><span data-i18n="auth.login">Đăng nhập Google</span></button><div id="authErr" class="alert alert-danger d-none mt-3"></div></div></div>
 <div id="app" class="d-none">
 <nav class="navbar nav" aria-label="Điều hướng chính"><div class="container-fluid">
   <a class="navbar-brand" href="#" data-page="home"><span class="brand-mark">📘</span>English Notebook</a>
   <div class="navbar-collapse">
     <div class="navbar-nav">
-      <div class="nav-section" data-teacher-only>Quản trị giáo viên</div>
-      <button class="nav-link d-none" data-page="admin" data-admin-nav><span class="nav-icon">⚙</span>Khu vực Giáo viên</button>
+      <div class="nav-section" data-teacher-only data-i18n="nav.sec.teacherAdmin">Quản lý lớp học</div>
+      <button class="nav-link d-none" data-page="admin" data-admin-nav><span class="nav-icon">⚙</span><span class="nav-label" data-i18n="nav.admin">Khu vực Giáo viên</span></button>
 
-      <div class="nav-section">Điểm hằng ngày</div>
-      <button class="nav-link" data-page="daily"><span class="nav-icon">🎯</span>Daily Set</button>
+      <div class="nav-section" data-student-only>Điểm hằng ngày</div>
+      <button class="nav-link" data-page="daily"><span class="nav-icon">🎯</span><span class="nav-label" data-i18n="nav.daily">Daily Set</span></button>
 
-      <div class="nav-section" data-student-only>Tổng quan</div>
-      <button class="nav-link active" data-page="home" data-student-only><span class="nav-icon">⌂</span>Tổng quan</button>
+      <div class="nav-section" data-student-only data-i18n="nav.sec.overview">Tổng quan</div>
+      <button class="nav-link active" data-page="home" data-student-only><span class="nav-icon">⌂</span><span class="nav-label" data-i18n="nav.home">Tổng quan</span></button>
 
-      <div class="nav-section" data-student-only>Ghi & lưu</div>
-      <button class="nav-link" data-page="capture" data-student-only><span class="nav-icon">＋</span>Ghi bài</button>
-      <button class="nav-link" data-page="mistakes" data-student-only><span class="nav-icon">×</span>Câu sai</button>
-      <button class="nav-link" data-page="vocab" data-student-only><span class="nav-icon">Aa</span>Từ vựng</button>
-      <button class="nav-link" data-page="grammar" data-student-only><span class="nav-icon">ƒ</span>Cấu trúc</button>
+      <div class="nav-section" data-student-only data-i18n="nav.sec.capture">Ghi & lưu</div>
+      <button class="nav-link" data-page="capture" data-student-only><span class="nav-icon">＋</span><span class="nav-label" data-i18n="nav.capture">Ghi bài</span></button>
+      <button class="nav-link" data-page="mistakes" data-student-only><span class="nav-icon">×</span><span class="nav-label" data-i18n="nav.mistakes">Câu sai</span></button>
+      <button class="nav-link" data-page="vocab" data-student-only><span class="nav-icon">Aa</span><span class="nav-label" data-i18n="nav.vocab">Từ vựng</span></button>
+      <button class="nav-link" data-page="grammar" data-student-only><span class="nav-icon">ƒ</span><span class="nav-label" data-i18n="nav.grammar">Cấu trúc</span></button>
 
-      <div class="nav-section">Luyện tập</div>
-      <button class="nav-link" data-page="knowledge"><span class="nav-icon">📚</span>Kiến thức giáo viên</button><button class="nav-link" data-page="textbook"><span class="nav-icon">▦</span>Ôn theo Unit</button>
-      <button class="nav-link" data-page="exercises"><span class="nav-icon">✓</span>Bài tập</button>
-      <button class="nav-link" data-page="listening"><span class="nav-icon">◖</span>Listening</button>
-      <button class="nav-link" data-page="review" data-student-only><span class="nav-icon">↯</span>Ôn nhanh</button><button class="nav-link profile-nav" data-page="profile" data-student-only><span class="nav-icon">👤</span>Hồ sơ <span class="nav-badge">ME</span></button>
-
-      <div class="nav-section" data-teacher-only>Xem trước</div>
-      <button class="nav-link" data-page="home" data-teacher-only><span class="nav-icon">⌂</span>Trang chủ học sinh</button>
+      <div class="nav-section" data-i18n="nav.sec.practice">Học liệu & Luyện tập</div>
+      <button class="nav-link" data-page="knowledge"><span class="nav-icon">📚</span><span class="nav-label" data-i18n="nav.knowledge">Kiến thức giáo viên</span></button>
+      <button class="nav-link" data-page="textbook"><span class="nav-icon">▦</span><span class="nav-label" data-i18n="nav.textbook">Từ vựng theo Unit</span></button>
+      <button class="nav-link" data-page="exercises"><span class="nav-icon">✓</span><span class="nav-label" data-i18n="nav.exercises">Bài tập</span></button>
+      <button class="nav-link" data-page="listening"><span class="nav-icon">◖</span><span class="nav-label" data-i18n="nav.listening">Listening</span></button>
+      <button class="nav-link" data-page="review" data-student-only><span class="nav-icon">↯</span><span class="nav-label" data-i18n="nav.review">Ôn nhanh</span></button>
+      <button class="nav-link profile-nav" data-page="profile" data-student-only><span class="nav-icon">👤</span><span class="nav-label" data-i18n="nav.profile">Hồ sơ</span> <span class="nav-badge">ME</span></button>
     </div>
     <div class="nav-spacer"></div>
-    <div class="user-block"><div class="avatar" id="avatar">U</div><div class="user-meta"><strong id="userName">Tài khoản</strong><span id="user">Đang đăng nhập</span></div><button id="themeToggle" class="btn btn-outline-secondary btn-sm theme-toggle" type="button" aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện">🌙</button><button id="logout" class="btn btn-outline-secondary btn-sm" aria-label="Đăng xuất">↪</button></div>
+    <div class="user-block">
+      <div class="user-identity">
+        <div class="avatar" id="avatar">U</div>
+        <div class="user-meta"><strong id="userName">Tài khoản</strong><span id="user">Đang đăng nhập</span></div>
+      </div>
+      <div class="user-actions">
+        <button id="langToggle" class="btn btn-outline-secondary btn-sm lang-toggle" type="button" aria-label="Chuyển ngôn ngữ Tiếng Việt / English" title="Tiếng Việt / English">VI</button>
+        <button id="themeToggle" class="btn btn-outline-secondary btn-sm theme-toggle" type="button" aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện">🌙</button>
+        <button id="logout" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Đăng xuất">↪</button>
+      </div>
+    </div>
   </div>
 </div></nav>
 <header class="mobile-topbar" aria-hidden="true"></header>
 <nav class="mobile-bottom" aria-label="Điều hướng nhanh">
-  <button data-page="home" data-student-only><span class="mb-icon">⌂</span>Trang chủ</button>
-  <button data-page="admin" data-admin-nav class="d-none"><span class="mb-icon">⚙</span>Giáo viên</button>
-  <button data-page="daily"><span class="mb-icon">🎯</span>Daily</button>
-  <button data-page="exercises"><span class="mb-icon">✓</span>Luyện</button>
-  <button data-page="mistakes" data-student-only><span class="mb-icon">×</span>Câu sai</button>
-  <button data-page="home" data-teacher-only><span class="mb-icon">⌂</span>Học sinh</button>
-  <button class="mobile-more-trigger" id="mobileMoreTrigger" type="button" aria-controls="moreSheet" aria-expanded="false"><span class="mb-icon">•••</span>More</button>
+  <button data-page="home" data-student-only><span class="mb-icon">⌂</span><span class="mb-label" data-i18n="mb.home">Trang chủ</span></button>
+  <button data-page="admin" data-admin-nav class="d-none"><span class="mb-icon">⚙</span><span class="mb-label" data-i18n="mb.teacher">Giáo viên</span></button>
+  <button data-page="daily"><span class="mb-icon">🎯</span><span class="mb-label" data-i18n="mb.daily">Daily</span></button>
+  <button data-page="exercises"><span class="mb-icon">✓</span><span class="mb-label" data-i18n="mb.exercises">Bài tập</span></button>
+  <button data-page="mistakes" data-student-only><span class="mb-icon">×</span><span class="mb-label" data-i18n="mb.mistakes">Câu sai</span></button>
+  <button data-page="listening" data-teacher-only><span class="mb-icon">◖</span><span class="mb-label" data-i18n="mb.listening">Nghe</span></button>
+  <button class="mobile-more-trigger" id="mobileMoreTrigger" type="button" aria-controls="moreSheet" aria-expanded="false"><span class="mb-icon">•••</span><span class="mb-label" data-i18n="mb.more">Thêm</span></button>
 </nav>
 <div class="more-sheet" id="moreSheet" aria-hidden="true">
   <div class="more-handle" aria-hidden="true"></div>
   <div class="more-sheet-head"><strong id="moreSheetTitle">📚 Tất cả mục học</strong><button class="more-sheet-close" id="moreSheetClose" type="button" aria-label="Đóng menu">×</button></div>
   <div class="more-grid">
-    <button data-page="capture" data-student-only>＋ Ghi bài</button>
-    <button data-page="vocab" data-student-only>Aa Từ vựng</button>
-    <button data-page="grammar" data-student-only>ƒ Cấu trúc</button>
-    <button data-page="knowledge">📚 Kiến thức học tập giáo viên</button>
-    <button data-page="textbook">▦ Ôn theo Unit</button>
-    <button data-page="listening">◖ Listening</button>
-    <button data-page="review" data-student-only>↯ Ôn nhanh</button>
-    <button data-page="profile" data-student-only>👤 Hồ sơ</button>
-    <button data-page="admin" data-admin-nav class="d-none">⚙ Khu vực Giáo viên</button>
+    <button data-page="capture" data-student-only data-i18n="more.capture">＋ Ghi bài</button>
+    <button data-page="vocab" data-student-only data-i18n="more.vocab">Aa Từ vựng</button>
+    <button data-page="grammar" data-student-only data-i18n="more.grammar">ƒ Cấu trúc</button>
+    <button data-page="admin" data-admin-nav class="d-none" data-i18n="more.admin">⚙ Khu vực Giáo viên</button>
+    <button data-page="knowledge" data-i18n="more.knowledge">📚 Kiến thức giáo viên</button>
+    <button data-page="textbook" data-i18n="more.textbook">▦ Từ vựng theo Unit</button>
+    <button data-page="listening" data-student-only data-i18n="more.listening">◖ Listening</button>
+    <button data-page="review" data-student-only data-i18n="more.review">↯ Ôn nhanh</button>
+    <button data-page="profile" data-student-only data-i18n="more.profile">👤 Hồ sơ</button>
   </div>
   <div class="more-sheet-extra">
-    <button id="themeToggleMobile" class="theme-toggle-mobile" type="button" aria-label="Đổi giao diện">🌙 Đổi giao diện</button>
+    <div class="more-sheet-tools">
+      <button id="langToggleMobile" class="lang-toggle-mobile" type="button" aria-label="Chuyển ngôn ngữ">🌐 Tiếng Việt</button>
+      <button id="themeToggleMobile" class="theme-toggle-mobile" type="button" aria-label="Đổi giao diện">🌙 Giao diện tối</button>
+    </div>
   </div>
 </div>
 <div class="more-backdrop" id="moreBackdrop"></div>
@@ -149,14 +161,87 @@
 
 <section id="grammar" class="page d-none"><div class="head"><div><div class="eyebrow">GRAMMAR PATTERNS · GLOBAL SUCCESS 11</div><h2>Kho cấu trúc</h2><p>10 Unit của sách được tách riêng. Bên cạnh đó có <b>Chuyên đề</b> từ tài liệu English Course 11 bạn gửi: Verb patterns, Gerund/Infinitive và Sentence Transformation. Mỗi mục có công thức + ví dụ + bẫy dễ sai.</p></div><div class="filter-row"><select id="grammarUnitFilter" class="form-select"><option value="all">Tất cả 10 Unit</option><option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option><option>Unit 5</option><option>Unit 6</option><option>Unit 7</option><option>Unit 8</option><option>Unit 9</option><option>Unit 10</option><option>Chuyên đề</option></select><button class="btn btn-primary" data-page="capture">＋ Ghi cấu trúc</button></div></div><div id="textbookGrammarList" class="grammar-board mb-4"></div><div class="section-label">CẤU TRÚC BẠN TỰ GHI</div><div class="pattern-board" id="grammarList"></div></section>
 
-<section id="knowledge" class="page d-none"><div class="head"><div><div class="eyebrow">TEACHER KNOWLEDGE</div><h2>📚 Kiến thức học tập giáo viên</h2><p>Bài học được giáo viên đăng từ Dashboard. Khi bài được xuất bản, học sinh thấy ngay trên web.</p></div></div><div id="knowledgeList" class="knowledge-board"></div></section>
+<section id="knowledge" class="page d-none"><div class="head"><div><div class="eyebrow">TEACHER KNOWLEDGE</div><h2 data-i18n="page.knowledge.title">📚 Kiến thức học tập giáo viên</h2><p data-i18n="page.knowledge.desc">Bài học được giáo viên đăng từ Khu vực Giáo viên. Khi xuất bản, học sinh thấy ngay trên web.</p></div></div><div id="knowledgeList" class="knowledge-board"></div></section>
 
-<section id="textbook" class="page d-none"><div class="head"><div><div class="eyebrow">GLOBAL SUCCESS 11 · EXPANDED VOCABULARY</div><h2>Ôn từ vựng theo Unit</h2><p><b>238 từ Glossary của SGK</b> được giữ nguyên; thêm các từ/cụm xuất hiện trong nội dung Unit và kho mở rộng THPT để mỗi Unit có đủ chiều sâu hơn.</p></div><div class="filter-row"><select id="textbookUnit" class="form-select"><option value="all">Tất cả 10 Unit</option><option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option><option>Unit 5</option><option>Unit 6</option><option>Unit 7</option><option>Unit 8</option><option>Unit 9</option><option>Unit 10</option></select><select id="textbookSource" class="form-select"><option value="all">Tất cả nguồn</option><option value="sgk">Glossary SGK</option><option value="book">Từ/cụm trong nội dung sách</option><option value="extend">THPT mở rộng</option><option value="teacher">👨‍🏫 Giáo viên thêm</option></select><span id="textbookCount" class="badge text-bg-light">0 mục</span><button class="btn btn-primary" id="startTextbookReview">▶ Ôn Unit</button><button class="btn btn-success" id="btnOpenAddVocab" data-teacher-only>＋ Thêm từ vựng</button></div></div><div id="teacherVocabFormContainer" class="d-none mb-4" data-teacher-only></div><div id="textbookList" class="row g-3"></div></section>
+<section id="textbook" class="page d-none"><div class="head"><div><div class="eyebrow">GLOBAL SUCCESS 11 · EXPANDED VOCABULARY</div><h2 data-i18n="page.textbook.title">Ôn từ vựng theo Unit</h2><p><b>238 từ Glossary của SGK</b> được giữ nguyên; thêm các từ/cụm xuất hiện trong nội dung Unit và kho mở rộng THPT để mỗi Unit có đủ chiều sâu hơn.</p></div><div class="filter-row"><select id="textbookUnit" class="form-select"><option value="all">Tất cả 10 Unit</option><option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option><option>Unit 5</option><option>Unit 6</option><option>Unit 7</option><option>Unit 8</option><option>Unit 9</option><option>Unit 10</option></select><select id="textbookSource" class="form-select"><option value="all">Tất cả nguồn</option><option value="sgk">Glossary SGK</option><option value="book">Từ/cụm trong nội dung sách</option><option value="extend">THPT mở rộng</option><option value="teacher">👨‍🏫 Giáo viên thêm</option></select><span id="textbookCount" class="badge text-bg-light">0 mục</span><button class="btn btn-primary" id="startTextbookReview" data-i18n="page.textbook.btnReview">▶ Ôn Unit</button><button class="btn btn-success" id="btnOpenAddVocab" data-teacher-only data-i18n="page.textbook.btnAdd">＋ Thêm từ vựng</button></div></div><div id="teacherVocabFormContainer" class="d-none mb-4" data-teacher-only></div><div id="textbookList" class="row g-3"></div></section>
 
-<section id="listening" class="page d-none"><div class="head"><div><div class="eyebrow">LISTENING · SCHOOL TEST STYLE</div><h2>🎧 Nghe & điền 6 chỗ trống</h2><p>Đủ 10 bài Listening của Unit 1 → Unit 10. Mỗi Unit dùng đúng bài nghe theo sách Global Success 11, sau đó web chuyển thành bài kiểm tra 6 chỗ trống.</p></div><div class="filter-row"><select id="listeningUnit" class="form-select"><option value="Unit 1">Unit 1</option><option value="Unit 2">Unit 2</option><option value="Unit 3">Unit 3</option><option value="Unit 4">Unit 4</option><option value="Unit 5">Unit 5</option><option value="Unit 6">Unit 6</option><option value="Unit 7">Unit 7</option><option value="Unit 8">Unit 8</option><option value="Unit 9">Unit 9</option><option value="Unit 10">Unit 10</option></select><button id="startListening" class="btn btn-primary">▶ Bắt đầu</button><button class="btn btn-success" id="btnOpenAddListening" data-teacher-only>＋ Thêm bài nghe</button></div></div><div id="teacherListeningFormContainer" class="d-none mb-4" data-teacher-only></div><div id="listeningSetup" class="panel listening-setup"><div class="row g-3 align-items-end"><div class="col-md-4"><label class="fw-bold">Bài Listening gốc</label><select id="listeningTest" class="form-select"></select></div><div class="col-md-4"><div class="listening-rule"><b>Audio gốc:</b> phát từ nguồn Listening của từng Unit.</div></div><div class="col-md-4"><div class="listening-rule"><b>Quy tắc:</b> <b>6 chỗ trống</b> · đáp án hiển thị sau khi nộp.</div></div></div></div><div id="listeningArea" class="d-none"></div><div class="section-label mt-4">LISTENING GIÁO VIÊN ĐĂNG</div><div id="teacherListeningList" class="teacher-listening-board"></div></section><section id="exercises" class="page d-none"><div class="head"><div><div class="eyebrow">UNIT PRACTICE · GLOBAL SUCCESS 11</div><h2>Bài tập theo từng Unit</h2><p>Chọn Unit hoặc Review. Mỗi lần làm sẽ xáo câu; câu sai được tự động ghim vào Sổ câu sai để bạn vá đúng lỗ hổng.</p></div><div class="filter-row"><select id="exerciseUnit" class="form-select"><option value="Unit 1">Unit 1</option><option value="Unit 2">Unit 2</option><option value="Unit 3">Unit 3</option><option value="Unit 4">Unit 4</option><option value="Unit 5">Unit 5</option><option value="Unit 6">Unit 6</option><option value="Unit 7">Unit 7</option><option value="Unit 8">Unit 8</option><option value="Unit 9">Unit 9</option><option value="Unit 10">Unit 10</option><option value="Review 1">Review 1</option><option value="Review 2">Review 2</option><option value="Review 3">Review 3</option><option value="Review 4">Review 4</option></select><button id="startExercise" class="btn btn-primary">▶ Bắt đầu Unit</button><button class="btn btn-success" id="btnOpenAddExercise" data-teacher-only>＋ Thêm bài tập</button></div></div><div id="teacherExerciseFormContainer" class="d-none mb-4" data-teacher-only></div><div id="exerciseOverview" class="exercise-overview"></div><div id="exerciseSetup" class="panel exercise-setup"><div class="row g-3 align-items-end"><div class="col-md-4"><label>Số câu mỗi dạng</label><select id="exerciseCount" class="form-select"><option value="2">2 · Nhanh</option><option value="3" selected>3 · Chuẩn</option></select></div><div class="col-md-8"><div class="small muted">Bài đọc có 3 câu. Mỗi lần bắt đầu, câu trắc nghiệm được xáo nhẹ để bạn không học thuộc vị trí đáp án.</div></div></div></div><div id="exerciseArea" class="d-none"></div><div class="section-label mt-4">BÀI TẬP GIÁO VIÊN ĐĂNG</div><div id="teacherQuestionList" class="teacher-question-board"></div></section>
+<section id="listening" class="page d-none"><div class="head"><div><div class="eyebrow">LISTENING · SCHOOL TEST STYLE</div><h2 data-i18n="page.listening.title">🎧 Nghe & điền 6 chỗ trống</h2><p>Đủ 10 bài Listening của Unit 1 → Unit 10. Mỗi Unit dùng đúng bài nghe theo sách Global Success 11, sau đó web chuyển thành bài kiểm tra 6 chỗ trống.</p></div><div class="filter-row"><select id="listeningUnit" class="form-select"><option value="Unit 1">Unit 1</option><option value="Unit 2">Unit 2</option><option value="Unit 3">Unit 3</option><option value="Unit 4">Unit 4</option><option value="Unit 5">Unit 5</option><option value="Unit 6">Unit 6</option><option value="Unit 7">Unit 7</option><option value="Unit 8">Unit 8</option><option value="Unit 9">Unit 9</option><option value="Unit 10">Unit 10</option></select><button id="startListening" class="btn btn-primary" data-i18n="page.listening.btnStart">▶ Bắt đầu</button><button class="btn btn-success" id="btnOpenAddListening" data-teacher-only data-i18n="page.listening.btnAdd">＋ Thêm bài nghe</button></div></div><div id="teacherListeningFormContainer" class="d-none mb-4" data-teacher-only></div><div id="listeningSetup" class="panel listening-setup"><div class="row g-3 align-items-end"><div class="col-md-4"><label class="fw-bold">Bài Listening gốc</label><select id="listeningTest" class="form-select"></select></div><div class="col-md-4"><div class="listening-rule"><b>Audio gốc:</b> phát từ nguồn Listening của từng Unit.</div></div><div class="col-md-4"><div class="listening-rule"><b>Quy tắc:</b> <b>6 chỗ trống</b> · đáp án hiển thị sau khi nộp.</div></div></div></div><div id="listeningArea" class="d-none"></div><div class="section-label mt-4" data-i18n="page.listening.teacherSec">LISTENING GIÁO VIÊN ĐĂNG</div><div id="teacherListeningList" class="teacher-listening-board"></div></section><section id="exercises" class="page d-none"><div class="head"><div><div class="eyebrow">UNIT PRACTICE · GLOBAL SUCCESS 11</div><h2 data-i18n="page.exercises.title">Bài tập theo từng Unit</h2><p>Chọn Unit hoặc Review. Mỗi lần làm sẽ xáo câu; câu sai được tự động ghim vào Sổ câu sai để bạn vá đúng lỗ hổng.</p></div><div class="filter-row"><select id="exerciseUnit" class="form-select"><option value="Unit 1">Unit 1</option><option value="Unit 2">Unit 2</option><option value="Unit 3">Unit 3</option><option value="Unit 4">Unit 4</option><option value="Unit 5">Unit 5</option><option value="Unit 6">Unit 6</option><option value="Unit 7">Unit 7</option><option value="Unit 8">Unit 8</option><option value="Unit 9">Unit 9</option><option value="Unit 10">Unit 10</option><option value="Review 1">Review 1</option><option value="Review 2">Review 2</option><option value="Review 3">Review 3</option><option value="Review 4">Review 4</option></select><button id="startExercise" class="btn btn-primary" data-i18n="page.exercises.btnStart">▶ Bắt đầu Unit</button><button class="btn btn-success" id="btnOpenAddExercise" data-teacher-only data-i18n="page.exercises.btnAdd">＋ Thêm bài tập</button></div></div><div id="teacherExerciseFormContainer" class="d-none mb-4" data-teacher-only></div><div id="exerciseOverview" class="exercise-overview"></div><div id="exerciseSetup" class="panel exercise-setup"><div class="row g-3 align-items-end"><div class="col-md-4"><label>Số câu mỗi dạng</label><select id="exerciseCount" class="form-select"><option value="2">2 · Nhanh</option><option value="3" selected>3 · Chuẩn</option></select></div><div class="col-md-8"><div class="small muted">Bài đọc có 3 câu. Mỗi lần bắt đầu, câu trắc nghiệm được xáo nhẹ để bạn không học thuộc vị trí đáp án.</div></div></div></div><div id="exerciseArea" class="d-none"></div><div class="section-label mt-4" data-i18n="page.exercises.teacherSec">BÀI TẬP GIÁO VIÊN ĐĂNG</div><div id="teacherQuestionList" class="teacher-question-board"></div></section>
 
 <section id="daily" class="page d-none"><div id="dailyWork"></div></section>
-<section id="admin" class="page d-none"><div class="head"><div><div class="eyebrow">QUẢN LÝ CÁC LỚP 11 (11T1 & 11.1)</div><h2>👨‍🏫 Khu vực giáo viên</h2><p>Chọn mục cần quản lý bên dưới. Dữ liệu được lưu trực tiếp trên web.</p></div><button id="exportStreak" class="btn btn-outline-primary">⇩ Xuất Word</button></div><div id="adminContent"><div class="cms-tabs"><button class="cms-tab active" data-cms="knowledge">📚 Kiến thức học tập</button><button class="cms-tab" data-cms="questions">🎯 Daily Sets</button><button class="cms-tab" data-cms="listening">🎧 Bài nghe</button><button class="cms-tab" data-cms="students">👥 Tiến độ học sinh</button><button class="cms-tab" data-cms="admins">⚙ Phân quyền</button></div><div id="cms-knowledge" class="cms-pane"><div class="panel"><div class="panel-title"><div><div class="eyebrow">KNOWLEDGE</div><h5>Quản lý kiến thức</h5></div></div><div id="adminKnowledge"></div></div></div><div id="cms-questions" class="cms-pane d-none"><div class="panel"><div class="panel-title"><div><div class="eyebrow">🎯 DAILY SETS</div><h5>Quản lý Daily Set</h5></div></div><div id="adminSetManager"></div><hr class="my-4"><div class="panel-title"><div><div class="eyebrow">QUESTION BANK</div><h5>Ngân hàng câu hỏi thủ công</h5></div></div><div id="adminQuestions"></div></div></div><div id="cms-listening" class="cms-pane d-none"><div class="panel"><div class="panel-title"><div><div class="eyebrow">LISTENING</div><h5>Quản lý Listening</h5></div></div><div id="adminListening"></div></div></div><div id="cms-students" class="cms-pane d-none"><div class="panel"><div class="panel-title"><div><div class="eyebrow">STUDENTS</div><h5>Danh sách học sinh</h5></div></div><div id="adminUsers"></div><hr><div class="eyebrow">ROSTER</div><h5>Cấu hình danh sách học sinh (11T1 & 11.1)</h5><div id="adminRoster"></div></div></div><div id="cms-admins" class="cms-pane d-none"><div class="panel"><div class="panel-title"><div><div class="eyebrow">ADMINS</div><h5>Giáo viên / quản trị viên</h5></div></div><div id="adminAdmins"></div></div></div></div></div></section>
+<section id="admin" class="page d-none">
+  <div class="head admin-head">
+    <div>
+      <h2 data-i18n="admin.title">Khu vực Giáo viên</h2>
+      <p data-i18n="admin.subtitle">Theo dõi 2 lớp 11T1 & 11.1, quản lý Daily Set, kiến thức, bài nghe và xuất Word.</p>
+    </div>
+    <button id="exportStreak" class="btn btn-outline-primary">⇩ <span data-i18n="admin.exportWord">Xuất Word</span></button>
+  </div>
+  <div id="adminContent">
+    <div id="adminOverview" class="admin-overview mb-3"></div>
+    <div class="cms-tabs" role="tablist">
+      <button class="cms-tab active" data-cms="students" role="tab" aria-selected="true"><span data-i18n="admin.tab.students">2 Lớp & Tiến độ</span></button>
+      <button class="cms-tab" data-cms="questions" role="tab" aria-selected="false"><span data-i18n="admin.tab.questions">Daily Sets & Đề</span></button>
+      <button class="cms-tab" data-cms="knowledge" role="tab" aria-selected="false"><span data-i18n="admin.tab.knowledge">Kiến thức</span></button>
+      <button class="cms-tab" data-cms="listening" role="tab" aria-selected="false"><span data-i18n="admin.tab.listening">Bài nghe</span></button>
+      <button class="cms-tab" data-cms="admins" role="tab" aria-selected="false"><span data-i18n="admin.tab.admins">Phân quyền</span></button>
+    </div>
+    <div id="cms-students" class="cms-pane">
+      <div id="adminClassCompare" class="admin-compare-grid mb-3"></div>
+      <div class="panel">
+        <div class="panel-title mb-3">
+          <h3 data-i18n="admin.panel.students">Tiến độ học sinh 2 lớp (11T1 & 11.1)</h3>
+        </div>
+        <div id="adminUsers"></div>
+        <details id="adminRosterWrap" class="admin-roster-details mt-4">
+          <summary class="fw-bold" data-i18n="admin.panel.roster">Cấu hình danh sách học sinh (11T1 & 11.1)</summary>
+          <div id="adminRoster" class="mt-3"></div>
+        </details>
+      </div>
+    </div>
+    <div id="cms-questions" class="cms-pane d-none">
+      <div class="cms-subtabs mb-3" role="tablist">
+        <button type="button" class="cms-subtab active" data-qsub="sets" role="tab" aria-selected="true"><span data-i18n="admin.sub.daily">Daily Sets (Word & Danh sách)</span></button>
+        <button type="button" class="cms-subtab" data-qsub="bank" role="tab" aria-selected="false"><span data-i18n="admin.sub.bank">Ngân hàng câu hỏi</span></button>
+      </div>
+      <div id="subPaneDaily" class="panel">
+        <div class="panel-title mb-3">
+          <h3 data-i18n="admin.panel.dailySets">Quản lý Daily Set</h3>
+        </div>
+        <div id="adminSetManager"></div>
+      </div>
+      <div id="subPaneBank" class="panel d-none">
+        <div class="panel-title mb-3">
+          <h3 data-i18n="admin.panel.questionBank">Ngân hàng câu hỏi thủ công</h3>
+        </div>
+        <div id="adminQuestions"></div>
+      </div>
+    </div>
+    <div id="cms-knowledge" class="cms-pane d-none">
+      <div class="panel">
+        <div class="panel-title mb-3">
+          <h3 data-i18n="admin.panel.knowledge">Quản lý kiến thức</h3>
+        </div>
+        <div id="adminKnowledge"></div>
+      </div>
+    </div>
+    <div id="cms-listening" class="cms-pane d-none">
+      <div class="panel">
+        <div class="panel-title mb-3">
+          <h3 data-i18n="admin.panel.listening">Quản lý Listening</h3>
+        </div>
+        <div id="adminListening"></div>
+      </div>
+    </div>
+    <div id="cms-admins" class="cms-pane d-none">
+      <div class="panel">
+        <div class="panel-title mb-3">
+          <h3 data-i18n="admin.panel.admins">Giáo viên / quản trị viên</h3>
+        </div>
+        <div id="adminAdmins"></div>
+      </div>
+    </div>
+  </div>
+</section>
 <section id="review" class="page d-none"><div class="head"><div><div class="eyebrow">TARGETED REVIEW</div><h2>Ôn nhanh phần yếu</h2><p>Không phải học lại cả web. Chọn một nhóm và tự kiểm tra trí nhớ.</p></div><span id="reviewProgress" class="badge text-bg-primary"></span></div><div id="reviewEmpty" class="empty d-none"><div>🎉</div><h3>Hiện chưa có mục cần ôn.</h3><p>Hãy ghi từ mới hoặc đánh dấu câu sai sau giờ học.</p><button class="btn btn-primary" data-page="capture">＋ Ghi ngay</button></div><div id="reviewArea" class="review-area d-none"><div class="review-card"><div class="review-type" id="reviewType"></div><div class="review-prompt" id="reviewPrompt"></div><div id="reviewExtra" class="review-extra"></div><div id="reviewAnswer" class="review-answer d-none"></div></div><div class="review-actions"><button id="reveal" class="btn btn-outline-primary btn-lg">👀 Xem đáp án</button><button id="reviewAgain" class="btn btn-outline-danger btn-lg d-none">❌ Chưa nhớ</button><button id="reviewKnown" class="btn btn-success btn-lg d-none">✓ Nhớ rồi</button></div></div></section>
 </main></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -165,11 +250,17 @@
   const key="english-notebook-theme";
   const syncTheme=()=>{
     const dark=document.documentElement.dataset.theme==="dark";
+    const en=document.documentElement.lang==="en";
     const desktop=document.getElementById('themeToggle');
     const mobile=document.getElementById('themeToggleMobile');
-    if(desktop){desktop.textContent=dark?'☀️':'🌙';desktop.setAttribute('aria-label',dark?'Chuyển sang giao diện sáng':'Chuyển sang giao diện tối');desktop.title=dark?'Giao diện sáng':'Giao diện tối';}
-    if(mobile){mobile.textContent=dark?'☀️ Giao diện sáng':'🌙 Giao diện tối';mobile.setAttribute('aria-label',dark?'Chuyển sang giao diện sáng':'Chuyển sang giao diện tối');}
+    const toLight=en?'Switch to light mode':'Chuyển sang giao diện sáng';
+    const toDark=en?'Switch to dark mode':'Chuyển sang giao diện tối';
+    const labelLight=en?'Light mode':'Giao diện sáng';
+    const labelDark=en?'Dark mode':'Giao diện tối';
+    if(desktop){desktop.textContent=dark?'☀️':'🌙';desktop.setAttribute('aria-label',dark?toLight:toDark);desktop.title=dark?labelLight:labelDark;}
+    if(mobile){mobile.textContent=dark?`☀️ ${labelLight}`:`🌙 ${labelDark}`;mobile.setAttribute('aria-label',dark?toLight:toDark);}
   };
+  window.__syncThemeLabel=syncTheme;
   const toggleTheme=()=>{const dark=document.documentElement.dataset.theme!=="dark";document.documentElement.dataset.theme=dark?'dark':'light';localStorage.setItem(key,dark?'dark':'light');syncTheme();};
   const init=()=>{const saved=localStorage.getItem(key);document.documentElement.dataset.theme=saved==='dark'?'dark':'light';syncTheme();document.getElementById('themeToggle')?.addEventListener('click',toggleTheme);document.getElementById('themeToggleMobile')?.addEventListener('click',toggleTheme);};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
