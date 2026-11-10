@@ -394,7 +394,5 @@
     input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur()}});
   });
   new MutationObserver(wireListeningInputs).observe(document.body,{childList:true,subtree:true});wireListeningInputs();
-
-  document.addEventListener('click',e=>{if(e.target.closest('#toast')){const t=document.getElementById('toast');if(t){t.classList.remove('show');delete t.dataset.v18Timer}}});
 })();
 </script></body></html>

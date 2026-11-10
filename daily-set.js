@@ -55,6 +55,8 @@ let currentUser=null,currentSets=[],selectedSet=null,answers={},dailyQuestionInd
 const today=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=(msg,type='success')=>window.appToast?window.appToast(msg,type):undefined;
+const appConfirm=(opts)=>window.appConfirm?window.appConfirm(opts):Promise.resolve(false);
+const safeErr=(e,vi,en)=>window.appErrorMsg?window.appErrorMsg(e,vi,en):tr(vi,en);
 const isPassedValue=v=>v===true||v===1||String(v).toLowerCase()==='true'||String(v).toLowerCase()==='passed';
 const dailyAttemptKey=(uid,setId,date=today())=>`englishNotebook.dailyAttempt.${String(uid||'')}.${String(date)}.${String(setId||'')}`;
 const readDailyAttemptStartedAt=(uid,setId)=>{try{const n=Number(localStorage.getItem(dailyAttemptKey(uid,setId)));return Number.isFinite(n)&&n>0?n:0}catch{return 0}};
@@ -105,7 +107,7 @@ async function loadSets(){
     });
     currentSets.sort((a,b)=>getUnitOfSet(a)-getUnitOfSet(b)||getDailyOfSet(a)-getDailyOfSet(b));
     await renderDailySetPage();
-  }catch(e){console.error('Không tải được Daily Set:',e);toast(tr('Không tải được bộ đề. Kiểm tra Firestore.','Could not load Daily Sets. Check Firestore.'),'error')}
+  }catch(e){console.error('Không tải được Daily Set:',e);toast(tr('Không tải được bộ đề. Vui lòng kiểm tra kết nối và thử lại.','Could not load Daily Sets. Please check your connection and try again.'),'error')}
 }
 function getUnitOfSet(s){
   const u=Number(s?.unitNumber);
@@ -385,7 +387,7 @@ function saveCurrentAnswer(){
   if(!String(val).trim()){if(btn)btn.disabled=false;toast(tr('Hãy trả lời câu này trước.','Please answer this question first.'),'error');return}
   answers[idx]=val;
   if(idx===qs.length-1){
-    submitSet().catch(e=>{console.error('Lỗi nộp Daily:',e);toast(e?.message||tr('Không thể nộp bài.','Could not submit.'),'error')}).finally(()=>{
+    submitSet().catch(e=>{console.error('Lỗi nộp Daily:',e);toast(safeErr(e,'Không thể nộp bài.','Could not submit.'),'error')}).finally(()=>{
       if(btn&&idx===qs.length-1)btn.disabled=false;
     });
   }else{dailyQuestionIndex=idx+1;dailySlide('next')}
@@ -447,7 +449,7 @@ export async function submitSet(){
     if(passed&&firstPass)window._dailyJustPassedId=selectedSet.id;
     if(!passed&&navigator.vibrate)navigator.vibrate(50);
     rootResult(score,passed,streak);
-  }catch(e){console.error('Lỗi nộp Daily Set:',e);toast(e.message||tr('Không thể nộp bài. Vui lòng thử lại.','Could not submit. Please try again.'),'error')}
+  }catch(e){console.error('Lỗi nộp Daily Set:',e);toast(safeErr(e,'Không thể nộp bài. Vui lòng thử lại.','Could not submit. Please try again.'),'error')}
   finally{submitting=false}
 }
 function burstConfetti(){
@@ -466,6 +468,22 @@ function rootResult(score,passed,streak,skipConfetti=false){
 initDailySet();
 
 // ===== Full-screen exam overlay =====
+let _exitPromptBusy=false;
+async function _confirmAndCloseExam(){
+  if(_exitPromptBusy||document.querySelector('.app-dialog-backdrop.is-open'))return;
+  if(lastResult){_closeExamOverlay();return;}
+  _exitPromptBusy=true;
+  try{
+    const ok=await appConfirm({
+      title:tr('Thoát bài làm?','Exit quiz?'),
+      message:tr('Tiến độ chưa nộp sẽ bị mất.','Unsubmitted progress will be lost.'),
+      confirmText:tr('Thoát bài','Exit Quiz'),
+      cancelText:tr('Làm tiếp','Keep Going'),
+      danger:true
+    });
+    if(ok)_closeExamOverlay();
+  }finally{_exitPromptBusy=false;}
+}
 function _ensureExamOverlay(){
   let el=document.getElementById('dailyExamOverlay');
   if(el)return el;
@@ -480,15 +498,14 @@ function _ensureExamOverlay(){
     </div>
     <div class="daily-exam-body" id="dailyExamBody"></div>`;
   document.body.appendChild(el);
-  el.querySelector('#dailyExamClose').onclick=()=>{
+  el.querySelector('#dailyExamClose').onclick=async()=>{
     const hasAnswers=Object.keys(answers||{}).some(k=>String(answers[k]??'').trim()!=='');
-    if(hasAnswers){
-      if(window.confirm(tr('Thoát bài làm? Tiến độ chưa nộp sẽ bị mất.','Exit quiz? Unsubmitted progress will be lost.')))_closeExamOverlay();
-    }else _closeExamOverlay();
+    if(hasAnswers&&!lastResult)await _confirmAndCloseExam();
+    else _closeExamOverlay();
   };
-  document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'&&el.classList.contains('is-open')){
-      if(window.confirm(tr('Thoát bài làm? Tiến độ chưa nộp sẽ bị mất.','Exit quiz? Unsubmitted progress will be lost.')))_closeExamOverlay();
+  document.addEventListener('keydown',async e=>{
+    if(e.key==='Escape'&&el.classList.contains('is-open')&&!document.querySelector('.app-dialog-backdrop.is-open')){
+      await _confirmAndCloseExam();
     }
   });
   return el;

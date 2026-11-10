@@ -16,9 +16,11 @@ import { tr } from "./i18n.js";
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
 const isPublished = v => v === undefined || v === null || v === true || v === 1 || String(v).trim().toLowerCase() === 'true' || String(v).trim().toLowerCase() === 'published';
 const showToast = (msg, type = 'info') => {
-  if (typeof window.toast === 'function') window.toast(msg, type);
-  else alert(msg);
+  if (typeof window.appToast === 'function') window.appToast(msg, type);
+  else if (typeof window.toast === 'function') window.toast(msg, type);
+  else if (typeof window.appAlert === 'function') window.appAlert(msg);
 };
+const askConfirm = (opts) => window.appConfirm ? window.appConfirm(opts) : Promise.resolve(false);
 const isStaff = () => isStaffRole(getCurrentRole());
 
 let stops = [];
@@ -195,7 +197,12 @@ function openVocabModal(id = null) {
 window.__editTeacherVocab = openVocabModal;
 window.__deleteTeacherVocab = async (id) => {
   if (!isStaff()) return;
-  if (!confirm(tr('Bạn có chắc chắn muốn xóa từ vựng này khỏi Unit không?', 'Delete this vocabulary item from the unit?'))) return;
+  const ok = await askConfirm({
+    title: tr('Xóa từ vựng?', 'Delete vocabulary?'),
+    message: tr('Bạn có chắc chắn muốn xóa từ vựng này khỏi Unit không?', 'Delete this vocabulary item from the unit?'),
+    danger: true
+  });
+  if (!ok) return;
   try {
     await deleteDoc(doc(db, 'teacherVocab', id));
     showToast(tr('Đã xóa từ vựng thành công.', 'Vocabulary item deleted.'));
@@ -405,7 +412,12 @@ function renderTeacherListeningBoard(list) {
     });
     root.querySelectorAll('[data-tl-del]').forEach(btn => {
       btn.onclick = async () => {
-        if (!confirm(tr('Bạn có chắc muốn xóa bài Listening này không?', 'Delete this listening task?'))) return;
+        const ok = await askConfirm({
+          title: tr('Xóa bài Listening?', 'Delete listening task?'),
+          message: tr('Bạn có chắc muốn xóa bài Listening này không?', 'Delete this listening task?'),
+          danger: true
+        });
+        if (!ok) return;
         try {
           await deleteDoc(doc(db, 'listeningContent', btn.dataset.tlDel));
           showToast(tr('Đã xóa bài Listening.', 'Listening task deleted.'));
@@ -747,7 +759,12 @@ function renderTeacherExercises(rows) {
   if (staff) {
     root.querySelectorAll('[data-te-del-q]').forEach(b => {
       b.onclick = async () => {
-        if (!confirm(tr('Xóa câu hỏi này?', 'Delete this question?'))) return;
+        const ok = await askConfirm({
+          title: tr('Xóa câu hỏi?', 'Delete question?'),
+          message: tr('Xóa câu hỏi này?', 'Delete this question?'),
+          danger: true
+        });
+        if (!ok) return;
         try {
           await deleteDoc(doc(db, 'questionBank', b.dataset.teDelQ));
           showToast(tr('Đã xóa câu hỏi.', 'Question deleted.'));
@@ -770,7 +787,12 @@ function renderTeacherExercises(rows) {
       b.onclick = async () => {
         const setId = b.dataset.teDelSet;
         const set = groups.get(setId);
-        if (!confirm(tr(`Bạn có chắc muốn xóa toàn bộ bộ bài tập "${set?.title}" (${set?.items.length} câu)?`, `Delete the entire exercise set "${set?.title}" (${set?.items.length} questions)?`))) return;
+        const ok = await askConfirm({
+          title: tr('Xóa bộ bài tập?', 'Delete exercise set?'),
+          message: tr(`Bạn có chắc muốn xóa toàn bộ bộ bài tập "${set?.title}" (${set?.items.length} câu)?`, `Delete the entire exercise set "${set?.title}" (${set?.items.length} questions)?`),
+          danger: true
+        });
+        if (!ok) return;
         try {
           await Promise.all(set.items.map(item => deleteDoc(doc(db, 'questionBank', item.id))));
           showToast(tr('Đã xóa bộ bài tập.', 'Exercise set deleted.'));

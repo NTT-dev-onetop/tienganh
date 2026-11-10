@@ -468,7 +468,7 @@ export async function initRosterGate(user, role, existingProfile = null) {
       backdrop: 'static',
       keyboard: false
     });
-    if (!bsModal) throw new Error(tr('Bootstrap Modal chưa sẵn sàng.','Bootstrap Modal is not ready.'));
+    if (!bsModal) throw new Error(tr('Không thể mở hộp thoại. Vui lòng tải lại trang.','Could not open dialog. Please reload the page.'));
     const mobileNav = document.querySelector('.mobile-bottom');
     if (mobileNav) mobileNav.classList.add('d-none');
     modal.addEventListener('hidden.bs.modal', () => {
@@ -529,7 +529,7 @@ export async function initRosterGate(user, role, existingProfile = null) {
           resolve(true);
         } catch (err) {
           console.error('Lỗi lưu danh tính roster:', err);
-          confirmErr.textContent = err.message || tr('Không thể lưu tên. Vui lòng thử lại.','Could not save selection. Please try again.');
+          confirmErr.textContent = window.appErrorMsg ? window.appErrorMsg(err, 'Không thể lưu tên. Vui lòng thử lại.', 'Could not save selection. Please try again.') : tr('Không thể lưu tên. Vui lòng thử lại.','Could not save selection. Please try again.');
           confirmErr.classList.remove('d-none');
           confirmSaveBtn.disabled = false;
           confirmBackBtn.disabled = false;
@@ -539,7 +539,7 @@ export async function initRosterGate(user, role, existingProfile = null) {
     });
   } catch (error) {
     console.error('Lỗi khởi tạo Roster Gate:', error);
-    toastGlobal(error.message || tr('Không thể kiểm tra danh sách lớp.','Could not load class roster.'), 'error');
+    toastGlobal(window.appErrorMsg ? window.appErrorMsg(error, 'Không thể kiểm tra danh sách lớp.', 'Could not load class roster.') : tr('Không thể kiểm tra danh sách lớp.','Could not load class roster.'), 'error');
     return false;
   }
 }

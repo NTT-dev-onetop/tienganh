@@ -10,6 +10,8 @@ import{tr,getLang}from"./i18n.js";
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const DEFAULT_ROSTER=['Trần Diễm Linh Giang','Võ Hồ Minh Hằng','Nguyễn Anh Khôi','Huỳnh Nguyễn Ly Lam','Nguyễn Thị Ngọc Mỹ','Lê Bảo Ngọc','Phạm Minh Triết','Phan Trần Huỳnh Hương','Võ Mai Khánh','Nguyễn Trần Thùy Ngân','Nguyễn Thanh Sang','Phạm Nhật Trường','Nguyễn Dương Gia Nghi','Nguyễn Phúc Thịnh','Lê Nguyễn Trung Trực','Nguyễn Ngọc Bích Anh','Nguyễn Thùy Anh','Lê Ngọc Quốc Bảo','Huỳnh Lê Minh Đạt','Lê Minh Đạt','Lê Ngọc Bảo Hân','Trương Thị Kim Hân','Trần Huy Hoàng','Nguyễn Tuấn Huy','Nguyễn Đăng Khoa','Lê Nguyễn Hoàng Nam','Nguyễn Khánh Ngọc','Nguyễn Lê Hồng Ngọc','Nguyễn Vũ Bảo Ngọc','Bùi Ngọc An Nhi','Dương Ngọc Tâm Như','Nguyễn Tấn Phát','Trần Minh Phi','Nguyễn Ngọc Bích Phương','Phạm Hà Mai Quỳnh','Nguyễn Bùi Phúc Trí','Lê Nhã Thanh','Nguyễn Khánh Thi','Phạm Hoàng Thiên','Trần Thiện Tín','Phạm Ngọc Bảo Trân','Vĩnh Huỳnh Diễm Trinh','Lê Quốc Trọng','Võ Hoàng Trọng','Nguyễn Trung Trực'];
 const toast=(m,t='success')=>window.appToast?window.appToast(m,t):undefined;
+const appConfirm=(opts)=>window.appConfirm?window.appConfirm(opts):Promise.resolve(false);
+const safeErr=(e,vi,en)=>window.appErrorMsg?window.appErrorMsg(e,vi,en):tr(vi,en);
 const localToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const isValidYouTubeInput=v=>{const s=String(v||'').trim();return /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:[?&/#]|$)/i.test(s)||/^[a-zA-Z0-9_-]{11}$/.test(s)};
 let currentUser=null,sets=[],questions=[],knowledge=[],listenings=[],stopUsersProgress=null,rerenderUsers=null,langBound=false,exportControlsBound=false;
@@ -441,10 +443,10 @@ async function loadUsers(){
   }catch(e){stopUsers();stopSubmissions();r.innerHTML=`<div class="alert alert-danger">${tr('Không tải được học sinh.','Failed to load students.')}</div>`;console.error(e)}
 }
 
-async function saveAdmins(){if(!admin())return;try{const lines=String(document.getElementById('adminEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error(tr('Có email admin không hợp lệ.','Invalid admin email found.'));const ownerEmail=OWNER_EMAIL;const emails=[...new Set([ownerEmail,...lines])];await setDoc(doc(db,'config','admins'),{emails,updatedAt:serverTimestamp()},{merge:true});invalidateRoleCaches();toast(tr('Đã lưu danh sách admin.','Admin list saved.'));await loadTeachers()}catch(e){console.error(e);toast(e.message||tr('Không thể lưu admin.','Could not save admin list.'),'error')}}
+async function saveAdmins(){if(!admin())return;try{const lines=String(document.getElementById('adminEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error(tr('Có email admin không hợp lệ.','Invalid admin email found.'));const ownerEmail=OWNER_EMAIL;const emails=[...new Set([ownerEmail,...lines])];await setDoc(doc(db,'config','admins'),{emails,updatedAt:serverTimestamp()},{merge:true});invalidateRoleCaches();toast(tr('Đã lưu danh sách admin.','Admin list saved.'));await loadTeachers()}catch(e){console.error(e);toast(safeErr(e,'Không thể lưu admin.','Could not save admin list.'),'error')}}
 
 async function loadTeachers(){const r=document.getElementById('adminAdmins');if(!r||!admin())return;let adminEmails=[],teacherEmails=[];try{const a=await getDoc(doc(db,'config','admins'));adminEmails=a.exists()&&Array.isArray(a.data()?.emails)?a.data().emails.map(x=>String(x).trim().toLowerCase()).filter(Boolean):[];const t=await getDoc(doc(db,'config','teachers'));teacherEmails=t.exists()&&Array.isArray(t.data()?.emails)?t.data().emails.map(x=>String(x).trim().toLowerCase()).filter(Boolean):[];r.innerHTML=`<div class="cms-form"><h4>👑 Admin</h4><textarea id="adminEmails" class="form-control" rows="3">${esc(adminEmails.join('\n'))}</textarea><div class="small muted mt-2">${tr('Admin có toàn quyền và có thể bổ nhiệm giáo viên.','Admins have full access and can appoint teachers.')}</div><button id="saveAdmins" class="btn btn-dark mt-2">${tr('Lưu Admin','Save Admins')}</button><hr class="my-4"><h4>👨‍🏫 ${tr('Giáo viên','Teachers')}</h4><textarea id="teacherEmails" class="form-control" rows="4" placeholder="teacher@example.com">${esc(teacherEmails.join('\n'))}</textarea><div class="small muted mt-2">${tr('Mỗi dòng một Gmail. Giáo viên có quyền quản lý nội dung, Daily Set và xuất tiến độ; không có quyền quản trị hệ thống.','One Gmail per line. Teachers can manage content, Daily Sets, and export reports; no system-admin privileges.')}</div><button id="saveTeachers" class="btn btn-success mt-2">${tr('Lưu danh sách giáo viên','Save Teachers')}</button></div>`;document.getElementById('saveAdmins').onclick=saveAdmins;document.getElementById('saveTeachers').onclick=saveTeachers}catch(e){console.error(e);r.innerHTML=`<div class="alert alert-danger">${tr('Không tải được danh sách quản trị viên.','Could not load permissions list.')}</div>`}}
-async function saveTeachers(){if(!admin())return;try{const lines=String(document.getElementById('teacherEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error(tr('Có email giáo viên không hợp lệ.','Invalid teacher email found.'));const admins=(await getDoc(doc(db,'config','admins'))).data()?.emails||[];const cleanAdmins=new Set([String(OWNER_EMAIL).trim().toLowerCase(),...admins.map(x=>String(x).trim().toLowerCase())]);const teachers=[...new Set(lines.filter(x=>!cleanAdmins.has(x)))];await setDoc(doc(db,'config','teachers'),{emails:teachers,updatedAt:serverTimestamp()});invalidateRoleCaches();toast(tr('Đã lưu danh sách giáo viên.','Teacher list saved.'));await loadTeachers()}catch(e){console.error(e);toast(e.message||tr('Không thể lưu giáo viên.','Could not save teacher list.'),'error')}}
+async function saveTeachers(){if(!admin())return;try{const lines=String(document.getElementById('teacherEmails')?.value||'').split(/\r?\n/).map(x=>x.trim().toLowerCase()).filter(Boolean);if(lines.some(x=>!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))throw new Error(tr('Có email giáo viên không hợp lệ.','Invalid teacher email found.'));const admins=(await getDoc(doc(db,'config','admins'))).data()?.emails||[];const cleanAdmins=new Set([String(OWNER_EMAIL).trim().toLowerCase(),...admins.map(x=>String(x).trim().toLowerCase())]);const teachers=[...new Set(lines.filter(x=>!cleanAdmins.has(x)))];await setDoc(doc(db,'config','teachers'),{emails:teachers,updatedAt:serverTimestamp()});invalidateRoleCaches();toast(tr('Đã lưu danh sách giáo viên.','Teacher list saved.'));await loadTeachers()}catch(e){console.error(e);toast(safeErr(e,'Không thể lưu giáo viên.','Could not save teacher list.'),'error')}}
 
 async function loadRoster(){
   const r=document.getElementById('adminRoster');if(!r||!admin())return;
@@ -495,7 +497,7 @@ async function saveRosterClass(className){
     const textareaId=className==='11T1'?'rosterNames11T1':'rosterNames11_1';
     const lines=String(document.getElementById(textareaId)?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
     if(lines.length<1)throw new Error(tr(`Roster lớp ${className} phải có ít nhất 1 tên.`,`Roster for ${className} must contain at least 1 name.`));
-    if(className==='11T1'&&lines.length!==45&&!window.confirm(tr(`Lớp 11T1 hiện có ${lines.length} HS (khác mặc định 45). Vẫn lưu?`,`11T1 has ${lines.length} students (default 45). Save anyway?`)))return;
+    if(className==='11T1'&&lines.length!==45&&!(await appConfirm({title:tr('Xác nhận số lượng học sinh','Confirm Class Size'),message:tr(`Lớp 11T1 hiện có ${lines.length} HS (khác mặc định 45). Vẫn lưu?`,`11T1 has ${lines.length} students (default 45). Save anyway?`),confirmText:tr('Vẫn lưu','Save Anyway')})))return;
     const students=lines.map((name,i)=>({
       id:`${className}_s${String(i+1).padStart(2,'0')}`,
       name,
@@ -513,7 +515,7 @@ async function saveRosterClass(className){
     invalidateRosterCache();
     toast(tr(`Đã lưu roster lớp ${className} (${lines.length} HS).`,`Saved ${className} roster (${lines.length} students).`));
     await Promise.all([loadRoster(),loadUsers()]);
-  }catch(e){toast(e.message||tr('Không thể lưu roster.','Could not save roster.'),'error')}
+  }catch(e){toast(safeErr(e,'Không thể lưu roster.','Could not save roster.'),'error')}
 }
 
 function activateCmsTab(id){
@@ -559,8 +561,8 @@ async function loadKnowledge(){const r=document.getElementById('adminKnowledge')
 function knowledgeForm(k=null){const x=k||{};return `<div class="cms-form"><div class="row g-3"><div class="col-md-8"><label>${tr('Tiêu đề *','Title *')}</label><input id="kTitle" class="form-control form-control-lg" value="${esc(x.title||'')}" placeholder="Unit 6 – Relative clauses"></div><div class="col-md-4"><label>Unit</label><select id="kUnit" class="form-select form-select-lg">${['Unit 1','Unit 2','Unit 3','Unit 4','Unit 5','Unit 6','Unit 7','Unit 8','Unit 9','Unit 10','Chuyên đề','Khác'].map(u=>`<option value="${u}" ${x.unit===u?'selected':''}>${u==='Chuyên đề'?tr('Chuyên đề','Special Topic'):u==='Khác'?tr('Khác','Other'):u}</option>`).join('')}</select></div><div class="col-md-6"><label>${tr('Môn / chủ đề','Topic / Category')}</label><input id="kCategory" class="form-control" value="${esc(x.category||'Grammar')}" placeholder="Grammar / Vocabulary / Reading..."></div><div class="col-12"><label>${tr('Lý thuyết *','Content *')}</label><textarea id="kContent" class="form-control" rows="7" placeholder="${tr('Viết nội dung bài học...','Write lesson content...')}">${esc(x.content||'')}</textarea></div><div class="col-12"><label>${tr('Ví dụ','Examples')}</label><textarea id="kExamples" class="form-control" rows="4" placeholder="${tr('Mỗi ví dụ một dòng...','One example per line...')}">${esc(x.examples||'')}</textarea></div><div class="col-md-6"><label>${tr('Ghi chú / mẹo nhớ','Notes / Tips')}</label><textarea id="kNotes" class="form-control" rows="4">${esc(x.notes||'')}</textarea></div><div class="col-md-6"><label>${tr('Bài tập (nếu muốn)','Exercises (optional)')}</label><textarea id="kExercises" class="form-control" rows="4" placeholder="1. ...&#10;2. ...">${esc(x.exercises||'')}</textarea></div><div class="col-12"><div class="form-check form-switch"><input id="kPublished" class="form-check-input" type="checkbox" ${x.published===false?'':'checked'}><label class="form-check-label"><b>${tr('Đã xuất bản','Published')}</b> — ${tr('học sinh sẽ thấy ngay','visible to students immediately')}</label></div></div></div><div class="form-actions"><button id="saveKnowledge" class="btn btn-primary btn-lg">💾 ${k?tr('Cập nhật','Update'):tr('Đăng kiến thức','Publish')}</button><button id="cancelKnowledge" class="btn btn-outline-secondary">${tr('Hủy','Cancel')}</button></div></div>`}
 function renderKnowledgeAdmin(){const r=document.getElementById('adminKnowledge');if(!r)return;r.innerHTML=`<button id="newKnowledge" class="btn btn-primary mb-3">＋ ${tr('Thêm kiến thức','Add Study Note')}</button><div id="knowledgeEditor"></div><div class="cms-list">${knowledge.map(k=>`<article class="cms-item"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(k.unit==='Chuyên đề'?tr('Chuyên đề','Special Topic'):k.unit==='Khác'?tr('Khác','Other'):(k.unit||''))}</span><span class="tag ${k.published?'tag-published':'tag-draft'}">${k.published?tr('Đã xuất bản','Published'):tr('Nháp','Draft')}</span></div><h4 class="mt-2 mb-1 h5">${esc(k.title||tr('Không có tiêu đề','Untitled'))}</h4><small class="muted">${esc(k.category||'')} · ${esc(k.authorName||'')}</small></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary" data-k-edit="${esc(k.id)}">${tr('Sửa','Edit')}</button><button class="btn btn-sm btn-outline-danger" data-k-del="${esc(k.id)}">${tr('Xóa','Delete')}</button></div></article>`).join('')||`<div class="muted">${tr('Chưa có bài kiến thức.','No study notes yet.')}</div>`}</div>`;document.getElementById('newKnowledge').onclick=()=>openKnowledge();r.querySelectorAll('[data-k-edit]').forEach(b=>b.onclick=()=>openKnowledge(b.dataset.kEdit));r.querySelectorAll('[data-k-del]').forEach(b=>b.onclick=()=>deleteKnowledge(b.dataset.kDel))}
 function openKnowledge(id){const r=document.getElementById('knowledgeEditor');if(!r)return;const k=id?knowledge.find(x=>x.id===id):null;r.innerHTML=knowledgeForm(k);document.getElementById('saveKnowledge').onclick=()=>saveKnowledge(id);document.getElementById('cancelKnowledge').onclick=()=>{r.innerHTML=''};r.scrollIntoView({behavior:'smooth',block:'start'})}
-async function saveKnowledge(id){if(!staff())return;try{const title=document.getElementById('kTitle').value.trim(),content=document.getElementById('kContent').value.trim();if(!title||!content)throw new Error(tr('Tiêu đề và lý thuyết là bắt buộc.','Title and content are required.'));const payload={title,unit:document.getElementById('kUnit').value,category:document.getElementById('kCategory').value.trim()||'Grammar',content,examples:document.getElementById('kExamples').value.trim(),notes:document.getElementById('kNotes').value.trim(),exercises:document.getElementById('kExercises').value.trim(),published:document.getElementById('kPublished').checked,author:currentUser.email||'',authorName:currentUser.displayName||currentUser.email||tr('Giáo viên','Teacher'),updatedAt:serverTimestamp()};if(id)await updateDoc(doc(db,'knowledge',id),payload);else await setDoc(doc(collection(db,'knowledge')),{...payload,createdAt:serverTimestamp()});toast(payload.published?tr('Đã đăng kiến thức — học sinh thấy ngay.','Published — visible to students.'):tr('Đã lưu bản nháp.','Draft saved.'));await loadKnowledge()}catch(e){console.error(e);toast(e.message||tr('Không thể lưu kiến thức.','Could not save study note.'),'error')}}
-async function deleteKnowledge(id){if(!staff())return;if(!window.confirm(tr('Xóa bài kiến thức này?','Delete this study note?')))return;try{await deleteDoc(doc(db,'knowledge',id));toast(tr('Đã xóa kiến thức.','Study note deleted.'));await loadKnowledge()}catch(e){console.error(e);toast(tr('Xóa thất bại.','Delete failed.'),'error')}}
+async function saveKnowledge(id){if(!staff())return;try{const title=document.getElementById('kTitle').value.trim(),content=document.getElementById('kContent').value.trim();if(!title||!content)throw new Error(tr('Tiêu đề và lý thuyết là bắt buộc.','Title and content are required.'));const payload={title,unit:document.getElementById('kUnit').value,category:document.getElementById('kCategory').value.trim()||'Grammar',content,examples:document.getElementById('kExamples').value.trim(),notes:document.getElementById('kNotes').value.trim(),exercises:document.getElementById('kExercises').value.trim(),published:document.getElementById('kPublished').checked,author:currentUser.email||'',authorName:currentUser.displayName||currentUser.email||tr('Giáo viên','Teacher'),updatedAt:serverTimestamp()};if(id)await updateDoc(doc(db,'knowledge',id),payload);else await setDoc(doc(collection(db,'knowledge')),{...payload,createdAt:serverTimestamp()});toast(payload.published?tr('Đã đăng kiến thức — học sinh thấy ngay.','Published — visible to students.'):tr('Đã lưu bản nháp.','Draft saved.'));await loadKnowledge()}catch(e){console.error(e);toast(safeErr(e,'Không thể lưu kiến thức.','Could not save study note.'),'error')}}
+async function deleteKnowledge(id){if(!staff())return;if(!(await appConfirm({title:tr('Xóa bài kiến thức?','Delete study note?'),message:tr('Xóa bài kiến thức này?','Delete this study note?'),danger:true})))return;try{await deleteDoc(doc(db,'knowledge',id));toast(tr('Đã xóa kiến thức.','Study note deleted.'));await loadKnowledge()}catch(e){console.error(e);toast(tr('Xóa thất bại.','Delete failed.'),'error')}}
 
 // ===== QUESTION CMS =====
 const getKinds=()=>[
@@ -601,34 +603,34 @@ function bindQuestionBulk(r){
   boxes().forEach(b=>b.addEventListener('change',sync));
   r.querySelector('#qSelectAll')?.addEventListener('click',()=>{const all=boxes(),should=all.some(x=>!x.checked);all.forEach(x=>x.checked=should);sync()});
   r.querySelector('#qClearSelect')?.addEventListener('click',()=>{boxes().forEach(x=>x.checked=false);sync()});
-  delBtn?.addEventListener('click',async()=>{const ids=selected();if(!ids.length)return;if(!window.confirm(tr(`Xóa ${ids.length} câu hỏi đã chọn?`,`Delete ${ids.length} selected questions?`)))return;await deleteQuestionsBulk(ids)});
-  allBtn?.addEventListener('click',async()=>{if(!questions.length)return;if(!window.confirm(tr(`Xóa TOÀN BỘ ${questions.length} câu hỏi trong ngân hàng?\nHành động này không thể hoàn tác.`,`Delete ALL ${questions.length} questions in the bank?\nThis cannot be undone.`)))return;await deleteQuestionsBulk(questions.map(q=>q.id))});
+  delBtn?.addEventListener('click',async()=>{const ids=selected();if(!ids.length)return;if(!(await appConfirm({title:tr('Xóa câu hỏi?','Delete questions?'),message:tr(`Xóa ${ids.length} câu hỏi đã chọn?`,`Delete ${ids.length} selected questions?`),danger:true})))return;await deleteQuestionsBulk(ids)});
+  allBtn?.addEventListener('click',async()=>{if(!questions.length)return;if(!(await appConfirm({title:tr('Xóa toàn bộ ngân hàng?','Clear entire question bank?'),message:tr(`Xóa TOÀN BỘ ${questions.length} câu hỏi trong ngân hàng?\nHành động này không thể hoàn tác.`,`Delete ALL ${questions.length} questions in the bank?\nThis cannot be undone.`),danger:true})))return;await deleteQuestionsBulk(questions.map(q=>q.id))});
   setBtn?.addEventListener('click',async()=>{const ids=selected();if(ids.length<1)return;await createDailySetFromQuestionIds(ids,1,true)});
   sync();
 }
 
-async function deleteQuestionsBulk(ids){if(!staff()||!ids.length)return;const CHUNK=450;try{for(let i=0;i<ids.length;i+=CHUNK){const batch=writeBatch(db);ids.slice(i,i+CHUNK).forEach(id=>batch.delete(doc(db,'questionBank',id)));await batch.commit()}toast(tr(`🗑 Đã xóa ${ids.length} câu hỏi.`,`🗑 Deleted ${ids.length} questions.`));await loadQuestions()}catch(e){console.error(e);toast(e.message||tr('Xóa hàng loạt thất bại.','Bulk delete failed.'),'error')}}
+async function deleteQuestionsBulk(ids){if(!staff()||!ids.length)return;const CHUNK=450;try{for(let i=0;i<ids.length;i+=CHUNK){const batch=writeBatch(db);ids.slice(i,i+CHUNK).forEach(id=>batch.delete(doc(db,'questionBank',id)));await batch.commit()}toast(tr(`🗑 Đã xóa ${ids.length} câu hỏi.`,`🗑 Deleted ${ids.length} questions.`));await loadQuestions()}catch(e){console.error(e);toast(safeErr(e,'Xóa hàng loạt thất bại.','Bulk delete failed.'),'error')}}
 
-async function createDailySetFromQuestionIds(ids,order=1,published=true,unit=1){if(!staff()||ids.length<1)return;try{const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);if(chosen.length!==ids.length)throw new Error(tr('Một số câu hỏi không còn tồn tại. Hãy tải lại danh sách.','Some questions no longer exist. Reload and try again.'));const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error(tr(`Câu hỏi "${String(q.prompt||'').slice(0,60)}" sai định dạng.`,`Question "${String(q.prompt||'').slice(0,60)}" is invalid.`));const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});const setId=`u${String(unit).padStart(2,'0')}d${String(order).padStart(2,'0')}`;const ref=doc(db,'sets',setId);const existing=await getDoc(ref);if(existing.exists()&&!window.confirm(tr(`Unit ${unit} · Daily ${String(order).padStart(2,'0')} đã tồn tại. Ghi đè danh sách câu hỏi hiện tại?`,`Unit ${unit} · Daily ${String(order).padStart(2,'0')} already exists. Overwrite it?`)))return;await setDoc(ref,{order,unitNumber:unit,dailyNumber:order,title:`Unit ${unit} · Daily ${String(order).padStart(2,'0')}`,questions:qs,totalQuestions:qs.length,passScore:Math.max(1,Math.min(qs.length,Math.ceil(qs.length*0.75))),passTotal:qs.length,published,isDaily:true,author:currentUser.email||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(tr(`🚀 Đã đưa ${qs.length} câu vào Unit ${unit} · Daily ${String(order).padStart(2,'0')} và ${published?'xuất bản':'lưu nháp'}.`,`🚀 Added ${qs.length} questions to Unit ${unit} · Daily ${String(order).padStart(2,'0')}.`));await loadSets();document.querySelector('[data-cms="questions"]')?.click();document.querySelector('[data-qsub="sets"]')?.click()}catch(e){console.error(e);toast(e.message||tr('Không thể tạo Daily Set.','Could not create Daily Set.'),'error')}}
+async function createDailySetFromQuestionIds(ids,order=1,published=true,unit=1){if(!staff()||ids.length<1)return;try{const chosen=ids.map(id=>questions.find(q=>q.id===id)).filter(Boolean);if(chosen.length!==ids.length)throw new Error(tr('Một số câu hỏi không còn tồn tại. Hãy tải lại danh sách.','Some questions no longer exist. Reload and try again.'));const qs=chosen.map(q=>{const n=normalizeExerciseItem(q.kind,q.kind==='form'||q.kind==='rewrite'?[q.prompt,q.answer]:[q.prompt,...q.options,Number(q.correctIndex),q.explain]);if(!n)throw new Error(tr(`Câu hỏi "${String(q.prompt||'').slice(0,60)}" sai định dạng.`,`Question "${String(q.prompt||'').slice(0,60)}" is invalid.`));const x={sourceQuestionId:q.id,kind:n.kind,prompt:n.prompt,options:n.options,correctCode:encodeCorrectIndex(n.correctIndex),explain:n.explain};if(n.kind==='form'||n.kind==='rewrite')x.answer=q.answer;return x});const setId=`u${String(unit).padStart(2,'0')}d${String(order).padStart(2,'0')}`;const ref=doc(db,'sets',setId);const existing=await getDoc(ref);if(existing.exists()&&!(await appConfirm({title:tr('Ghi đè Daily Set?','Overwrite Daily Set?'),message:tr(`Unit ${unit} · Daily ${String(order).padStart(2,'0')} đã tồn tại. Ghi đè danh sách câu hỏi hiện tại?`,`Unit ${unit} · Daily ${String(order).padStart(2,'0')} already exists. Overwrite it?`),confirmText:tr('Ghi đè','Overwrite'),danger:true})))return;await setDoc(ref,{order,unitNumber:unit,dailyNumber:order,title:`Unit ${unit} · Daily ${String(order).padStart(2,'0')}`,questions:qs,totalQuestions:qs.length,passScore:Math.max(1,Math.min(qs.length,Math.ceil(qs.length*0.75))),passTotal:qs.length,published,isDaily:true,author:currentUser.email||'',updatedAt:serverTimestamp(),...(existing.exists()?{}:{createdAt:serverTimestamp()})},{merge:true});toast(tr(`🚀 Đã đưa ${qs.length} câu vào Unit ${unit} · Daily ${String(order).padStart(2,'0')} và ${published?'xuất bản':'lưu nháp'}.`,`🚀 Added ${qs.length} questions to Unit ${unit} · Daily ${String(order).padStart(2,'0')}.`));await loadSets();document.querySelector('[data-cms="questions"]')?.click();document.querySelector('[data-qsub="sets"]')?.click()}catch(e){console.error(e);toast(safeErr(e,'Không thể tạo Daily Set.','Could not create Daily Set.'),'error')}}
 
 async function parseDocxVocabulary(file){const buf=await file.arrayBuffer(),bytes=new Uint8Array(buf);const cd=findCentralDirectory(bytes);let xmlBytes=null,off=cd.offset,end=off+cd.size;while(off<end){if(readU32(bytes,off)!==0x02014b50)break;const method=readU16(bytes,off+10),csize=readU32(bytes,off+20),nlen=readU16(bytes,off+28),elen=readU16(bytes,off+30),clen=readU16(bytes,off+32),local=readU32(bytes,off+42);const name=new TextDecoder('utf-8').decode(bytes.slice(off+46,off+46+nlen));if(name==='word/document.xml'){const lf=local;if(readU32(bytes,lf)!==0x04034b50)throw new Error(tr('DOCX local header không hợp lệ.','Invalid DOCX local header.'));const ln=readU16(bytes,lf+26),le=readU16(bytes,lf+28),data=bytes.slice(lf+30+ln+le,lf+30+ln+le+csize);xmlBytes=method===0?data:await inflateRaw(data)}off+=46+nlen+elen+clen}if(!xmlBytes)throw new Error(tr('Không tìm thấy word/document.xml trong file.','Missing word/document.xml inside file.'));return parseWordXml(new TextDecoder('utf-8').decode(xmlBytes))}
 function findCentralDirectory(bytes){for(let i=bytes.length-22;i>=Math.max(0,bytes.length-66000);i--){if(readU32(bytes,i)===0x06054b50)return{offset:readU32(bytes,i+16),size:readU32(bytes,i+12)} }throw new Error(tr('File .docx không phải ZIP hợp lệ.','File is not a valid .docx archive.'))}
 function readU16(b,i){return b[i]|(b[i+1]<<8)}function readU32(b,i){return (b[i]|(b[i+1]<<8)|(b[i+2]<<16)|(b[i+3]<<24))>>>0}
-async function inflateRaw(data){if(!('DecompressionStream' in window))throw new Error(tr('Trình duyệt này chưa hỗ trợ đọc Word trực tiếp. Hãy dùng Chrome/Edge/Safari mới.','Browser does not support DecompressionStream. Please use modern Chrome/Edge/Safari.'));return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
+async function inflateRaw(data){if(!('DecompressionStream' in window))throw new Error(tr('Trình duyệt này chưa hỗ trợ đọc Word trực tiếp. Hãy dùng Chrome/Edge/Safari mới.','This browser version cannot read .docx files directly. Please use modern Chrome, Edge, or Safari.'));return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
 function parseWordXml(xml){const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.querySelector('parsererror'))throw new Error(tr('Word XML bị lỗi.','Corrupted Word XML.'));const ps=[...doc.getElementsByTagNameNS('*','p')];const rows=ps.map(p=>{const runs=[...p.getElementsByTagNameNS('*','r')];let text='',bold=false;for(const run of runs){const t=[...run.getElementsByTagNameNS('*','t')].map(x=>x.textContent||'').join('');if(t){text+=t;const rpr=run.getElementsByTagNameNS('*','rPr')[0];const b=rpr&&[...rpr.children].find(x=>x.localName==='b');if(b&&b.getAttribute('w:val')!=='0'&&b.getAttribute('w:val')!=='false'&&b.getAttribute('w:val')!=='off')bold=true}}return{text:text.replace(/\s+/g,' ').trim(),bold}}).filter(x=>x.text);const out=[];let cur=null;for(const row of rows){const qm=row.text.match(/^\s*(\d+)[\.)]\s*(.+)$/);const om=row.text.match(/^\s*([ABCD])\s*[\.)\-:]\s*(.+)$/i);if(qm){if(cur)finishWordQuestion(cur,out);cur={prompt:qm[2].trim(),options:[],correctIndex:-1}}else if(om&&cur){const idx='ABCD'.indexOf(om[1].toUpperCase());cur.options[idx]=om[2].trim();if(row.bold)cur.correctIndex=idx}else if(cur&&row.text){cur.prompt+=` ${row.text}`}}if(cur)finishWordQuestion(cur,out);if(!out.length)throw new Error(tr('Không nhận được câu nào. Hãy dùng đúng mẫu Word.','No valid questions found. Please follow the standard Word format.'));return out}
 function finishWordQuestion(q,out){const options=(q.options||[]).map(x=>String(x||'').trim());if(!q.prompt||options.length!==4||options.some(x=>!x)||q.correctIndex<0)return;out.push({prompt:q.prompt,options,correctIndex:q.correctIndex})}
 function friendlyFileName(name){return String(name||'Word Set').replace(/[\\/:*?"<>|]/g,' ').replace(/\s+/g,' ').trim()||'Word Set'}
 function openQuestion(id){const r=document.getElementById('questionEditor');const q=id?questions.find(x=>x.id===id):null;r.innerHTML=questionForm(q);document.getElementById('saveQuestion').onclick=()=>saveQuestion(id);document.getElementById('cancelQuestion').onclick=()=>{r.innerHTML=''};r.scrollIntoView({behavior:'smooth',block:'start'})}
-async function saveQuestion(id){if(!staff())return;try{const kind=document.getElementById('qKind').value,prompt=document.getElementById('qPrompt').value.trim(),options=document.getElementById('qOptions').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),correctIndex=Number(document.getElementById('qCorrect').value),answer=document.getElementById('qAnswer').value.trim(),explain=document.getElementById('qExplain').value.trim();if(!prompt)throw new Error(tr('Chưa nhập câu hỏi.','Missing question prompt.'));if((kind==='mcq'&&options.length!==4)||(kind==='two'&&options.length!==2))throw new Error(kind==='mcq'?tr('MCQ phải có đúng 4 lựa chọn.','MCQ requires 4 options.'):tr('Dạng 2 lựa chọn phải có đúng 2 đáp án.','Two-choice requires 2 options.'));if(kind==='reading'&&options.length<2)throw new Error(tr('Câu đọc hiểu cần ít nhất 2 lựa chọn.','Reading questions need at least 2 options.'));if((kind==='mcq'||kind==='two'||kind==='reading')&&(!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>=options.length))throw new Error(tr('Đáp án đúng vượt quá số lựa chọn hiện có.','Selected answer index exceeds provided options.'));if((kind==='form'||kind==='rewrite')&&!answer)throw new Error(tr('Dạng này cần đáp án chữ.','This question type requires a text answer.'));const payload={unit:document.getElementById('qUnit').value,kind,prompt,options,correctIndex,answer,explain,published:document.getElementById('qPublished').checked,author:currentUser.email||'',updatedAt:serverTimestamp()};if(id)await updateDoc(doc(db,'questionBank',id),payload);else await setDoc(doc(collection(db,'questionBank')),{...payload,createdAt:serverTimestamp()});toast(tr('Đã lưu câu hỏi.','Question saved.'));await loadQuestions()}catch(e){toast(e.message||tr('Không thể lưu câu hỏi.','Could not save question.'),'error')}}
-async function deleteQuestion(id){if(!staff())return;if(!window.confirm(tr('Xóa câu hỏi này?','Delete this question?')))return;try{await deleteDoc(doc(db,'questionBank',id));toast(tr('Đã xóa câu hỏi.','Question deleted.'));await loadQuestions()}catch(e){toast(tr('Xóa thất bại.','Delete failed.'),'error')}}
+async function saveQuestion(id){if(!staff())return;try{const kind=document.getElementById('qKind').value,prompt=document.getElementById('qPrompt').value.trim(),options=document.getElementById('qOptions').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),correctIndex=Number(document.getElementById('qCorrect').value),answer=document.getElementById('qAnswer').value.trim(),explain=document.getElementById('qExplain').value.trim();if(!prompt)throw new Error(tr('Chưa nhập câu hỏi.','Missing question prompt.'));if((kind==='mcq'&&options.length!==4)||(kind==='two'&&options.length!==2))throw new Error(kind==='mcq'?tr('MCQ phải có đúng 4 lựa chọn.','MCQ requires 4 options.'):tr('Dạng 2 lựa chọn phải có đúng 2 đáp án.','Two-choice requires 2 options.'));if(kind==='reading'&&options.length<2)throw new Error(tr('Câu đọc hiểu cần ít nhất 2 lựa chọn.','Reading questions need at least 2 options.'));if((kind==='mcq'||kind==='two'||kind==='reading')&&(!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>=options.length))throw new Error(tr('Đáp án đúng vượt quá số lựa chọn hiện có.','Selected answer index exceeds provided options.'));if((kind==='form'||kind==='rewrite')&&!answer)throw new Error(tr('Dạng này cần đáp án chữ.','This question type requires a text answer.'));const payload={unit:document.getElementById('qUnit').value,kind,prompt,options,correctIndex,answer,explain,published:document.getElementById('qPublished').checked,author:currentUser.email||'',updatedAt:serverTimestamp()};if(id)await updateDoc(doc(db,'questionBank',id),payload);else await setDoc(doc(collection(db,'questionBank')),{...payload,createdAt:serverTimestamp()});toast(tr('Đã lưu câu hỏi.','Question saved.'));await loadQuestions()}catch(e){toast(safeErr(e,'Không thể lưu câu hỏi.','Could not save question.'),'error')}}
+async function deleteQuestion(id){if(!staff())return;if(!(await appConfirm({title:tr('Xóa câu hỏi?','Delete question?'),message:tr('Xóa câu hỏi này?','Delete this question?'),danger:true})))return;try{await deleteDoc(doc(db,'questionBank',id));toast(tr('Đã xóa câu hỏi.','Question deleted.'));await loadQuestions()}catch(e){toast(tr('Xóa thất bại.','Delete failed.'),'error')}}
 
 // ===== LISTENING CMS =====
 async function loadListenings(){const r=document.getElementById('adminListening');if(!r)return;try{const snap=await getDocs(collection(db,'listeningContent'));listenings=[];snap.forEach(d=>listenings.push({id:d.id,...d.data()}));listenings.sort((a,b)=>String(a.unit||'').localeCompare(String(b.unit||'')));renderListeningAdmin();renderAdminOverview()}catch(e){console.error(e);r.innerHTML=`<div class="alert alert-danger">${tr('Không tải được Listening.','Could not load listening items.')}</div>`}}
 function listeningForm(x=null){x=x||{};return `<div class="cms-form"><div class="row g-3"><div class="col-md-3"><label>Unit</label><select id="lUnit" class="form-select">${Array.from({length:10},(_,i)=>`<option ${x.unit===`Unit ${i+1}`?'selected':''}>Unit ${i+1}</option>`).join('')}</select></div><div class="col-md-9"><label>${tr('Tiêu đề *','Title *')}</label><input id="lTitle" class="form-control" value="${esc(x.title||'')}" placeholder="Healthy habits listening"></div><div class="col-md-6"><label>${tr('Audio URL (MP3 hoặc YouTube)','Audio URL (MP3 or YouTube)')}</label><input id="lAudio" class="form-control" value="${esc(x.audioUrl||'')}" placeholder="https://..."></div><div class="col-md-6"><label>${tr('Trang nguồn','Reference URL')}</label><input id="lSource" class="form-control" value="${esc(x.sourceUrl||'')}" placeholder="https://..."></div><div class="col-12"><label>${tr('Câu hỏi / gợi ý (mỗi dòng một câu)','Prompts (one per line)')}</label><textarea id="lPrompts" class="form-control" rows="5">${esc((Array.isArray(x.prompts)?x.prompts:[]).join('\n'))}</textarea></div><div class="col-12"><label>${tr('Đáp án tương ứng (mỗi dòng một đáp án)','Answers (one per line)')}</label><textarea id="lAnswers" class="form-control" rows="5">${esc((Array.isArray(x.answers)?x.answers:[]).join('\n'))}</textarea></div><div class="col-12"><label>Transcript</label><textarea id="lTranscript" class="form-control" rows="5">${esc(x.transcript||'')}</textarea></div><div class="col-12"><div class="form-check form-switch"><input id="lPublished" class="form-check-input" type="checkbox" ${x.published?'checked':''}><label class="form-check-label">${tr('Đã xuất bản','Published')}</label></div></div></div><div class="form-actions"><button id="saveListening" class="btn btn-primary btn-lg">💾 ${x.id?tr('Cập nhật','Update'):tr('Thêm Listening','Add Listening')}</button><button id="cancelListening" class="btn btn-outline-secondary">${tr('Hủy','Cancel')}</button></div></div>`}
 function renderListeningAdmin(){const r=document.getElementById('adminListening');if(!r)return;r.innerHTML=`<button id="newListening" class="btn btn-primary mb-3">＋ ${tr('Thêm bài Listening','Add Listening Task')}</button><div id="listeningEditor"></div><div class="cms-list">${listenings.map(x=>`<article class="cms-item"><div><div class="d-flex gap-2 flex-wrap"><span class="tag">${esc(x.unit||'')}</span><span class="tag ${x.published?'tag-published':'tag-draft'}">${x.published?tr('Đã xuất bản','Published'):tr('Nháp','Draft')}</span></div><h4 class="mt-2 mb-0 fs-6 fw-semibold">${esc(x.title||'')}</h4></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary" data-l-edit="${esc(x.id)}">${tr('Sửa','Edit')}</button><button class="btn btn-sm btn-outline-danger" data-l-del="${esc(x.id)}">${tr('Xóa','Delete')}</button></div></article>`).join('')||`<div class="muted">${tr('Chưa có bài Listening do giáo viên tạo.','No listening tasks created yet.')}</div>`}</div>`;document.getElementById('newListening').onclick=()=>openListening();r.querySelectorAll('[data-l-edit]').forEach(b=>b.onclick=()=>openListening(b.dataset.lEdit));r.querySelectorAll('[data-l-del]').forEach(b=>b.onclick=()=>deleteListening(b.dataset.lDel))}
 function openListening(id){const r=document.getElementById('listeningEditor');const x=id?listenings.find(a=>a.id===id):null;r.innerHTML=listeningForm(x);document.getElementById('saveListening').onclick=()=>saveListening(id);document.getElementById('cancelListening').onclick=()=>{r.innerHTML=''};r.scrollIntoView({behavior:'smooth',block:'start'})}
-async function saveListening(id){if(!staff())return;try{const title=document.getElementById('lTitle').value.trim(),audioUrl=document.getElementById('lAudio').value.trim(),sourceUrl=document.getElementById('lSource').value.trim(),prompts=document.getElementById('lPrompts').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),answers=document.getElementById('lAnswers').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!title)throw new Error(tr('Thiếu tiêu đề.','Missing title.'));if(audioUrl&&!safeUrl(audioUrl)&&!isValidYouTubeInput(audioUrl))throw new Error(tr('Link Audio / YouTube không hợp lệ (chỉ hỗ trợ https:// hoặc mã video YouTube).','Invalid Audio / YouTube URL (must be https:// or YouTube ID).'));if(sourceUrl&&!safeUrl(sourceUrl))throw new Error(tr('Link trang nguồn không hợp lệ (phải là https://).','Invalid reference URL (must start with https://).'));if(!prompts.length||!answers.length)throw new Error(tr('Cần ít nhất 1 câu hỏi và 1 đáp án.','Need at least 1 prompt and 1 answer.'));if(prompts.length!==answers.length)throw new Error(tr(`Số câu hỏi (${prompts.length}) không khớp với số đáp án (${answers.length}).`,`Prompt count (${prompts.length}) does not match answer count (${answers.length}).`));const payload={unit:document.getElementById('lUnit').value,title,audioUrl,sourceUrl,prompts,answers,transcript:document.getElementById('lTranscript').value.trim(),published:document.getElementById('lPublished').checked,author:currentUser.email||'',updatedAt:serverTimestamp()};if(id)await updateDoc(doc(db,'listeningContent',id),payload);else await setDoc(doc(collection(db,'listeningContent')),{...payload,createdAt:serverTimestamp()});toast(tr('Đã lưu Listening.','Listening saved.'));await loadListenings()}catch(e){toast(e.message||tr('Không thể lưu Listening.','Could not save listening task.'),'error')}}
-async function deleteListening(id){if(!staff())return;if(!window.confirm(tr('Xóa bài Listening này?','Delete this listening task?')))return;try{await deleteDoc(doc(db,'listeningContent',id));toast(tr('Đã xóa Listening.','Listening deleted.'));await loadListenings()}catch(e){toast(tr('Xóa thất bại.','Delete failed.'),'error')}}
+async function saveListening(id){if(!staff())return;try{const title=document.getElementById('lTitle').value.trim(),audioUrl=document.getElementById('lAudio').value.trim(),sourceUrl=document.getElementById('lSource').value.trim(),prompts=document.getElementById('lPrompts').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),answers=document.getElementById('lAnswers').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!title)throw new Error(tr('Thiếu tiêu đề.','Missing title.'));if(audioUrl&&!safeUrl(audioUrl)&&!isValidYouTubeInput(audioUrl))throw new Error(tr('Link Audio / YouTube không hợp lệ (chỉ hỗ trợ https:// hoặc mã video YouTube).','Invalid Audio / YouTube URL (must be https:// or YouTube ID).'));if(sourceUrl&&!safeUrl(sourceUrl))throw new Error(tr('Link trang nguồn không hợp lệ (phải là https://).','Invalid reference URL (must start with https://).'));if(!prompts.length||!answers.length)throw new Error(tr('Cần ít nhất 1 câu hỏi và 1 đáp án.','Need at least 1 prompt and 1 answer.'));if(prompts.length!==answers.length)throw new Error(tr(`Số câu hỏi (${prompts.length}) không khớp với số đáp án (${answers.length}).`,`Prompt count (${prompts.length}) does not match answer count (${answers.length}).`));const payload={unit:document.getElementById('lUnit').value,title,audioUrl,sourceUrl,prompts,answers,transcript:document.getElementById('lTranscript').value.trim(),published:document.getElementById('lPublished').checked,author:currentUser.email||'',updatedAt:serverTimestamp()};if(id)await updateDoc(doc(db,'listeningContent',id),payload);else await setDoc(doc(collection(db,'listeningContent')),{...payload,createdAt:serverTimestamp()});toast(tr('Đã lưu Listening.','Listening saved.'));await loadListenings()}catch(e){toast(safeErr(e,'Không thể lưu Listening.','Could not save listening task.'),'error')}}
+async function deleteListening(id){if(!staff())return;if(!(await appConfirm({title:tr('Xóa bài Listening?','Delete listening task?'),message:tr('Xóa bài Listening này?','Delete this listening task?'),danger:true})))return;try{await deleteDoc(doc(db,'listeningContent',id));toast(tr('Đã xóa Listening.','Listening deleted.'));await loadListenings()}catch(e){toast(tr('Xóa thất bại.','Delete failed.'),'error')}}
 
 // ===== DAILY SET BUILDER =====
 async function loadSets(){
@@ -738,7 +740,7 @@ function bindDailyWordImport(r){
         ? tr(`✅ File có ${pool.length} câu hợp lệ. Bạn có thể chọn số câu Daily và điều kiện đạt.`,`✅ Found ${pool.length} valid questions. Configure count and pass threshold below.`)
         : tr('❌ File không có câu hợp lệ.','❌ No valid questions found in file.');
     }catch(e){
-      console.error(e);status.textContent=`❌ ${e.message||tr('Không đọc được file Word.','Could not read Word file.')}`;
+      console.error(e);status.textContent=`❌ ${safeErr(e,'Không đọc được file Word.','Could not read Word file.')}`;
     }
   });
   [count,pass,title,random].forEach(el=>el?.addEventListener('input',sync));
@@ -886,7 +888,7 @@ function bindManualDailyEditor(r){
       },{merge:true});
       toast(tr(`Đã lưu Daily Set · ${qs.length} câu · đạt ${pass}/${qs.length}.`,`Saved Daily Set · ${qs.length} Qs · pass ${pass}/${qs.length}.`));
       await loadSets();
-    }catch(e){console.error(e);toast(e.message||tr('Không thể lưu Daily Set.','Could not save Daily Set.'),'error')}
+    }catch(e){console.error(e);toast(safeErr(e,'Không thể lưu Daily Set.','Could not save Daily Set.'),'error')}
   });
 }
 
@@ -963,14 +965,14 @@ function openSetEditor(id){
       }
       toast(tr(`✅ Đã cập nhật ${payload.title} · ${selected.length}/${pool.length} câu · đạt ${pass}/${selected.length}.`,`✅ Updated ${payload.title} · ${selected.length}/${pool.length} Qs · pass ${pass}/${selected.length}.`));
       root.innerHTML='';await loadSets();
-    }catch(e){console.error(e);toast(e.message||tr('Cập nhật Set thất bại.','Failed to update Set.'),'error')}
+    }catch(e){console.error(e);toast(safeErr(e,'Cập nhật Set thất bại.','Failed to update Set.'),'error')}
   };
   sync();
   root.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 async function deleteDaily(id){
-  if(!staff()||!window.confirm(tr('Xóa Daily Set này?','Delete this Daily Set?')))return;
+  if(!staff()||!(await appConfirm({title:tr('Xóa Daily Set?','Delete Daily Set?'),message:tr('Xóa Daily Set này?','Delete this Daily Set?'),danger:true})))return;
   try{await deleteDoc(doc(db,'sets',id));toast(tr('Đã xóa Daily Set.','Daily Set deleted.'));await loadSets();}
   catch(e){toast(tr('Xóa thất bại.','Delete failed.'),'error')}
 }
@@ -1031,7 +1033,7 @@ function buildDocxSpec(preset,includeClass){
   ];
 }
 
-function downloadDOCX(filename,columns,rows,title,subtitle,footerSummary){
+function buildDocxBytes(columns,rows,title,subtitle,footerSummary){
   const grid=`<w:tblGrid>${columns.map(c=>`<w:gridCol w:w="${c.width}"/>`).join('')}</w:tblGrid>`;
   const headerRow=wRow(columns.map(c=>c.label),columns,true);
   const bodyRows=rows.map(r=>wRow(r,columns,false)).join('');
@@ -1040,10 +1042,96 @@ function downloadDOCX(filename,columns,rows,title,subtitle,footerSummary){
   const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
   const wordRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
   const files=[{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rels},{name:'word/document.xml',data:documentXml},{name:'word/_rels/document.xml.rels',data:wordRels}];
-  const bytes=zipStore(files);
-  const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  return zipStore(files);
+}
+
+function triggerSingleDownload(blob,filename){
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
+function openWordSplitDownloadModal(jobs,todayStr,presetTag){
+  const oldCfgModal=document.getElementById('exportConfigModal');
+  if(oldCfgModal){
+    try{window.bootstrap?.Modal?.getInstance(oldCfgModal)?.dispose();}catch{}
+    oldCfgModal.remove();
+  }
+  document.getElementById('wordSplitDownloadModal')?.remove();
+  document.querySelectorAll('.modal-backdrop').forEach(b=>b.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
+
+  const wrap=document.createElement('div');
+  wrap.className='modal fade';
+  wrap.id='wordSplitDownloadModal';
+  wrap.tabIndex=-1;
+  wrap.setAttribute('aria-hidden','true');
+  wrap.innerHTML=`
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold">📄 ${tr('Tải 2 file Word theo lớp','Download 2 Separate Word Files')}</h5>
+            <p class="small muted mb-0">${tr('Bấm tải từng lớp ngay trên web (không bật cảnh báo trình duyệt) hoặc gộp 1 gói ZIP.','Download each class file individually here or grab both inside one ZIP archive.')}</p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="${tr('Đóng','Close')}"></button>
+        </div>
+        <div class="modal-body">
+          <div class="word-split-list">
+            <div class="word-split-card">
+              <div class="word-split-meta">
+                <strong>📘 ${tr('Lớp 11T1','Class 11T1')} · ${jobs[0].count} ${tr('HS','students')}</strong>
+                <small>${esc(jobs[0].filename)}</small>
+                <span class="tag tag-published mt-1" id="splitStatus0">✓ ${tr('Đã tải xong','Downloaded')}</span>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="splitBtn0">↻ ${tr('Tải lại 11T1','Re-download')}</button>
+            </div>
+            <div class="word-split-card">
+              <div class="word-split-meta">
+                <strong>📗 ${tr('Lớp 11.1','Class 11.1')} · ${jobs[1].count} ${tr('HS','students')}</strong>
+                <small>${esc(jobs[1].filename)}</small>
+                <span class="tag mt-1" id="splitStatus1">${tr('Sẵn sàng tải','Ready to download')}</span>
+              </div>
+              <button type="button" class="btn btn-sm btn-primary fw-bold" id="splitBtn1">⬇ ${tr('Tải Lớp 11.1 (.docx)','Download 11.1 (.docx)')}</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-between flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-primary" id="splitBtnZip">🗜 ${tr('Tải 1 file .zip (cả 2 lớp)','Download .zip (both files)')}</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">${tr('Đóng','Close')}</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(wrap);
+  const modal=window.bootstrap?.Modal?.getOrCreateInstance(wrap);
+  if(!modal){wrap.remove();return;}
+  wrap.addEventListener('hidden.bs.modal',()=>{wrap.remove();},{once:true});
+
+  wrap.querySelector('#splitBtn0').onclick=()=>{
+    triggerSingleDownload(jobs[0].blob,jobs[0].filename);
+    const s0=wrap.querySelector('#splitStatus0');
+    if(s0)s0.textContent=`✓ ${tr('Đã tải lại','Re-downloaded')}`;
+  };
+  wrap.querySelector('#splitBtn1').onclick=()=>{
+    triggerSingleDownload(jobs[1].blob,jobs[1].filename);
+    const s1=wrap.querySelector('#splitStatus1');
+    if(s1){s1.className='tag tag-published mt-1';s1.textContent=`✓ ${tr('Đã tải xong','Downloaded')}`;}
+    const b1=wrap.querySelector('#splitBtn1');
+    if(b1){b1.className='btn btn-sm btn-outline-secondary';b1.textContent=`↻ ${tr('Tải lại 11.1','Re-download')}`;}
+  };
+  wrap.querySelector('#splitBtnZip').onclick=()=>{
+    const zipBytes=zipStore([
+      {name:jobs[0].filename,data:jobs[0].bytes},
+      {name:jobs[1].filename,data:jobs[1].bytes}
+    ]);
+    const zipBlob=new Blob([zipBytes],{type:'application/zip'});
+    triggerSingleDownload(zipBlob,`english-notebook-2-classes-${presetTag}-${todayStr}.zip`);
+    toast(tr('Đã tải gói ZIP gồm 2 file Word 11T1 & 11.1.','Downloaded ZIP archive with 11T1 & 11.1 Word files.'));
+  };
+  modal.show();
 }
 
 async function exportStudentsStreak(overrideCfg=null){
@@ -1128,6 +1216,7 @@ async function exportStudentsStreak(overrideCfg=null){
         :[x.stt,x.name,x.streak];
     };
 
+    const docxMime='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     const buildJob=(cls,students,includeClass)=>{
       const filtered=applyFilterAndSort(students);
       const columns=buildDocxSpec(cfg.preset,includeClass);
@@ -1138,7 +1227,9 @@ async function exportStudentsStreak(overrideCfg=null){
       const footer=tr(`Tổng số: ${rows.length} học sinh`,`Total: ${rows.length} students`);
       const fileTag=cls==='ALL'?'khoi11':cls;
       const filename=`english-notebook-${fileTag}-${cfg.preset}-${today}.docx`;
-      return {filename,columns,rows,title,subtitle,footer,count:rows.length};
+      const bytes=buildDocxBytes(columns,rows,title,subtitle,footer);
+      const blob=new Blob([bytes],{type:docxMime});
+      return {cls,filename,bytes,blob,count:rows.length};
     };
 
     const jobs=[];
@@ -1157,18 +1248,15 @@ async function exportStudentsStreak(overrideCfg=null){
       jobs.push(buildJob('ALL',combined,true));
     }
 
-    for(let i=0;i<jobs.length;i++){
-      if(i>0)await new Promise(res=>setTimeout(res,320));
-      const j=jobs[i];
-      downloadDOCX(j.filename,j.columns,j.rows,j.title,j.subtitle,j.footer);
-    }
-
     if(jobs.length===2){
+      triggerSingleDownload(jobs[0].blob,jobs[0].filename);
+      openWordSplitDownloadModal(jobs,today,cfg.preset);
       toast(tr(
-        `Đã xuất 2 file Word riêng: 11T1 (${jobs[0].count} HS) & 11.1 (${jobs[1].count} HS).`,
-        `Exported 2 separate Word files: 11T1 (${jobs[0].count}) & 11.1 (${jobs[1].count}).`
+        `Đã tải Lớp 11T1 (${jobs[0].count} HS) — bấm tải Lớp 11.1 trong hộp thoại.`,
+        `Downloaded 11T1 (${jobs[0].count}) — click 11.1 in the dialog to save the second file.`
       ));
     }else{
+      triggerSingleDownload(jobs[0].blob,jobs[0].filename);
       toast(tr(
         `Đã xuất Word: ${jobs[0].count} học sinh.`,
         `Exported Word: ${jobs[0].count} students.`
@@ -1320,7 +1408,12 @@ function openExportConfigModal(triggerEl=null){
   };
   wrap.querySelector('#expCfgExportNow').onclick=async()=>{
     const saved=saveExportConfig(readForm());
-    modal.hide();
+    try{modal.dispose();}catch{}
+    wrap.remove();
+    document.querySelectorAll('.modal-backdrop').forEach(b=>b.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
     const btn=document.getElementById('exportStreak');
     await handleExportStreak(btn,saved);
   };
