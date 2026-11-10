@@ -264,8 +264,14 @@ const DICT = {
     'settings.sec.appearance': 'Giao diện',
     'settings.theme.light': 'Sáng',
     'settings.theme.dark': 'Tối',
-    'settings.glass.label': 'Hiệu ứng kính mờ Minimal Frost',
-    'settings.glass.desc': 'Nền chiều sâu + kính mờ nhiều tầng. Mặc định tắt để tối ưu pin & FPS.'
+    'settings.glass.label': 'Liquid Glass quang học',
+    'settings.glass.desc': 'Kính quang học, viền tán sắc & chiều sâu nổi khối. Mặc định tắt để tiết kiệm pin.',
+    'settings.glass.strengthAria': 'Độ mạnh Liquid Glass',
+    'settings.glass.preset.subtle': 'Nhẹ',
+    'settings.glass.preset.crystal': 'Pha lê',
+    'settings.glass.preset.pro': 'Liquid Pro',
+    'settings.glass.preset.extreme': 'Tối đa',
+    'settings.glass.offTag': 'Đang tắt'
   },
   en: {
     'app.title': 'English Notebook — Capture → Practice → Master',
@@ -530,8 +536,14 @@ const DICT = {
     'settings.sec.appearance': 'Appearance',
     'settings.theme.light': 'Light',
     'settings.theme.dark': 'Dark',
-    'settings.glass.label': 'Minimal Frost Liquid Glass',
-    'settings.glass.desc': 'Ambient depth + layered frosted glass. Off by default for battery & FPS.'
+    'settings.glass.label': 'Optical Liquid Glass',
+    'settings.glass.desc': 'Optical crystal lens, prismatic rim & layered depth. Off by default.',
+    'settings.glass.strengthAria': 'Liquid Glass intensity',
+    'settings.glass.preset.subtle': 'Subtle',
+    'settings.glass.preset.crystal': 'Crystal',
+    'settings.glass.preset.pro': 'Liquid Pro',
+    'settings.glass.preset.extreme': 'Max',
+    'settings.glass.offTag': 'Off'
   }
 };
 

@@ -11,15 +11,34 @@
 <link rel="icon" type="image/webp" href="./img/logo1.webp">
 <script>
 (()=>{try{
+  const root=document.documentElement;
   const t=localStorage.getItem('english-notebook-theme');
-  document.documentElement.dataset.theme=t==='dark'?'dark':'light';
+  root.dataset.theme=t==='dark'?'dark':'light';
   const g=localStorage.getItem('english-notebook-glass');
-  document.documentElement.dataset.glass=g==='on'?'on':'off';
+  const rawLvl=Number(localStorage.getItem('english-notebook-glass-level'));
+  const lvl=Number.isFinite(rawLvl)?Math.max(0,Math.min(100,Math.round(rawLvl))):65;
+  root.dataset.glass=(g==='on'&&lvl>0)?'on':'off';
+  root.style.setProperty('--gl-level',String(root.dataset.glass==='on'?lvl:0));
 }catch{document.documentElement.dataset.theme='light';document.documentElement.dataset.glass='off';}})();
 </script>
 </head>
 <body>
 <div id="glassAmbient" class="glass-ambient" aria-hidden="true"></div>
+<svg id="liquidGlassSvg" class="liquid-glass-svg" width="0" height="0" aria-hidden="true">
+  <defs>
+    <filter id="liquidGlassFilter" x="0%" y="0%" width="100%" height="100%" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB">
+      <feImage id="liquidGlassMap" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="lensMap" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"/>
+      <feDisplacementMap id="liquidGlassDispR" in="SourceGraphic" in2="lensMap" scale="0" xChannelSelector="R" yChannelSelector="G" result="dispR"/>
+      <feDisplacementMap id="liquidGlassDispG" in="SourceGraphic" in2="lensMap" scale="0" xChannelSelector="R" yChannelSelector="G" result="dispG"/>
+      <feDisplacementMap id="liquidGlassDispB" in="SourceGraphic" in2="lensMap" scale="0" xChannelSelector="R" yChannelSelector="G" result="dispB"/>
+      <feColorMatrix in="dispR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="chanR"/>
+      <feColorMatrix in="dispG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="chanG"/>
+      <feColorMatrix in="dispB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="chanB"/>
+      <feComposite in="chanR" in2="chanG" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="chanRG"/>
+      <feComposite in="chanRG" in2="chanB" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+  </defs>
+</svg>
 <div id="auth" class="auth"><div class="auth-card"><div class="logo">📘</div><h1>English Notebook</h1><p data-i18n="auth.subtitle">Biến những gì học thêm thành một cuốn sổ tiếng Anh riêng của bạn.</p><button id="login" class="btn btn-dark w-100 py-3"><i class="bi bi-google me-2"></i><span data-i18n="auth.login">Đăng nhập Google</span></button><div id="authErr" class="alert alert-danger d-none mt-3"></div></div></div>
 <div id="app" class="d-none">
 <nav class="navbar nav" data-i18n-aria="nav.aria" aria-label="Điều hướng chính"><div class="container-fluid">
@@ -370,15 +389,32 @@
       <div class="settings-switch-row">
         <div class="settings-switch-copy">
           <div class="settings-switch-title">
-            <i class="bi bi-layers-half" aria-hidden="true"></i>
-            <span data-i18n="settings.glass.label">Hiệu ứng kính mờ Minimal Frost</span>
+            <i class="bi bi-droplet-half" aria-hidden="true"></i>
+            <span data-i18n="settings.glass.label">Liquid Glass quang học</span>
+            <span id="glassLevelBadge" class="settings-level-pill tnum">0%</span>
           </div>
-          <p class="settings-switch-desc" data-i18n="settings.glass.desc">Nền chiều sâu + kính mờ nhiều tầng. Mặc định tắt để tối ưu pin &amp; FPS.</p>
+          <p class="settings-switch-desc" data-i18n="settings.glass.desc">Khúc xạ thấu kính, viền tán sắc &amp; chiều sâu nổi khối. Mặc định tắt để tối ưu pin.</p>
         </div>
         <button id="glassSwitch" class="settings-switch" type="button" role="switch" aria-checked="false" aria-labelledby="settingsGlassSwitchLabel">
-          <span class="visually-hidden" id="settingsGlassSwitchLabel" data-i18n="settings.glass.label">Hiệu ứng kính mờ Minimal Frost</span>
+          <span class="visually-hidden" id="settingsGlassSwitchLabel" data-i18n="settings.glass.label">Liquid Glass quang học</span>
           <span class="settings-switch-thumb" aria-hidden="true"></span>
         </button>
+      </div>
+
+      <div id="glassIntensityBox" class="settings-liquid-box">
+        <div class="settings-liquid-head">
+          <span class="settings-liquid-mode" id="glassTierName">Đang tắt</span>
+          <span class="settings-liquid-percent tnum" id="glassSliderPercent">65%</span>
+        </div>
+        <div class="settings-slider-wrap">
+          <input id="glassRange" class="settings-liquid-range" type="range" min="0" max="100" step="1" value="65" data-i18n-aria="settings.glass.strengthAria" aria-label="Độ mạnh Liquid Glass">
+        </div>
+        <div class="settings-presets" id="glassPresets" role="group" data-i18n-aria="settings.glass.strengthAria" aria-label="Độ mạnh Liquid Glass">
+          <button type="button" class="settings-preset-btn" data-glass-preset="25" data-i18n="settings.glass.preset.subtle">Nhẹ</button>
+          <button type="button" class="settings-preset-btn" data-glass-preset="55" data-i18n="settings.glass.preset.crystal">Pha lê</button>
+          <button type="button" class="settings-preset-btn" data-glass-preset="80" data-i18n="settings.glass.preset.pro">Liquid Pro</button>
+          <button type="button" class="settings-preset-btn" data-glass-preset="100" data-i18n="settings.glass.preset.extreme">Tối đa</button>
+        </div>
       </div>
 
       <div id="glassHwCard" class="settings-hw-card" data-tier="medium">
