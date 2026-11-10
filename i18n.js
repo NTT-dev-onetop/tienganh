@@ -2,10 +2,14 @@ const LANG_KEY = 'english-notebook-lang';
 
 const DICT = {
   vi: {
+    'app.title': 'English Notebook — Học thêm → Ghi lại → Vá lỗ hổng',
     'auth.subtitle': 'Biến những gì học thêm thành một cuốn sổ tiếng Anh riêng của bạn.',
     'auth.login': 'Đăng nhập Google',
+
+    'nav.aria': 'Điều hướng chính',
     'nav.sec.teacherAdmin': 'Quản lý lớp học',
     'nav.admin': 'Khu vực Giáo viên',
+    'nav.sec.daily': 'Điểm hằng ngày',
     'nav.daily': 'Daily Set',
     'nav.sec.overview': 'Tổng quan',
     'nav.home': 'Tổng quan',
@@ -21,6 +25,9 @@ const DICT = {
     'nav.listening': 'Listening',
     'nav.review': 'Ôn nhanh',
     'nav.profile': 'Hồ sơ',
+    'nav.signingIn': 'Đang đăng nhập',
+    'nav.account': 'Tài khoản',
+
     'mb.home': 'Trang chủ',
     'mb.teacher': 'Giáo viên',
     'mb.daily': 'Daily',
@@ -37,9 +44,187 @@ const DICT = {
     'more.review': '↯ Ôn nhanh',
     'more.profile': '👤 Hồ sơ',
     'more.admin': '⚙ Khu vực Giáo viên',
-    'admin.eyebrow': 'QUẢN LÝ KHỐI 11 · LỚP 11T1 & 11.1',
-    'admin.title': 'Khu vực Giáo viên',
-    'admin.subtitle': 'Theo dõi 2 lớp 11T1 & 11.1, quản lý Daily Set, kiến thức, bài nghe và xuất Word.',
+    'more.closeAria': 'Đóng menu',
+
+    'teacher.shell.context': 'Quản trị 2 lớp 11T1 & 11.1',
+    'teacher.shell.exportBtn': 'Xuất Word',
+    'teacher.shell.configBtn': 'Cấu hình',
+    'teacher.shell.configTitle': 'Cấu hình xuất Word & chọn mẫu có sẵn',
+    'teacher.shell.groupAdmin': 'Dashboard',
+    'teacher.shell.groupLearn': 'Lớp học',
+    'teacher.shell.nav.knowledge': 'Kiến thức lớp',
+    'teacher.shell.nav.textbook': 'Từ vựng Unit',
+    'teacher.shell.nav.exercises': 'Bài tập',
+    'teacher.shell.nav.listening': 'Listening',
+    'teacher.shell.nav.daily': 'Daily Set',
+
+    'home.eyebrow': 'PERSONAL ENGLISH NOTEBOOK · KHỐI 11 (11T1 & 11.1)',
+    'home.heroTitleLine1': 'Học xong ghi lại.',
+    'home.heroTitleLine2': 'Quên đâu, vá đó.',
+    'home.btnCapture': '＋ Ghi thứ vừa học',
+    'home.btnReview': '↯ Ôn phần yếu',
+    'home.btnAdmin': '⚙ Mở Khu vực Giáo viên',
+    'home.btnDaily': '🎯 Quản lý Daily Set',
+    'home.heroMetaStudent': 'Hôm nay: 0 ghi chú · 0 câu sai chưa xử lý',
+    'home.heroMetaTeacher': 'Chế độ giáo viên: Quản lý học sinh 11T1 & 11.1, Daily Sets và Ngân hàng bài tập.',
+    'home.statTotal': 'Tổng ghi chú',
+    'home.statVocab': 'Từ vựng cá nhân',
+    'home.statMistakes': 'Câu sai chưa xử lý',
+    'home.statGrammar': 'Cấu trúc đã lưu',
+    'home.continueEyebrow': 'TIẾP TỤC',
+    'home.continueTitle': 'Mở đúng chỗ bạn cần',
+    'home.actCaptureTitle': '＋ Ghi bài vừa học',
+    'home.actCaptureSub': 'Từ mới · cấu trúc · câu sai',
+    'home.actMistakesTitle': '× Xử lý câu sai',
+    'home.actMistakesSub': 'Chỉ xem lỗi chưa hiểu',
+    'home.actAdminTitle': '⚙ Khu vực Giáo viên',
+    'home.actAdminSub': 'Quản lý học sinh 11T1 & 11.1, xuất báo cáo',
+    'home.actDailyTitle': '🎯 Quản lý Daily Set',
+    'home.actDailySub': 'Kiểm tra đề bài hôm nay',
+    'home.actTextbookTitle': '▦ Ôn theo Unit',
+    'home.actTextbookSub': 'Từ vựng Global Success 11',
+    'home.actListeningTitle': '◖ Listening',
+    'home.actListeningSub': 'Nghe & điền 6 chỗ trống',
+    'home.attentionEyebrow': 'NEEDS ATTENTION',
+    'home.attentionTitle': 'Hôm nay nên xem gì?',
+    'home.recentEyebrow': 'RECENT',
+    'home.recentTitle': 'Mới ghi gần đây',
+    'home.recentAdd': '＋ Thêm',
+
+    'profile.eyebrow': 'MY PROFILE',
+    'profile.title': '👤 Hồ sơ của tôi',
+    'profile.subtitle': 'Thông tin tài khoản, lớp và tiến độ Daily Set.',
+    'profile.roleStudent': 'Học sinh',
+    'profile.editBtn': '✏️ Sửa tên',
+    'profile.statStreak': 'Chuỗi ngày',
+    'profile.statBonus': 'Bonus points',
+    'profile.statSets': 'Set đã pass',
+    'profile.statLast': 'Lần hoàn thành gần nhất',
+    'profile.infoEyebrow': 'THÔNG TIN',
+    'profile.infoTitle': 'Thông tin lớp',
+    'profile.labelName': 'Họ tên',
+    'profile.labelClass': 'Lớp',
+    'profile.labelRole': 'Vai trò',
+    'profile.labelEmail': 'Email Google',
+
+    'capture.eyebrow': 'CAPTURE AFTER CLASS',
+    'capture.title': 'Ghi bài vừa học',
+    'capture.subtitle': 'Chọn đúng loại ghi chú trước, rồi chỉ nhập những gì bạn thực sự cần nhớ.',
+    'capture.tabVocab': '📖 Từ mới',
+    'capture.tabGrammar': '🧩 Cấu trúc',
+    'capture.tabMistake': '❌ Câu sai',
+    'capture.v.word': 'Từ / cụm từ',
+    'capture.v.wordPh': 'vd. participate / take part in',
+    'capture.v.meaning': 'Nghĩa',
+    'capture.v.meaningPh': 'tham gia',
+    'capture.v.pos': 'Từ loại',
+    'capture.v.posPhrase': 'Phrase / Cụm từ',
+    'capture.v.pron': 'Phát âm',
+    'capture.v.family': 'Biến thể / word family',
+    'capture.v.forms': 'V1 / V2 / V3',
+    'capture.v.passive': 'Dạng bị động / V3',
+    'capture.v.passivePh': 'is/was + V3 · chỉ ghi khi cần',
+    'capture.v.pattern': 'Cách dùng / cấu trúc đi kèm',
+    'capture.v.example': 'Ví dụ của mình',
+    'capture.v.note': 'Điểm cần nhớ',
+    'capture.v.notePh': 'Hay nhầm với join; participate luôn đi với in khi theo sau là hoạt động...',
+    'capture.v.save': '💾 Lưu từ mới',
+    'capture.g.unitOther': 'Khác',
+    'capture.g.title': 'Cấu trúc',
+    'capture.g.meaning': 'Ý nghĩa / cách dùng',
+    'capture.g.meaningPh': 'bắt đầu làm gì',
+    'capture.g.topic': 'Chủ điểm',
+    'capture.g.topicOther': 'Other',
+    'capture.g.formula': 'Công thức',
+    'capture.g.example': 'Ví dụ đúng',
+    'capture.g.trap': 'Lỗi dễ sai',
+    'capture.g.trapPh': 'Không dùng start + V nguyên mẫu không có to.',
+    'capture.g.tip': 'Mẹo nhớ',
+    'capture.g.tipPh': 'Nhìn động từ trước, rồi xác định dạng sau nó.',
+    'capture.g.save': '💾 Lưu cấu trúc',
+    'capture.g.hint': '💡 Gợi ý nhanh lớp 11: start + to V / V-ing · need + to V · need + V-ing (mang nghĩa bị động) · be + V3 (bị động) · V2/V3 của động từ bất quy tắc.',
+    'capture.m.question': 'Câu / nội dung sai',
+    'capture.m.questionPh': 'Chép ngắn câu mình sai trong sách / bài học',
+    'capture.m.answer': 'Đáp án đúng',
+    'capture.m.type': 'Dạng bài',
+    'capture.m.why': 'Vì sao mình sai?',
+    'capture.m.whyPh': 'Quên rằng start dùng được cả to V và V-ing...',
+    'capture.m.rule': 'Quy tắc cần nhớ',
+    'capture.m.level': 'Mức độ',
+    'capture.m.lvl1': '🟢 Nhẹ',
+    'capture.m.lvl2': '🟡 Hay nhầm',
+    'capture.m.lvl3': '🔴 Hổng kiến thức',
+    'capture.m.save': '❌ Lưu câu sai',
+    'capture.clear': 'Xóa ô',
+
+    'mistakes.eyebrow': 'ERROR NOTEBOOK',
+    'mistakes.title': 'Sổ câu sai',
+    'mistakes.subtitle': 'Không cần ôn toàn bộ. Chỉ xử lý những lỗi bạn từng mắc.',
+    'mistakes.filterAll': 'Tất cả',
+    'mistakes.filterOpen': 'Chưa xử lý',
+    'mistakes.filterDone': 'Đã xử lý',
+    'mistakes.filterCritical': 'Hổng kiến thức',
+    'mistakes.searchPh': 'Tìm câu sai...',
+
+    'vocab.eyebrow': 'VOCABULARY BANK',
+    'vocab.title': 'Kho từ vựng',
+    'vocab.subtitle': 'Giữ sổ cá nhân như cũ, đồng thời có thêm kho từ SGK mở rộng và Word Family để học theo họ từ.',
+    'vocab.tabMine': '📘 Từ của tôi',
+    'vocab.tabFamily': '🔤 Gia đình từ',
+    'vocab.tabQuiz': '🧩 Đố gia đình từ',
+    'vocab.allUnits': 'Tất cả Unit',
+    'vocab.searchPh': 'Tìm từ...',
+    'vocab.btnAdd': '＋ Ghi từ',
+    'vocab.famAll': 'Tất cả nguồn',
+    'vocab.famFile1': 'Tệp 1 — Word Family',
+    'vocab.famCommon': 'Gia đình từ thông dụng THPT',
+    'vocab.famSearchPh': 'Tìm root / nghĩa / thành viên...',
+    'vocab.famNote': 'Học theo họ từ: đừng học decide riêng lẻ; hãy nối decide → decision → decisive → decisively. Các nhóm từ của Tệp 1 được giữ riêng, còn phần mở rộng ưu tiên B1–B2/THPT.',
+    'vocab.quizSub': '20 câu / lượt · chọn đúng dạng từ trước khi xem đáp án.',
+
+    'grammar.eyebrow': 'GRAMMAR PATTERNS · GLOBAL SUCCESS 11',
+    'grammar.title': 'Kho cấu trúc',
+    'grammar.subtitle': '10 Unit của sách được tách riêng, cùng chuyên đề mở rộng (Verb patterns, Gerund/Infinitive, Sentence Transformation) kèm công thức, ví dụ và bẫy dễ sai.',
+    'grammar.allUnits': 'Tất cả 10 Unit',
+    'grammar.specialTopics': 'Chuyên đề',
+    'grammar.btnAdd': '＋ Ghi cấu trúc',
+    'grammar.customHeading': 'CẤU TRÚC BẠN TỰ GHI',
+
+    'page.knowledge.title': '📚 Kiến thức học tập giáo viên',
+    'page.knowledge.desc': 'Bài học được giáo viên đăng từ Dashboard. Khi xuất bản, học sinh thấy ngay trên web.',
+
+    'page.textbook.title': 'Ôn từ vựng theo Unit',
+    'page.textbook.desc': '238 từ Glossary của SGK được giữ nguyên; bổ sung thêm từ/cụm theo bài học và kho từ THPT mở rộng để mỗi Unit có đủ chiều sâu.',
+    'page.textbook.allUnits': 'Tất cả 10 Unit',
+    'page.textbook.srcAll': 'Tất cả nguồn',
+    'page.textbook.srcSgk': 'Glossary SGK',
+    'page.textbook.srcBook': 'Từ/cụm trong nội dung sách',
+    'page.textbook.srcExtend': 'THPT mở rộng',
+    'page.textbook.srcTeacher': '👨‍🏫 Giáo viên thêm',
+    'page.textbook.btnReview': '▶ Ôn Unit',
+    'page.textbook.btnAdd': '＋ Thêm từ vựng',
+
+    'page.listening.title': '🎧 Nghe & điền 6 chỗ trống',
+    'page.listening.desc': 'Đủ 10 bài Listening từ Unit 1 → Unit 10 theo sách Global Success 11, chuyển thành bài kiểm tra 6 chỗ trống.',
+    'page.listening.btnStart': '▶ Bắt đầu',
+    'page.listening.btnAdd': '＋ Thêm bài nghe',
+    'page.listening.sourceLabel': 'Bài Listening gốc',
+    'page.listening.audioNote': 'Audio gốc: phát từ nguồn Listening của từng Unit.',
+    'page.listening.ruleNote': 'Quy tắc: 6 chỗ trống · đáp án hiển thị sau khi nộp.',
+    'page.listening.teacherSec': 'LISTENING GIÁO VIÊN ĐĂNG',
+
+    'page.exercises.title': 'Bài tập theo từng Unit',
+    'page.exercises.desc': 'Chọn Unit hoặc Review. Mỗi lần làm sẽ xáo câu; câu sai được tự động ghim vào Sổ câu sai để bạn vá đúng lỗ hổng.',
+    'page.exercises.btnStart': '▶ Bắt đầu Unit',
+    'page.exercises.btnAdd': '＋ Thêm bài tập',
+    'page.exercises.countLabel': 'Số câu mỗi dạng',
+    'page.exercises.count2': '2 · Nhanh',
+    'page.exercises.count3': '3 · Chuẩn',
+    'page.exercises.setupNote': 'Bài đọc có 3 câu. Mỗi lần bắt đầu, câu trắc nghiệm được xáo nhẹ để bạn không học thuộc vị trí đáp án.',
+    'page.exercises.teacherSec': 'BÀI TẬP GIÁO VIÊN ĐĂNG',
+
+    'admin.title': 'Dashboard Giáo viên',
+    'admin.subtitle': 'Theo dõi 2 lớp 11T1 & 11.1, quản lý Daily Set, kiến thức, bài nghe và xuất Word tách lớp.',
     'admin.exportWord': 'Xuất Word',
     'admin.tab.students': '2 Lớp & Tiến độ',
     'admin.tab.questions': 'Daily Sets & Đề',
@@ -55,28 +240,30 @@ const DICT = {
     'admin.panel.admins': 'Giáo viên / quản trị viên',
     'admin.sub.daily': 'Daily Sets (Word & Danh sách)',
     'admin.sub.bank': 'Ngân hàng câu hỏi',
-    'page.knowledge.title': '📚 Kiến thức học tập giáo viên',
-    'page.knowledge.desc': 'Bài học được giáo viên đăng từ Khu vực Giáo viên. Khi xuất bản, học sinh thấy ngay trên web.',
-    'page.textbook.title': 'Ôn từ vựng theo Unit',
-    'page.textbook.btnReview': '▶ Ôn Unit',
-    'page.textbook.btnAdd': '＋ Thêm từ vựng',
-    'page.listening.title': '🎧 Nghe & điền chỗ trống',
-    'page.listening.btnStart': '▶ Bắt đầu',
-    'page.listening.btnAdd': '＋ Thêm bài nghe',
-    'page.listening.teacherSec': 'LISTENING GIÁO VIÊN ĐĂNG',
-    'page.exercises.title': 'Bài tập theo từng Unit',
-    'page.exercises.btnStart': '▶ Bắt đầu Unit',
-    'page.exercises.btnAdd': '＋ Thêm bài tập',
-    'page.exercises.teacherSec': 'BÀI TẬP GIÁO VIÊN ĐĂNG',
+
+    'review.eyebrow': 'TARGETED REVIEW',
+    'review.title': 'Ôn nhanh phần yếu',
+    'review.subtitle': 'Không phải học lại cả web. Chọn một nhóm và tự kiểm tra trí nhớ.',
+    'review.emptyTitle': 'Hiện chưa có mục cần ôn.',
+    'review.emptyDesc': 'Hãy ghi từ mới hoặc đánh dấu câu sai sau giờ học.',
+    'review.emptyBtn': '＋ Ghi ngay',
+    'review.btnReveal': '👀 Xem đáp án',
+    'review.btnAgain': '❌ Chưa nhớ',
+    'review.btnKnown': '✓ Nhớ rồi',
+
     'theme.light': 'Giao diện sáng',
     'theme.dark': 'Giao diện tối',
     'logout.label': 'Đăng xuất'
   },
   en: {
+    'app.title': 'English Notebook — Capture → Practice → Master',
     'auth.subtitle': 'Turn class notes into your personal English mastery notebook.',
     'auth.login': 'Sign in with Google',
+
+    'nav.aria': 'Primary navigation',
     'nav.sec.teacherAdmin': 'Class Management',
     'nav.admin': 'Teacher Dashboard',
+    'nav.sec.daily': 'Daily Progress',
     'nav.daily': 'Daily Set',
     'nav.sec.overview': 'Overview',
     'nav.home': 'Overview',
@@ -92,6 +279,9 @@ const DICT = {
     'nav.listening': 'Listening',
     'nav.review': 'Quick Review',
     'nav.profile': 'Profile',
+    'nav.signingIn': 'Signing in',
+    'nav.account': 'Account',
+
     'mb.home': 'Home',
     'mb.teacher': 'Teacher',
     'mb.daily': 'Daily',
@@ -108,9 +298,187 @@ const DICT = {
     'more.review': '↯ Quick Review',
     'more.profile': '👤 Profile',
     'more.admin': '⚙ Teacher Dashboard',
-    'admin.eyebrow': 'GRADE 11 MANAGEMENT · CLASSES 11T1 & 11.1',
-    'admin.title': 'Teacher Workspace',
-    'admin.subtitle': 'Track 11T1 & 11.1 classes, manage Daily Sets, study notes, listening tasks, and export Word reports.',
+    'more.closeAria': 'Close menu',
+
+    'teacher.shell.context': 'Grade 11 · Classes 11T1 & 11.1',
+    'teacher.shell.exportBtn': 'Export Word',
+    'teacher.shell.configBtn': 'Presets',
+    'teacher.shell.configTitle': 'Word export presets & configuration',
+    'teacher.shell.groupAdmin': 'Dashboard',
+    'teacher.shell.groupLearn': 'Class View',
+    'teacher.shell.nav.knowledge': 'Class Notes',
+    'teacher.shell.nav.textbook': 'Unit Vocab',
+    'teacher.shell.nav.exercises': 'Exercises',
+    'teacher.shell.nav.listening': 'Listening',
+    'teacher.shell.nav.daily': 'Daily Set',
+
+    'home.eyebrow': 'PERSONAL ENGLISH NOTEBOOK · GRADE 11 (11T1 & 11.1)',
+    'home.heroTitleLine1': 'Capture after class.',
+    'home.heroTitleLine2': 'Fix every gap fast.',
+    'home.btnCapture': '＋ Quick Capture',
+    'home.btnReview': '↯ Review Weak Spots',
+    'home.btnAdmin': '⚙ Open Teacher Dashboard',
+    'home.btnDaily': '🎯 Manage Daily Sets',
+    'home.heroMetaStudent': 'Today: 0 notes · 0 unresolved mistakes',
+    'home.heroMetaTeacher': 'Teacher mode: Manage classes 11T1 & 11.1, Daily Sets, and exercise bank.',
+    'home.statTotal': 'Total notes',
+    'home.statVocab': 'Personal vocab',
+    'home.statMistakes': 'Open mistakes',
+    'home.statGrammar': 'Grammar structures',
+    'home.continueEyebrow': 'CONTINUE',
+    'home.continueTitle': 'Jump right back in',
+    'home.actCaptureTitle': '＋ Log New Notes',
+    'home.actCaptureSub': 'Words · grammar · mistakes',
+    'home.actMistakesTitle': '× Fix Open Mistakes',
+    'home.actMistakesSub': 'Focus only on unresolved gaps',
+    'home.actAdminTitle': '⚙ Teacher Dashboard',
+    'home.actAdminSub': 'Track 11T1 & 11.1 students and exports',
+    'home.actDailyTitle': '🎯 Daily Set Manager',
+    'home.actDailySub': 'Check today’s practice set',
+    'home.actTextbookTitle': '▦ Unit Vocabulary',
+    'home.actTextbookSub': 'Global Success 11 word bank',
+    'home.actListeningTitle': '◖ Listening',
+    'home.actListeningSub': 'Audio & 6-blank fill practice',
+    'home.attentionEyebrow': 'NEEDS ATTENTION',
+    'home.attentionTitle': 'Suggested focus today',
+    'home.recentEyebrow': 'RECENT',
+    'home.recentTitle': 'Recently captured',
+    'home.recentAdd': '＋ Add',
+
+    'profile.eyebrow': 'MY PROFILE',
+    'profile.title': '👤 My Profile',
+    'profile.subtitle': 'Account info, class assignment, and Daily Set progress.',
+    'profile.roleStudent': 'Student',
+    'profile.editBtn': '✏️ Edit Name',
+    'profile.statStreak': 'Day streak',
+    'profile.statBonus': 'Bonus points',
+    'profile.statSets': 'Sets passed',
+    'profile.statLast': 'Last completed',
+    'profile.infoEyebrow': 'CLASS DETAILS',
+    'profile.infoTitle': 'Class Information',
+    'profile.labelName': 'Full name',
+    'profile.labelClass': 'Class',
+    'profile.labelRole': 'Role',
+    'profile.labelEmail': 'Google Email',
+
+    'capture.eyebrow': 'CAPTURE AFTER CLASS',
+    'capture.title': 'Quick Capture',
+    'capture.subtitle': 'Pick the note type first, then record only what you need to remember.',
+    'capture.tabVocab': '📖 Vocabulary',
+    'capture.tabGrammar': '🧩 Grammar',
+    'capture.tabMistake': '❌ Mistake',
+    'capture.v.word': 'Word / phrase',
+    'capture.v.wordPh': 'e.g. participate / take part in',
+    'capture.v.meaning': 'Meaning',
+    'capture.v.meaningPh': 'Vietnamese meaning or definition',
+    'capture.v.pos': 'Part of speech',
+    'capture.v.posPhrase': 'Phrase / Idiom',
+    'capture.v.pron': 'Pronunciation',
+    'capture.v.family': 'Word family',
+    'capture.v.forms': 'V1 / V2 / V3',
+    'capture.v.passive': 'Passive / V3 form',
+    'capture.v.passivePh': 'is/was + V3 · fill when helpful',
+    'capture.v.pattern': 'Collocations / patterns',
+    'capture.v.example': 'My example sentence',
+    'capture.v.note': 'Memory note',
+    'capture.v.notePh': 'Easily confused with join; participate pairs with in + activity...',
+    'capture.v.save': '💾 Save Word',
+    'capture.g.unitOther': 'Other',
+    'capture.g.title': 'Structure',
+    'capture.g.meaning': 'Meaning / Usage',
+    'capture.g.meaningPh': 'begin doing something',
+    'capture.g.topic': 'Topic',
+    'capture.g.topicOther': 'Other',
+    'capture.g.formula': 'Formula',
+    'capture.g.example': 'Correct examples',
+    'capture.g.trap': 'Common trap',
+    'capture.g.trapPh': 'Do not use bare infinitive after start.',
+    'capture.g.tip': 'Quick tip',
+    'capture.g.tipPh': 'Identify the main verb first to pick to-V or V-ing.',
+    'capture.g.save': '💾 Save Structure',
+    'capture.g.hint': '💡 Grade 11 quick tip: start + to V / V-ing · need + to V · need + V-ing (passive sense) · be + V3 · irregular V2/V3 forms.',
+    'capture.m.question': 'Wrong sentence / question',
+    'capture.m.questionPh': 'Write the sentence you missed in class or homework',
+    'capture.m.answer': 'Correct answer',
+    'capture.m.type': 'Category',
+    'capture.m.why': 'Why did I miss it?',
+    'capture.m.whyPh': 'Forgot that start works with both to-V and V-ing...',
+    'capture.m.rule': 'Rule to remember',
+    'capture.m.level': 'Severity',
+    'capture.m.lvl1': '🟢 Minor',
+    'capture.m.lvl2': '🟡 Tricky',
+    'capture.m.lvl3': '🔴 Knowledge Gap',
+    'capture.m.save': '❌ Pin Mistake',
+    'capture.clear': 'Clear',
+
+    'mistakes.eyebrow': 'ERROR NOTEBOOK',
+    'mistakes.title': 'Mistake Log',
+    'mistakes.subtitle': 'Skip what you already know. Practice only your logged errors.',
+    'mistakes.filterAll': 'All',
+    'mistakes.filterOpen': 'Unresolved',
+    'mistakes.filterDone': 'Resolved',
+    'mistakes.filterCritical': 'Knowledge Gaps',
+    'mistakes.searchPh': 'Search mistakes...',
+
+    'vocab.eyebrow': 'VOCABULARY BANK',
+    'vocab.title': 'Vocabulary Bank',
+    'vocab.subtitle': 'Keep your personal word notebook alongside expanded Grade 11 vocabulary and Word Families.',
+    'vocab.tabMine': '📘 My Words',
+    'vocab.tabFamily': '🔤 Word Families',
+    'vocab.tabQuiz': '🧩 Family Challenge',
+    'vocab.allUnits': 'All Units',
+    'vocab.searchPh': 'Search words...',
+    'vocab.btnAdd': '＋ Add Word',
+    'vocab.famAll': 'All sources',
+    'vocab.famFile1': 'Set 1 — Word Family',
+    'vocab.famCommon': 'Common High-School Families',
+    'vocab.famSearchPh': 'Search root / meaning / forms...',
+    'vocab.famNote': 'Learn in word families: connect decide → decision → decisive → decisively instead of memorizing isolated words (focused on B1–B2 / High School levels).',
+    'vocab.quizSub': '20 questions / round · choose the right word form before checking.',
+
+    'grammar.eyebrow': 'GRAMMAR PATTERNS · GLOBAL SUCCESS 11',
+    'grammar.title': 'Grammar Patterns',
+    'grammar.subtitle': 'All 10 Units organized cleanly alongside special topics (Verb patterns, Gerund/Infinitive, Sentence Transformation) with formulas, examples, and common traps.',
+    'grammar.allUnits': 'All 10 Units',
+    'grammar.specialTopics': 'Special Topics',
+    'grammar.btnAdd': '＋ Add Pattern',
+    'grammar.customHeading': 'YOUR PERSONAL PATTERNS',
+
+    'page.knowledge.title': '📚 Teacher Study Notes',
+    'page.knowledge.desc': 'Lessons published from the Teacher Dashboard appear here immediately for students.',
+
+    'page.textbook.title': 'Unit Vocabulary Review',
+    'page.textbook.desc': '238 textbook glossary words preserved with extra unit phrases, high-school extensions, and teacher additions.',
+    'page.textbook.allUnits': 'All 10 Units',
+    'page.textbook.srcAll': 'All sources',
+    'page.textbook.srcSgk': 'Textbook Glossary',
+    'page.textbook.srcBook': 'Textbook In-Unit',
+    'page.textbook.srcExtend': 'Extended B1–B2',
+    'page.textbook.srcTeacher': '👨‍🏫 Added by Teacher',
+    'page.textbook.btnReview': '▶ Review Unit',
+    'page.textbook.btnAdd': '＋ Add Vocabulary',
+
+    'page.listening.title': '🎧 Listening Practice',
+    'page.listening.desc': 'All 10 Global Success 11 listening tracks (Unit 1 → Unit 10) adapted into 6-blank gap-fill tests.',
+    'page.listening.btnStart': '▶ Start',
+    'page.listening.btnAdd': '＋ Add Listening',
+    'page.listening.sourceLabel': 'Original Listening Track',
+    'page.listening.audioNote': 'Original audio: streams from each unit’s verified listening source.',
+    'page.listening.ruleNote': 'Rule: 6 blanks · answers unlock after submitting.',
+    'page.listening.teacherSec': 'TEACHER LISTENING TASKS',
+
+    'page.exercises.title': 'Unit Practice Exercises',
+    'page.exercises.desc': 'Pick a Unit or Review. Questions shuffle on every run; missed items automatically pin to your Mistake Log.',
+    'page.exercises.btnStart': '▶ Start Unit',
+    'page.exercises.btnAdd': '＋ Add Exercise',
+    'page.exercises.countLabel': 'Questions per type',
+    'page.exercises.count2': '2 · Quick',
+    'page.exercises.count3': '3 · Standard',
+    'page.exercises.setupNote': 'Reading includes 3 questions. Multiple-choice items shuffle every attempt so you test understanding, not option positions.',
+    'page.exercises.teacherSec': 'TEACHER EXERCISES',
+
+    'admin.title': 'Teacher Dashboard',
+    'admin.subtitle': 'Track classes 11T1 & 11.1, manage Daily Sets, notes, listening tasks, and export split Word reports.',
     'admin.exportWord': 'Export Word',
     'admin.tab.students': '2 Classes & Progress',
     'admin.tab.questions': 'Daily Sets & Bank',
@@ -126,19 +494,17 @@ const DICT = {
     'admin.panel.admins': 'Teachers & Administrators',
     'admin.sub.daily': 'Daily Sets (Word & List)',
     'admin.sub.bank': 'Question Bank',
-    'page.knowledge.title': '📚 Teacher Study Notes',
-    'page.knowledge.desc': 'Lessons published from the Teacher Workspace appear here immediately for students.',
-    'page.textbook.title': 'Unit Vocabulary Review',
-    'page.textbook.btnReview': '▶ Review Unit',
-    'page.textbook.btnAdd': '＋ Add Vocabulary',
-    'page.listening.title': '🎧 Listening Practice',
-    'page.listening.btnStart': '▶ Start',
-    'page.listening.btnAdd': '＋ Add Listening',
-    'page.listening.teacherSec': 'TEACHER LISTENING TASKS',
-    'page.exercises.title': 'Unit Practice Exercises',
-    'page.exercises.btnStart': '▶ Start Unit',
-    'page.exercises.btnAdd': '＋ Add Exercise',
-    'page.exercises.teacherSec': 'TEACHER EXERCISES',
+
+    'review.eyebrow': 'TARGETED REVIEW',
+    'review.title': 'Quick Recall Review',
+    'review.subtitle': 'Focus only on active cards. Pick a deck and test your recall.',
+    'review.emptyTitle': 'Nothing due for review yet.',
+    'review.emptyDesc': 'Add new words or pin mistakes after your lesson.',
+    'review.emptyBtn': '＋ Add Note',
+    'review.btnReveal': '👀 Show Answer',
+    'review.btnAgain': '❌ Forgot',
+    'review.btnKnown': '✓ Got it',
+
     'theme.light': 'Light mode',
     'theme.dark': 'Dark mode',
     'logout.label': 'Sign out'
@@ -166,32 +532,48 @@ export function t(key) {
 export function syncLangButtons() {
   const lang = getLang();
   const isEn = lang === 'en';
-  const desktop = document.getElementById('langToggle');
+  const ids = ['langToggle', 'langToggleTeacher'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = isEn ? 'EN' : 'VI';
+    el.setAttribute('aria-label', isEn ? 'Switch language to Vietnamese' : 'Chuyển sang tiếng Anh (English)');
+    el.title = isEn ? 'English (click for Tiếng Việt)' : 'Tiếng Việt (bấm đổi sang English)';
+    el.dataset.lang = lang;
+  });
   const mobile = document.getElementById('langToggleMobile');
-  const logout = document.getElementById('logout');
-  if (desktop) {
-    desktop.textContent = isEn ? 'EN' : 'VI';
-    desktop.setAttribute('aria-label', isEn ? 'Switch language to Vietnamese' : 'Chuyển sang tiếng Anh (English)');
-    desktop.title = isEn ? 'English (click for Tiếng Việt)' : 'Tiếng Việt (bấm đổi sang English)';
-    desktop.dataset.lang = lang;
-  }
   if (mobile) {
     mobile.textContent = isEn ? '🌐 English' : '🌐 Tiếng Việt';
     mobile.setAttribute('aria-label', isEn ? 'Switch language to Vietnamese' : 'Chuyển sang tiếng Anh');
   }
-  if (logout) {
-    logout.title = t('logout.label');
-    logout.setAttribute('aria-label', t('logout.label'));
-  }
+  ['logout', 'logoutTeacher'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.title = t('logout.label');
+    el.setAttribute('aria-label', t('logout.label'));
+  });
   window.__syncThemeLabel?.();
 }
 
 export function applyTranslations() {
   const lang = getLang();
   document.documentElement.lang = lang;
+  document.title = t('app.title');
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const val = DICT[lang]?.[el.dataset.i18n];
     if (val !== undefined) el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const val = DICT[lang]?.[el.dataset.i18nPlaceholder];
+    if (val !== undefined) el.setAttribute('placeholder', val);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const val = DICT[lang]?.[el.dataset.i18nTitle];
+    if (val !== undefined) el.setAttribute('title', val);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const val = DICT[lang]?.[el.dataset.i18nAria];
+    if (val !== undefined) el.setAttribute('aria-label', val);
   });
   syncLangButtons();
 }
@@ -220,4 +602,5 @@ export function initI18n() {
   };
   bind('langToggle');
   bind('langToggleMobile');
+  bind('langToggleTeacher');
 }

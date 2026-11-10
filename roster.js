@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { db } from "./firebase-services.js";
 import { OWNER_EMAIL } from "./roles.js";
+import { tr, getLang } from "./i18n.js";
 
 const escLocal = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
 
@@ -127,11 +128,17 @@ export function invalidateRosterCache() {
 }
 
 function buildModalDOM() {
-  if (modalEl) return modalEl;
+  const curLang = getLang();
+  if (modalEl && modalEl.dataset.lang === curLang) return modalEl;
+  if (modalEl) {
+    modalEl.remove();
+    modalEl = null;
+  }
   modalEl = document.createElement('div');
   modalEl.className = 'modal fade';
   modalEl.id = 'rosterModal';
   modalEl.tabIndex = -1;
+  modalEl.dataset.lang = curLang;
   modalEl.setAttribute('aria-hidden', 'true');
   modalEl.setAttribute('data-bs-backdrop', 'static');
   modalEl.setAttribute('data-bs-keyboard', 'false');
@@ -141,9 +148,9 @@ function buildModalDOM() {
       <div class="modal-content border-0 shadow-lg">
         <div class="modal-header border-0 pb-0">
           <div>
-            <div class="roster-header-pill">Bước 1 / 1 · Xác thực học sinh</div>
-            <h5 class="modal-title fw-bold">Chọn danh tính của bạn</h5>
-            <p class="text-muted small mb-0">Liên kết tài khoản Google với danh sách lớp để lưu điểm & streak.</p>
+            <div class="roster-header-pill">${tr('Bước 1 / 1 · Xác thực học sinh','Step 1 / 1 · Student Verification')}</div>
+            <h5 class="modal-title fw-bold">${tr('Chọn danh tính của bạn','Select Your Identity')}</h5>
+            <p class="text-muted small mb-0">${tr('Liên kết tài khoản Google với danh sách lớp để lưu điểm & streak.','Link your Google account with your class roster to track scores & streaks.')}</p>
           </div>
         </div>
         <div class="modal-body pt-3">
@@ -152,28 +159,28 @@ function buildModalDOM() {
             <!-- Segmented Class Switcher -->
             <div class="roster-class-switch d-flex gap-1 p-1 mb-3">
               <button type="button" class="btn roster-class-btn active flex-fill" data-class="11T1" id="rosterTab11T1">
-                🏫 Lớp 11T1 <span class="badge bg-primary ms-1" id="badgeCount11T1">45</span>
+                ${tr('🏫 Lớp 11T1','🏫 Class 11T1')} <span class="badge bg-primary ms-1" id="badgeCount11T1">45</span>
               </button>
               <button type="button" class="btn roster-class-btn flex-fill" data-class="11.1" id="rosterTab11_1">
-                🏫 Lớp 11.1 <span class="badge bg-secondary ms-1" id="badgeCount11_1">10</span>
+                ${tr('🏫 Lớp 11.1','🏫 Class 11.1')} <span class="badge bg-secondary ms-1" id="badgeCount11_1">10</span>
               </button>
             </div>
 
             <!-- Instant Search Bar -->
             <div class="roster-search-wrapper mb-2">
               <span class="roster-search-icon" aria-hidden="true">🔍</span>
-              <input type="text" id="rosterSearchInput" class="form-control roster-search-input" placeholder="Gõ tên hoặc số thứ tự (vd: Trực, 45)..." autocomplete="off" spellcheck="false">
-              <button type="button" id="rosterSearchClear" class="roster-search-clear d-none" title="Xóa tìm kiếm">✕</button>
+              <input type="text" id="rosterSearchInput" class="form-control roster-search-input" placeholder="${tr('Gõ tên hoặc số thứ tự (vd: Trực, 45)...','Search by name or # (e.g. Truc, 45)...')}" autocomplete="off" spellcheck="false">
+              <button type="button" id="rosterSearchClear" class="roster-search-clear d-none" title="${tr('Xóa tìm kiếm','Clear search')}">✕</button>
             </div>
 
             <!-- Filter Status & Stats -->
             <div class="d-flex justify-content-between align-items-center mb-2 px-1">
-              <small class="text-muted" id="rosterStatsCount">Đang tải...</small>
-              <small class="text-muted"><span class="status-dot available"></span> Chưa chọn · <span class="status-dot claimed"></span> Đã kích hoạt</small>
+              <small class="text-muted" id="rosterStatsCount">${tr('Đang tải...','Loading...')}</small>
+              <small class="text-muted"><span class="status-dot available"></span> ${tr('Chưa chọn','Available')} · <span class="status-dot claimed"></span> ${tr('Đã kích hoạt','Claimed')}</small>
             </div>
 
             <!-- Scrollable Student Card List -->
-            <div class="roster-student-list" id="rosterStudentList" role="listbox" aria-label="Danh sách học sinh"></div>
+            <div class="roster-student-list" id="rosterStudentList" role="listbox" aria-label="${tr('Danh sách học sinh','Student list')}"></div>
 
             <!-- Error Banner -->
             <div id="rosterErr" class="alert alert-danger d-none mt-3 mb-0 py-2 small"></div>
@@ -182,7 +189,7 @@ function buildModalDOM() {
             <div id="rosterSelectedBanner" class="roster-selected-banner d-none mt-3">
               <div class="d-flex align-items-center justify-content-between">
                 <div>
-                  <div class="small text-muted">Bạn đang chọn:</div>
+                  <div class="small text-muted">${tr('Bạn đang chọn:','Selected:')}</div>
                   <strong id="rosterSelectedName" class="text-primary">—</strong>
                 </div>
                 <span class="badge bg-primary" id="rosterSelectedClassBadge">11T1</span>
@@ -191,7 +198,7 @@ function buildModalDOM() {
 
             <!-- Actions -->
             <div class="mt-3">
-              <button id="rosterProceedBtn" class="btn btn-primary w-100 py-2 fw-bold" disabled>Tiếp tục với tên này →</button>
+              <button id="rosterProceedBtn" class="btn btn-primary w-100 py-2 fw-bold" disabled>${tr('Tiếp tục với tên này →','Continue with this name →')}</button>
             </div>
           </div>
 
@@ -201,20 +208,20 @@ function buildModalDOM() {
               <div class="confirm-avatar mb-2" id="confirmAvatar">HS</div>
               <h4 class="mb-1 fw-bold" id="confirmStudentName">—</h4>
               <div class="d-flex justify-content-center gap-2 mb-3">
-                <span class="badge bg-primary fs-6 px-3 py-1" id="confirmClassBadge">Lớp 11T1</span>
+                <span class="badge bg-primary fs-6 px-3 py-1" id="confirmClassBadge">${tr('Lớp 11T1','Class 11T1')}</span>
                 <span class="badge bg-dark-subtle text-dark fs-6 px-3 py-1" id="confirmSttBadge">STT #01</span>
               </div>
               <div class="confirm-email-box p-2 rounded-3 small mb-3">
-                Email Google liên kết: <b id="confirmGoogleEmail">—</b>
+                ${tr('Email Google liên kết:','Google Email:')} <b id="confirmGoogleEmail">—</b>
               </div>
               <div class="alert alert-warning text-start small mb-0 py-2">
-                <strong>⚠️ Lưu ý quan trọng:</strong> Mỗi tài khoản chỉ được liên kết <b>1 lần duy nhất</b> với danh sách lớp. Bạn không thể tự đổi lại tên nếu chọn sai.
+                ${tr('<strong>⚠️ Lưu ý quan trọng:</strong> Mỗi tài khoản chỉ được liên kết <b>1 lần duy nhất</b> với danh sách lớp. Bạn không thể tự đổi lại tên nếu chọn sai.','<strong>⚠️ Important:</strong> Each Google account can only be linked <b>once</b> to the class roster. You cannot self-edit it later.')}
               </div>
             </div>
             <div id="confirmErr" class="alert alert-danger d-none mb-3 py-2 small"></div>
             <div class="d-flex gap-2">
-              <button type="button" id="confirmBackBtn" class="btn btn-outline-secondary flex-fill py-2">← Chọn lại</button>
-              <button type="button" id="confirmSaveBtn" class="btn btn-primary flex-fill py-2 fw-bold">✓ Xác nhận & Bắt đầu</button>
+              <button type="button" id="confirmBackBtn" class="btn btn-outline-secondary flex-fill py-2">${tr('← Chọn lại','← Go Back')}</button>
+              <button type="button" id="confirmSaveBtn" class="btn btn-primary flex-fill py-2 fw-bold">${tr('✓ Xác nhận & Bắt đầu','✓ Confirm & Start')}</button>
             </div>
           </div>
         </div>
@@ -232,7 +239,7 @@ export async function initRosterGate(user, role, existingProfile = null) {
     let profile = existingProfile;
     if (!profile) {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
-      if (!userSnap.exists()) throw new Error('Không tìm thấy hồ sơ người dùng.');
+      if (!userSnap.exists()) throw new Error(tr('Không tìm thấy hồ sơ người dùng.','User profile not found.'));
       profile = userSnap.data() || {};
     }
 
@@ -265,7 +272,7 @@ export async function initRosterGate(user, role, existingProfile = null) {
       if (mapping.exists() && mapping.data()?.uid === user.uid) return true;
       // Also allow legacy s45 for owner
       if (rId === 's45' && cleanUserEmail === ownerEmail) return true;
-      throw new Error('Tên lớp đang được liên kết với tài khoản khác. Vui lòng liên hệ thầy cô để reset.');
+      throw new Error(tr('Tên lớp đang được liên kết với tài khoản khác. Vui lòng liên hệ thầy cô để reset.','This roster identity is already linked to another account. Please contact your teacher to reset.'));
     }
 
     // Load both rosters and claimed identities in parallel
@@ -343,13 +350,13 @@ export async function initRosterGate(user, role, existingProfile = null) {
         return nameNorm.includes(queryNorm) || sttStr === queryNorm || paddedStt === queryNorm;
       });
 
-      statsCount.textContent = `Hiển thị ${filtered.length} / ${list.length} học sinh`;
+      statsCount.textContent = tr(`Hiển thị ${filtered.length} / ${list.length} học sinh`,`Showing ${filtered.length} / ${list.length} students`);
 
       if (!filtered.length) {
         studentListEl.innerHTML = `
           <div class="roster-empty py-4 text-center text-muted">
             <div class="fs-2 mb-2">🔍</div>
-            <p class="mb-0">Không tìm thấy học sinh nào phù hợp với từ khóa.</p>
+            <p class="mb-0">${tr('Không tìm thấy học sinh nào phù hợp với từ khóa.','No matching student found.')}</p>
           </div>
         `;
         return;
@@ -369,8 +376,8 @@ export async function initRosterGate(user, role, existingProfile = null) {
               <div class="roster-card-meta">
                 <span class="badge bg-light text-dark border">${escLocal(s.className)}</span>
                 ${claimed
-                  ? `<span class="badge ${isMine ? 'bg-primary text-white' : 'bg-secondary-subtle text-muted'}">🔒 ${isMine ? 'Tài khoản của bạn' : 'Đã kích hoạt'}</span>`
-                  : `<span class="badge bg-success-subtle text-success">🟢 Sẵn sàng chọn</span>`
+                  ? `<span class="badge ${isMine ? 'bg-primary text-white' : 'bg-secondary-subtle text-muted'}">🔒 ${isMine ? tr('Tài khoản của bạn','Your account') : tr('Đã kích hoạt','Claimed')}</span>`
+                  : `<span class="badge bg-success-subtle text-success">🟢 ${tr('Sẵn sàng chọn','Available')}</span>`
                 }
               </div>
             </div>
@@ -388,7 +395,7 @@ export async function initRosterGate(user, role, existingProfile = null) {
           selectedStudent = found;
           errEl.classList.add('d-none');
           selectedBanner.classList.remove('d-none');
-          selectedNameEl.textContent = `${found.name} (STT #${String(found.stt).padStart(2, '0')})`;
+          selectedNameEl.textContent = `${found.name} (${tr('STT','No.')} #${String(found.stt).padStart(2, '0')})`;
           selectedClassBadge.textContent = found.className;
           proceedBtn.disabled = false;
           renderStudents();
@@ -439,8 +446,8 @@ export async function initRosterGate(user, role, existingProfile = null) {
       if (!selectedStudent) return;
       confirmAvatar.textContent = getInitials(selectedStudent.name);
       confirmStudentName.textContent = selectedStudent.name;
-      confirmClassBadge.textContent = `Lớp ${selectedStudent.className}`;
-      confirmSttBadge.textContent = `STT #${String(selectedStudent.stt).padStart(2, '0')}`;
+      confirmClassBadge.textContent = tr(`Lớp ${selectedStudent.className}`,`Class ${selectedStudent.className}`);
+      confirmSttBadge.textContent = `#${String(selectedStudent.stt).padStart(2, '0')}`;
       confirmGoogleEmail.textContent = user.email || '—';
       confirmErr.classList.add('d-none');
 
@@ -461,7 +468,7 @@ export async function initRosterGate(user, role, existingProfile = null) {
       backdrop: 'static',
       keyboard: false
     });
-    if (!bsModal) throw new Error('Bootstrap Modal chưa sẵn sàng.');
+    if (!bsModal) throw new Error(tr('Bootstrap Modal chưa sẵn sàng.','Bootstrap Modal is not ready.'));
     const mobileNav = document.querySelector('.mobile-bottom');
     if (mobileNav) mobileNav.classList.add('d-none');
     modal.addEventListener('hidden.bs.modal', () => {
@@ -474,14 +481,14 @@ export async function initRosterGate(user, role, existingProfile = null) {
         if (!selectedStudent) return;
         confirmSaveBtn.disabled = true;
         confirmBackBtn.disabled = true;
-        confirmSaveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang lưu...';
+        confirmSaveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${tr('Đang lưu...','Saving...')}`;
 
         try {
           // Concurrency safety check
           const mappingRef = doc(db, 'users_by_roster', selectedStudent.id);
           const currentSnap = await getDoc(mappingRef);
           if (currentSnap.exists() && currentSnap.data()?.uid !== user.uid) {
-            throw new Error(`Tên ${selectedStudent.name} vừa được một tài khoản khác kích hoạt. Vui lòng chọn lại.`);
+            throw new Error(tr(`Tên ${selectedStudent.name} vừa được một tài khoản khác kích hoạt. Vui lòng chọn lại.`,`${selectedStudent.name} was just claimed by another account. Please choose again.`));
           }
 
           // Write mapping to users_by_roster
@@ -518,21 +525,21 @@ export async function initRosterGate(user, role, existingProfile = null) {
           }
 
           bsModal.hide();
-          toastGlobal(`Xin chào ${selectedStudent.name} (${selectedStudent.className})! Đã kích hoạt tài khoản thành công.`, 'success');
+          toastGlobal(tr(`Xin chào ${selectedStudent.name} (${selectedStudent.className})! Đã kích hoạt tài khoản thành công.`,`Welcome ${selectedStudent.name} (${selectedStudent.className})! Account linked.`), 'success');
           resolve(true);
         } catch (err) {
           console.error('Lỗi lưu danh tính roster:', err);
-          confirmErr.textContent = err.message || 'Không thể lưu tên. Vui lòng thử lại.';
+          confirmErr.textContent = err.message || tr('Không thể lưu tên. Vui lòng thử lại.','Could not save selection. Please try again.');
           confirmErr.classList.remove('d-none');
           confirmSaveBtn.disabled = false;
           confirmBackBtn.disabled = false;
-          confirmSaveBtn.textContent = '✓ Xác nhận & Bắt đầu';
+          confirmSaveBtn.textContent = tr('✓ Xác nhận & Bắt đầu','✓ Confirm & Start');
         }
       };
     });
   } catch (error) {
     console.error('Lỗi khởi tạo Roster Gate:', error);
-    toastGlobal(error.message || 'Không thể kiểm tra danh sách lớp.', 'error');
+    toastGlobal(error.message || tr('Không thể kiểm tra danh sách lớp.','Could not load class roster.'), 'error');
     return false;
   }
 }

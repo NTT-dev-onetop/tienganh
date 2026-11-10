@@ -81,56 +81,56 @@ function renderVocabForm(data = null) {
   const isEdit = !!x.id;
   const units = ['Unit 1','Unit 2','Unit 3','Unit 4','Unit 5','Unit 6','Unit 7','Unit 8','Unit 9','Unit 10','Review 1','Review 2','Review 3','Review 4','Khác'];
   const posList = [
-    { v: 'verb', l: 'Verb (V) - Động từ' },
-    { v: 'noun', l: 'Noun (N) - Danh từ' },
-    { v: 'adjective', l: 'Adjective (Adj) - Tính từ' },
-    { v: 'adverb', l: 'Adverb (Adv) - Trạng từ' },
-    { v: 'phrase', l: 'Phrase / Idiom - Cụm từ' }
+    { v: 'verb', l: tr('Verb (V) - Động từ', 'Verb (V)') },
+    { v: 'noun', l: tr('Noun (N) - Danh từ', 'Noun (N)') },
+    { v: 'adjective', l: tr('Adjective (Adj) - Tính từ', 'Adjective (Adj)') },
+    { v: 'adverb', l: tr('Adverb (Adv) - Trạng từ', 'Adverb (Adv)') },
+    { v: 'phrase', l: tr('Phrase / Idiom - Cụm từ', 'Phrase / Idiom') }
   ];
 
   return `
   <div class="teacher-form-card">
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="mb-0 text-primary">👨‍🏫 ${isEdit ? 'Chỉnh sửa từ vựng' : 'Thêm từ vựng mới vào Unit'}</h5>
-      <button type="button" class="btn-close" id="btnCloseVocabForm" aria-label="Đóng"></button>
+      <h3 class="mb-0 text-primary fs-5 fw-bold">👨‍🏫 ${isEdit ? tr('Chỉnh sửa từ vựng', 'Edit Vocabulary') : tr('Thêm từ vựng mới vào Unit', 'Add New Vocabulary to Unit')}</h3>
+      <button type="button" class="btn-close" id="btnCloseVocabForm" aria-label="${tr('Đóng', 'Close')}"></button>
     </div>
     <div class="row g-3">
       <div class="col-md-4">
         <label class="form-label fw-bold">Unit *</label>
-        <select id="tvUnit" class="form-select">${units.map(u => `<option value="${u}" ${x.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select>
+        <select id="tvUnit" class="form-select">${units.map(u => `<option value="${u}" ${x.unit === u ? 'selected' : ''}>${u === 'Khác' ? tr('Khác', 'Other') : u}</option>`).join('')}</select>
       </div>
       <div class="col-md-5">
-        <label class="form-label fw-bold">Từ / Cụm từ *</label>
-        <input id="tvWord" class="form-control" placeholder="vd. sustainable development" value="${esc(x.word || '')}">
+        <label class="form-label fw-bold">${tr('Từ / Cụm từ *', 'Word / Phrase *')}</label>
+        <input id="tvWord" class="form-control" placeholder="${tr('vd. sustainable development', 'e.g. sustainable development')}" value="${esc(x.word || '')}">
       </div>
       <div class="col-md-3">
-        <label class="form-label fw-bold">Từ loại</label>
+        <label class="form-label fw-bold">${tr('Từ loại', 'Part of Speech')}</label>
         <select id="tvPos" class="form-select">${posList.map(p => `<option value="${p.v}" ${x.pos === p.v ? 'selected' : ''}>${p.l}</option>`).join('')}</select>
       </div>
       <div class="col-md-4">
-        <label class="form-label fw-bold">Phát âm (Phonetics)</label>
+        <label class="form-label fw-bold">${tr('Phát âm (Phonetics)', 'Phonetics')}</label>
         <input id="tvPron" class="form-control" placeholder="/səˈsteɪnəbl dɪˈveləpmənt/" value="${esc(x.pron || '')}">
       </div>
       <div class="col-md-8">
-        <label class="form-label fw-bold">Nghĩa tiếng Việt *</label>
-        <input id="tvMeaning" class="form-control" placeholder="sự phát triển bền vững" value="${esc(x.meaning || '')}">
+        <label class="form-label fw-bold">${tr('Nghĩa tiếng Việt *', 'Meaning *')}</label>
+        <input id="tvMeaning" class="form-control" placeholder="${tr('sự phát triển bền vững', 'Vietnamese meaning / definition')}" value="${esc(x.meaning || '')}">
       </div>
       <div class="col-md-6">
-        <label class="form-label fw-bold">Cách dùng / Cụm đi kèm</label>
+        <label class="form-label fw-bold">${tr('Cách dùng / Cụm đi kèm', 'Usage / Collocations')}</label>
         <textarea id="tvPattern" class="form-control" rows="2" placeholder="promote / achieve sustainable development">${esc(x.pattern || '')}</textarea>
       </div>
       <div class="col-md-6">
-        <label class="form-label fw-bold">Ví dụ minh họa</label>
+        <label class="form-label fw-bold">${tr('Ví dụ minh họa', 'Example Sentence')}</label>
         <textarea id="tvExample" class="form-control" rows="2" placeholder="Countries are working toward sustainable development.">${esc(x.example || '')}</textarea>
       </div>
       <div class="col-12">
-        <label class="form-label fw-bold">Ghi chú / Word Family</label>
+        <label class="form-label fw-bold">${tr('Ghi chú / Word Family', 'Notes / Word Family')}</label>
         <input id="tvNote" class="form-control" placeholder="sustain (v), sustainability (n)" value="${esc(x.note || x.family || '')}">
       </div>
     </div>
     <div class="d-flex gap-2 justify-content-end mt-4">
-      <button type="button" id="btnCancelVocab" class="btn btn-outline-secondary">Hủy</button>
-      <button type="button" id="btnSaveVocab" class="btn btn-primary px-4">💾 ${isEdit ? 'Lưu thay đổi' : 'Thêm từ vựng'}</button>
+      <button type="button" id="btnCancelVocab" class="btn btn-outline-secondary">${tr('Hủy', 'Cancel')}</button>
+      <button type="button" id="btnSaveVocab" class="btn btn-primary px-4">💾 ${isEdit ? tr('Lưu thay đổi', 'Save Changes') : tr('Thêm từ vựng', 'Add Vocabulary')}</button>
     </div>
   </div>`;
 }
@@ -159,7 +159,7 @@ function openVocabModal(id = null) {
     const note = document.getElementById('tvNote')?.value.trim();
 
     if (!word || !meaning) {
-      showToast('Vui lòng nhập từ tiếng Anh và nghĩa tiếng Việt.', 'error');
+      showToast(tr('Vui lòng nhập từ tiếng Anh và nghĩa tiếng Việt.', 'Please enter both the English word and its meaning.'), 'error');
       return;
     }
 
@@ -179,10 +179,10 @@ function openVocabModal(id = null) {
       };
       if (id) {
         await updateDoc(doc(db, 'teacherVocab', id), payload);
-        showToast('Đã cập nhật từ vựng thành công!');
+        showToast(tr('Đã cập nhật từ vựng thành công!', 'Vocabulary updated successfully!'));
       } else {
         await setDoc(doc(collection(db, 'teacherVocab')), { ...payload, createdAt: serverTimestamp() });
-        showToast('Đã thêm từ vựng mới vào Unit!');
+        showToast(tr('Đã thêm từ vựng mới vào Unit!', 'Added new vocabulary item to Unit!'));
       }
       closeForm();
     } catch (err) {
@@ -226,7 +226,7 @@ function initListening() {
     renderTeacherListeningBoard(rows);
   }, e => {
     console.error(e);
-    if (root) root.innerHTML = '<div class="alert alert-danger">Không tải được bài Listening giáo viên.</div>';
+    if (root) root.innerHTML = `<div class="alert alert-danger">${tr('Không tải được bài Listening giáo viên.', 'Could not load teacher listening tasks.')}</div>`;
   });
   stops.push(stop);
 }
@@ -235,7 +235,7 @@ function renderTeacherListeningBoard(list) {
   const root = document.getElementById('teacherListeningList');
   if (!root) return;
   if (!list.length) {
-    root.innerHTML = '<div class="muted py-3">Chưa có bài Listening giáo viên đăng.</div>';
+    root.innerHTML = `<div class="muted py-3">${tr('Chưa có bài Listening giáo viên đăng.', 'No teacher listening tasks published yet.')}</div>`;
     return;
   }
 
@@ -249,12 +249,13 @@ function renderTeacherListeningBoard(list) {
     const safeSource = safeUrl(item.sourceUrl);
     const prompts = Array.isArray(item.prompts) ? item.prompts : [];
     const answers = Array.isArray(item.answers) ? item.answers : [];
+    const displayUnit = item.unit === 'Chuyên đề' ? tr('Chuyên đề', 'Special Topic') : (item.unit || 'Unit');
 
     return `
     <article class="teacher-listening-item" data-tl-id="${esc(item.id)}">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
         <div class="d-flex gap-2 align-items-center flex-wrap">
-          <span class="tag fw-bold">${esc(item.unit || 'Unit')}</span>
+          <span class="tag fw-bold">${esc(displayUnit)}</span>
           <span class="tag ${item.published ? 'tag-published' : 'tag-draft'}">${item.published ? tr('Đã xuất bản', 'Published') : tr('Bản nháp', 'Draft')}</span>
           <span class="tag">🎧 ${isBlanks ? tr('Điền chỗ trống', 'Gap fill') : tr('Trắc nghiệm nghe', 'Listening MCQ')}</span>
         </div>
@@ -265,7 +266,7 @@ function renderTeacherListeningBoard(list) {
         </div>` : ''}
       </div>
 
-      <h4 class="mt-2 mb-3">${esc(item.title || tr('Bài nghe', 'Listening task'))}</h4>
+      <h3 class="h5 mt-2 mb-3 fw-bold">${esc(item.title || tr('Bài nghe', 'Listening task'))}</h3>
 
       <!-- AUDIO PLAYER / YOUTUBE -->
       ${ytEmbed ? `
@@ -280,7 +281,7 @@ function renderTeacherListeningBoard(list) {
 
       <!-- INTERACTIVE EXERCISE -->
       <div class="teacher-listening-exercise p-3 bg-light rounded-3 mb-3">
-        <h6 class="fw-bold mb-3">📝 ${tr('Nhiệm vụ nghe:', 'Listening task:')}</h6>
+        <div class="fw-bold mb-3">📝 ${tr('Nhiệm vụ nghe:', 'Listening task:')}</div>
         ${isBlanks ? `
         <div class="listening-blanks-container d-grid gap-3">
           ${prompts.map((p, i) => {
@@ -427,58 +428,58 @@ function renderListeningForm(data = null) {
   return `
   <div class="teacher-form-card">
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="mb-0 text-primary">🎧 ${isEdit ? 'Chỉnh sửa bài Listening' : 'Thêm bài Listening mới'}</h5>
-      <button type="button" class="btn-close" id="btnCloseListeningForm" aria-label="Đóng"></button>
+      <h3 class="mb-0 text-primary fs-5 fw-bold">🎧 ${isEdit ? tr('Chỉnh sửa bài Listening', 'Edit Listening Task') : tr('Thêm bài Listening mới', 'Add New Listening Task')}</h3>
+      <button type="button" class="btn-close" id="btnCloseListeningForm" aria-label="${tr('Đóng', 'Close')}"></button>
     </div>
     <div class="row g-3">
       <div class="col-md-4">
         <label class="form-label fw-bold">Unit *</label>
-        <select id="tlUnit" class="form-select">${units.map(u => `<option value="${u}" ${x.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select>
+        <select id="tlUnit" class="form-select">${units.map(u => `<option value="${u}" ${x.unit === u ? 'selected' : ''}>${u === 'Chuyên đề' ? tr('Chuyên đề', 'Special Topic') : u}</option>`).join('')}</select>
       </div>
       <div class="col-md-8">
-        <label class="form-label fw-bold">Tiêu đề bài nghe *</label>
-        <input id="tlTitle" class="form-control" placeholder="vd. ASEAN Culture & Youth Exchange" value="${esc(x.title || '')}">
+        <label class="form-label fw-bold">${tr('Tiêu đề bài nghe *', 'Listening Title *')}</label>
+        <input id="tlTitle" class="form-control" placeholder="${tr('vd. ASEAN Culture & Youth Exchange', 'e.g. ASEAN Culture & Youth Exchange')}" value="${esc(x.title || '')}">
       </div>
       <div class="col-md-8">
-        <label class="form-label fw-bold">Link Audio (MP3 direct URL) hoặc Link YouTube *</label>
-        <input id="tlAudio" class="form-control" placeholder="vd. https://.../audio.mp3 hoặc https://www.youtube.com/watch?v=..." value="${esc(x.audioUrl || '')}">
-        <div class="form-text">Có thể dán link tệp âm thanh trực tiếp (.mp3, .wav, .m4a) hoặc link video YouTube.</div>
+        <label class="form-label fw-bold">${tr('Link Audio (MP3 direct URL) hoặc Link YouTube *', 'Audio URL (MP3) or YouTube Link *')}</label>
+        <input id="tlAudio" class="form-control" placeholder="https://.../audio.mp3" value="${esc(x.audioUrl || '')}">
+        <div class="form-text">${tr('Có thể dán link tệp âm thanh trực tiếp (.mp3, .wav, .m4a) hoặc link video YouTube.', 'Paste a direct audio URL (.mp3, .wav, .m4a) or a YouTube video link.')}</div>
       </div>
       <div class="col-md-4">
-        <label class="form-label fw-bold">Dạng bài tập</label>
+        <label class="form-label fw-bold">${tr('Dạng bài tập', 'Exercise Type')}</label>
         <select id="tlKind" class="form-select">
-          <option value="blanks" ${(x.kind || 'blanks') === 'blanks' ? 'selected' : ''}>Điền chỗ trống (Gap fill)</option>
-          <option value="mcq" ${x.kind === 'mcq' ? 'selected' : ''}>Trắc nghiệm nghe (MCQ)</option>
+          <option value="blanks" ${(x.kind || 'blanks') === 'blanks' ? 'selected' : ''}>${tr('Điền chỗ trống (Gap fill)', 'Gap fill')}</option>
+          <option value="mcq" ${x.kind === 'mcq' ? 'selected' : ''}>${tr('Trắc nghiệm nghe (MCQ)', 'Listening MCQ')}</option>
         </select>
       </div>
       <div class="col-12">
-        <label class="form-label fw-bold">Link nguồn / trang tham khảo (nếu có)</label>
+        <label class="form-label fw-bold">${tr('Link nguồn / trang tham khảo (nếu có)', 'Reference URL (optional)')}</label>
         <input id="tlSource" class="form-control" placeholder="https://..." value="${esc(x.sourceUrl || '')}">
       </div>
       <div class="col-md-7">
-        <label class="form-label fw-bold">Các câu hỏi hoặc câu cần điền * (Mỗi dòng một câu)</label>
-        <textarea id="tlPrompts" class="form-control" rows="6" placeholder="Câu 1: The students will visit on the 5th of ________.\nCâu 2: They will spend ________ days in Viet Nam.">${esc(prompts)}</textarea>
-        <div class="form-text">Dùng dấu <code>________</code> để biểu thị chỗ trống.</div>
+        <label class="form-label fw-bold">${tr('Các câu hỏi hoặc câu cần điền * (Mỗi dòng một câu)', 'Prompts / Sentences * (One per line)')}</label>
+        <textarea id="tlPrompts" class="form-control" rows="6" placeholder="${tr('Câu 1: The students will visit on the 5th of ________.\nCâu 2: They will spend ________ days in Viet Nam.', '1. The students will visit on the 5th of ________.\n2. They will spend ________ days in Viet Nam.')}">${esc(prompts)}</textarea>
+        <div class="form-text">${tr('Dùng dấu <code>________</code> để biểu thị chỗ trống.', 'Use <code>________</code> to indicate a blank.')}</div>
       </div>
       <div class="col-md-5">
-        <label class="form-label fw-bold">Đáp án tương ứng * (Mỗi dòng một đáp án)</label>
-        <textarea id="tlAnswers" class="form-control" rows="6" placeholder="May\nfive">${esc(answers)}</textarea>
-        <div class="form-text">Số dòng đáp án phải khớp với số dòng câu hỏi.</div>
+        <label class="form-label fw-bold">${tr('Đáp án tương ứng * (Mỗi dòng một đáp án)', 'Matching Answers * (One per line)')}</label>
+        <textarea id="tlAnswers" class="form-control" rows="6" placeholder="May&#10;five">${esc(answers)}</textarea>
+        <div class="form-text">${tr('Số dòng đáp án phải khớp với số dòng câu hỏi.', 'Answer line count must match prompt line count.')}</div>
       </div>
       <div class="col-12">
-        <label class="form-label fw-bold">Lời thoại / Bài đọc Transcript (để học sinh đối chiếu sau khi nộp)</label>
-        <textarea id="tlTranscript" class="form-control" rows="4" placeholder="Nội dung bài nghe transcript...">${esc(x.transcript || '')}</textarea>
+        <label class="form-label fw-bold">${tr('Lời thoại / Bài đọc Transcript (để học sinh đối chiếu sau khi nộp)', 'Transcript (shown for self-check after submission)')}</label>
+        <textarea id="tlTranscript" class="form-control" rows="4" placeholder="${tr('Nội dung bài nghe transcript...', 'Full audio transcript...')}">${esc(x.transcript || '')}</textarea>
       </div>
       <div class="col-12">
         <div class="form-check form-switch">
           <input id="tlPublished" class="form-check-input" type="checkbox" ${x.published === false ? '' : 'checked'}>
-          <label class="form-check-label fw-bold">Đã xuất bản (học sinh thấy và làm được ngay)</label>
+          <label class="form-check-label fw-bold">${tr('Đã xuất bản (học sinh thấy và làm được ngay)', 'Published (visible to students immediately)')}</label>
         </div>
       </div>
     </div>
     <div class="d-flex gap-2 justify-content-end mt-4">
-      <button type="button" id="btnCancelListening" class="btn btn-outline-secondary">Hủy</button>
-      <button type="button" id="btnSaveListening" class="btn btn-primary px-4">💾 ${isEdit ? 'Lưu thay đổi' : 'Đăng bài nghe'}</button>
+      <button type="button" id="btnCancelListening" class="btn btn-outline-secondary">${tr('Hủy', 'Cancel')}</button>
+      <button type="button" id="btnSaveListening" class="btn btn-primary px-4">💾 ${isEdit ? tr('Lưu thay đổi', 'Save Changes') : tr('Đăng bài nghe', 'Publish Listening')}</button>
     </div>
   </div>`;
 }
@@ -577,7 +578,7 @@ function initQuestions() {
     renderTeacherExercises(rows);
   }, e => {
     console.error(e);
-    if (root) root.innerHTML = '<div class="alert alert-danger">Không tải được bài tập giáo viên.</div>';
+    if (root) root.innerHTML = `<div class="alert alert-danger">${tr('Không tải được bài tập giáo viên.', 'Could not load teacher exercises.')}</div>`;
   });
   stops.push(stop);
 }
@@ -586,10 +587,11 @@ function renderTeacherExercises(rows) {
   const root = document.getElementById('teacherQuestionList');
   if (!root) return;
   if (!rows.length) {
-    root.innerHTML = '<div class="empty"><div>📝</div><h4>Chưa có bài tập giáo viên đăng</h4></div>';
+    root.innerHTML = `<div class="empty"><div>📝</div><h3>${tr('Chưa có bài tập giáo viên đăng', 'No teacher exercises published yet')}</h3></div>`;
     return;
   }
 
+  const openSetIds = new Set([...root.querySelectorAll('.teacher-set-quiz:not(.d-none)')].map(el => el.id.replace(/^teacher-set-/, '')));
   const staff = isStaff();
 
   // Nhóm theo setId hoặc bài đọc reading
@@ -599,7 +601,7 @@ function renderTeacherExercises(rows) {
     if (!groups.has(key)) {
       groups.set(key, {
         id: key,
-        title: String(x.setTitle || x.sourceFile || x.unit || 'Bài tập Unit'),
+        title: String(x.setTitle || x.sourceFile || x.unit || tr('Bài tập Unit', 'Unit Practice')),
         unit: String(x.unit || ''),
         kind: String(x.kind || 'mcq'),
         passage: String(x.passage || x.readingPassage || ''),
@@ -613,6 +615,7 @@ function renderTeacherExercises(rows) {
 
   root.innerHTML = sets.map(set => {
     const isReading = set.kind === 'reading' || !!set.passage;
+    const isOpen = openSetIds.has(set.id);
 
     return `
     <article class="teacher-set-card" data-set="${esc(set.id)}">
@@ -620,27 +623,27 @@ function renderTeacherExercises(rows) {
         <div>
           <div class="d-flex gap-2 flex-wrap align-items-center">
             <span class="tag fw-bold">${esc(set.unit)}</span>
-            <span class="tag">${isReading ? '📖 Đọc hiểu (Reading)' : '📝 Trắc nghiệm'}</span>
-            <span class="tag">${set.items.length} câu</span>
+            <span class="tag">${isReading ? tr('📖 Đọc hiểu (Reading)', '📖 Reading Comprehension') : tr('📝 Trắc nghiệm', '📝 Multiple Choice')}</span>
+            <span class="tag">${set.items.length} ${tr('câu', 'Qs')}</span>
           </div>
-          <h4>${esc(set.title)}</h4>
-          <p class="muted mb-0">${isReading ? 'Bài đọc hiểu có đoạn văn & câu hỏi đi kèm.' : 'Bài tập do giáo viên đăng · bấm để làm bài.'}</p>
+          <h3 class="h5 mt-2 mb-1 fw-bold">${esc(set.title)}</h3>
+          <p class="muted mb-0">${isReading ? tr('Bài đọc hiểu có đoạn văn & câu hỏi đi kèm.', 'Reading passage with comprehension questions.') : tr('Bài tập do giáo viên đăng · bấm để làm bài.', 'Teacher-assigned set · click to start.')}</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
           ${staff ? `
-            <button class="btn btn-sm btn-outline-primary" data-te-edit-set="${esc(set.id)}">✏️ Sửa</button>
-            <button class="btn btn-sm btn-outline-danger" data-te-del-set="${esc(set.id)}">🗑 Xóa</button>
+            <button class="btn btn-sm btn-outline-primary" data-te-edit-set="${esc(set.id)}">✏️ ${tr('Sửa', 'Edit')}</button>
+            <button class="btn btn-sm btn-outline-danger" data-te-del-set="${esc(set.id)}">🗑 ${tr('Xóa', 'Delete')}</button>
           ` : ''}
-          <button class="btn btn-primary" data-start-set="${esc(set.id)}">▶ Làm bài</button>
+          <button class="btn btn-primary" data-start-set="${esc(set.id)}">▶ ${tr('Làm bài', 'Start')}</button>
         </div>
       </div>
 
-      <div class="teacher-set-quiz d-none p-3" id="teacher-set-${esc(set.id)}">
+      <div class="teacher-set-quiz ${isOpen ? '' : 'd-none'} p-3" id="teacher-set-${esc(set.id)}">
         <!-- ĐOẠN VĂN ĐỌC HIỂU NẾU LÀ READING -->
         ${set.passage ? `
         <div class="teacher-reading-passage">
           <div class="d-flex align-items-center gap-2 mb-2 text-primary fw-bold">
-            <span>📖 ĐOẠN VĂN BÀI ĐỌC:</span>
+            <span>📖 ${tr('ĐOẠN VĂN BÀI ĐỌC:', 'READING PASSAGE:')}</span>
           </div>
           <div>${esc(set.passage)}</div>
         </div>` : ''}
@@ -652,14 +655,14 @@ function renderTeacherExercises(rows) {
             return `
             <article class="teacher-quiz-q" data-q-id="${esc(x.id)}">
               <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="small muted">Câu ${i + 1}/${set.items.length}</span>
-                ${staff ? `<button class="btn btn-link btn-sm text-danger p-0" data-te-del-q="${esc(x.id)}">Xóa câu này</button>` : ''}
+                <span class="small muted">${tr('Câu', 'Q')} ${i + 1}/${set.items.length}</span>
+                ${staff ? `<button class="btn btn-link btn-sm text-danger p-0" data-te-del-q="${esc(x.id)}">${tr('Xóa câu này', 'Delete question')}</button>` : ''}
               </div>
-              <h5>${esc(x.prompt || '')}</h5>
+              <h4 class="fs-6 fw-bold mt-1 mb-2">${esc(x.prompt || '')}</h4>
 
               ${isTextForm ? `
                 <div class="mt-2">
-                  <input type="text" class="form-control" name="textans-${esc(set.id)}-${i}" placeholder="Nhập đáp án...">
+                  <input type="text" class="form-control" name="textans-${esc(set.id)}-${i}" placeholder="${tr('Nhập đáp án...', 'Type answer...')}">
                 </div>
               ` : `
                 <div class="d-grid gap-1 mt-2">
@@ -677,8 +680,8 @@ function renderTeacherExercises(rows) {
         </div>
 
         <div class="d-flex gap-2 flex-wrap align-items-center mt-3 pt-3 border-top">
-          <button class="btn btn-success px-4" data-submit-set="${esc(set.id)}">🚀 Nộp bài</button>
-          <button class="btn btn-outline-secondary" data-close-set="${esc(set.id)}">Đóng</button>
+          <button class="btn btn-success px-4" data-submit-set="${esc(set.id)}">🚀 ${tr('Nộp bài', 'Submit')}</button>
+          <button class="btn btn-outline-secondary" data-close-set="${esc(set.id)}">${tr('Đóng', 'Close')}</button>
           <span class="teacher-quiz-result fw-bold ms-auto" id="result-${esc(set.id)}"></span>
         </div>
       </div>
@@ -714,9 +717,9 @@ function renderTeacherExercises(rows) {
             answered++;
             if (userText === expected) {
               score++;
-              if (fb) fb.innerHTML = '<span class="text-success fw-bold">✓ Chính xác</span>';
+              if (fb) fb.innerHTML = `<span class="text-success fw-bold">✓ ${tr('Chính xác', 'Correct')}</span>`;
             } else {
-              if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× Sai (Đáp án: ${esc(x.answer)})</span>`;
+              if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× ${tr('Sai', 'Wrong')} (${tr('Đáp án', 'Answer')}: ${esc(x.answer)})</span>`;
             }
           }
         } else {
@@ -725,10 +728,10 @@ function renderTeacherExercises(rows) {
             answered++;
             if (Number(checked.value) === Number(x.correctIndex)) {
               score++;
-              if (fb) fb.innerHTML = '<span class="text-success fw-bold">✓ Chính xác</span>';
+              if (fb) fb.innerHTML = `<span class="text-success fw-bold">✓ ${tr('Chính xác', 'Correct')}</span>`;
             } else {
               const letter = String.fromCharCode(65 + Number(x.correctIndex));
-              if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× Sai (Đáp án đúng: ${letter})</span>${x.explain ? `<div class="small text-muted mt-1">💡 ${esc(x.explain)}</div>` : ''}`;
+              if (fb) fb.innerHTML = `<span class="text-danger fw-bold">× ${tr('Sai', 'Wrong')} (${tr('Đáp án đúng', 'Correct answer')}: ${letter})</span>${x.explain ? `<div class="small text-muted mt-1">💡 ${esc(x.explain)}</div>` : ''}`;
             }
           }
         }
@@ -736,7 +739,7 @@ function renderTeacherExercises(rows) {
 
       const resEl = root.querySelector(`#result-${CSS.escape(setId)}`);
       if (resEl) {
-        resEl.innerHTML = `<span class="badge ${score === set.items.length ? 'bg-success' : 'bg-primary'} fs-6">${score}/${set.items.length} điểm</span> · đã làm ${answered}/${set.items.length} câu`;
+        resEl.innerHTML = `<span class="badge ${score === set.items.length ? 'bg-success' : 'bg-primary'} fs-6">${score}/${set.items.length} ${tr('điểm', 'pts')}</span> · ${tr(`đã làm ${answered}/${set.items.length} câu`, `answered ${answered}/${set.items.length}`)}`;
       }
     };
   });
@@ -798,8 +801,8 @@ function renderExerciseForm(data = null) {
   return `
   <div class="teacher-form-card">
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="mb-0 text-primary">📝 ${isEdit ? 'Chỉnh sửa bài tập' : 'Thêm bài tập mới (Trắc nghiệm / Đọc hiểu / Điền từ)'}</h5>
-      <button type="button" class="btn-close" id="btnCloseExerciseForm" aria-label="Đóng"></button>
+      <h3 class="mb-0 text-primary fs-5 fw-bold">📝 ${isEdit ? tr('Chỉnh sửa bài tập', 'Edit Exercise') : tr('Thêm bài tập mới (Trắc nghiệm / Đọc hiểu / Điền từ)', 'Add New Exercise (MCQ / Reading / Fill-in)')}</h3>
+      <button type="button" class="btn-close" id="btnCloseExerciseForm" aria-label="${tr('Đóng', 'Close')}"></button>
     </div>
     <div class="row g-3">
       <div class="col-md-4">
@@ -807,40 +810,40 @@ function renderExerciseForm(data = null) {
         <select id="teUnit" class="form-select">${units.map(u => `<option value="${u}" ${x.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select>
       </div>
       <div class="col-md-4">
-        <label class="form-label fw-bold">Dạng bài tập *</label>
+        <label class="form-label fw-bold">${tr('Dạng bài tập *', 'Exercise Type *')}</label>
         <select id="teKind" class="form-select">
-          <option value="mcq" ${currentKind === 'mcq' ? 'selected' : ''}>Trắc nghiệm 4 lựa chọn (MCQ)</option>
-          <option value="reading" ${isReading ? 'selected' : ''}>📖 Đọc hiểu (Reading Comprehension)</option>
-          <option value="two" ${currentKind === 'two' ? 'selected' : ''}>Trắc nghiệm Đúng/Sai (2 lựa chọn)</option>
-          <option value="form" ${currentKind === 'form' ? 'selected' : ''}>Điền dạng đúng của từ (Word form)</option>
-          <option value="rewrite" ${currentKind === 'rewrite' ? 'selected' : ''}>Viết lại câu (Sentence rewrite)</option>
+          <option value="mcq" ${currentKind === 'mcq' ? 'selected' : ''}>${tr('Trắc nghiệm 4 lựa chọn (MCQ)', '4-Choice MCQ')}</option>
+          <option value="reading" ${isReading ? 'selected' : ''}>${tr('📖 Đọc hiểu (Reading Comprehension)', '📖 Reading Comprehension')}</option>
+          <option value="two" ${currentKind === 'two' ? 'selected' : ''}>${tr('Trắc nghiệm Đúng/Sai (2 lựa chọn)', 'True/False (2 choices)')}</option>
+          <option value="form" ${currentKind === 'form' ? 'selected' : ''}>${tr('Điền dạng đúng của từ (Word form)', 'Word Form')}</option>
+          <option value="rewrite" ${currentKind === 'rewrite' ? 'selected' : ''}>${tr('Viết lại câu (Sentence rewrite)', 'Sentence Rewrite')}</option>
         </select>
       </div>
       <div class="col-md-4">
-        <label class="form-label fw-bold">Tên bộ bài tập / Tiêu đề *</label>
-        <input id="teTitle" class="form-control" placeholder="vd. Reading Practice - Eco Tourism" value="${esc(x.title || '')}">
+        <label class="form-label fw-bold">${tr('Tên bộ bài tập / Tiêu đề *', 'Exercise Set Title *')}</label>
+        <input id="teTitle" class="form-control" placeholder="${tr('vd. Reading Practice - Eco Tourism', 'e.g. Reading Practice - Eco Tourism')}" value="${esc(x.title || '')}">
       </div>
 
       <!-- READING PASSAGE (NẾU LÀ ĐỌC HIỂU) -->
       <div class="col-12 ${isReading ? '' : 'd-none'}" id="teReadingBox">
-        <label class="form-label fw-bold text-success">📖 Đoạn văn bài đọc (Reading Passage) *</label>
-        <textarea id="tePassage" class="form-control" rows="6" placeholder="Dán toàn bộ đoạn văn đọc hiểu vào đây...">${esc(passageVal)}</textarea>
+        <label class="form-label fw-bold text-success">📖 ${tr('Đoạn văn bài đọc (Reading Passage) *', 'Reading Passage *')}</label>
+        <textarea id="tePassage" class="form-control" rows="6" placeholder="${tr('Dán toàn bộ đoạn văn đọc hiểu vào đây...', 'Paste the reading passage here...')}">${esc(passageVal)}</textarea>
       </div>
 
       <!-- STANDARD MCQ FIELDS -->
       <div class="col-12" id="tePromptBox">
-        <label class="form-label fw-bold" id="tePromptLabel">Câu hỏi *</label>
-        <textarea id="tePrompt" class="form-control" rows="3" placeholder="Nhập câu hỏi...">${esc(promptVal)}</textarea>
+        <label class="form-label fw-bold" id="tePromptLabel">${tr('Câu hỏi *', 'Question Prompt *')}</label>
+        <textarea id="tePrompt" class="form-control" rows="3" placeholder="${tr('Nhập câu hỏi...', 'Enter question prompt...')}">${esc(promptVal)}</textarea>
       </div>
 
       <div class="col-md-8" id="teOptionsBox" style="${isText ? 'display:none;' : ''}">
-        <label class="form-label fw-bold">Các lựa chọn (Mỗi dòng một đáp án A, B, C, D)</label>
-        <textarea id="teOptions" class="form-control" rows="4" placeholder="Đáp án A\nĐáp án B\nĐáp án C\nĐáp án D">${esc(optionsVal)}</textarea>
+        <label class="form-label fw-bold">${tr('Các lựa chọn (Mỗi dòng một đáp án A, B, C, D)', 'Options (One per line: A, B, C, D)')}</label>
+        <textarea id="teOptions" class="form-control" rows="4" placeholder="${tr('Đáp án A&#10;Đáp án B&#10;Đáp án C&#10;Đáp án D', 'Option A&#10;Option B&#10;Option C&#10;Option D')}">${esc(optionsVal)}</textarea>
       </div>
 
       <div class="col-md-4" id="teCorrectBox">
         <div id="teCorrectSelectWrap" style="${isText ? 'display:none;' : ''}">
-          <label class="form-label fw-bold">Đáp án đúng</label>
+          <label class="form-label fw-bold">${tr('Đáp án đúng', 'Correct Option')}</label>
           <select id="teCorrect" class="form-select">
             <option value="0" ${Number(correctVal) === 0 ? 'selected' : ''}>A</option>
             <option value="1" ${Number(correctVal) === 1 ? 'selected' : ''}>B</option>
@@ -849,27 +852,27 @@ function renderExerciseForm(data = null) {
           </select>
         </div>
         <div class="mt-2" id="teAnswerBox" style="${isText ? '' : 'display:none;'}">
-          <label class="form-label fw-bold">Đáp án chữ mẫu</label>
-          <input id="teAnswer" class="form-control" placeholder="vd. was developed" value="${esc(answerVal)}">
+          <label class="form-label fw-bold">${tr('Đáp án chữ mẫu', 'Sample Text Answer')}</label>
+          <input id="teAnswer" class="form-control" placeholder="${tr('vd. was developed', 'e.g. was developed')}" value="${esc(answerVal)}">
         </div>
       </div>
 
       <div class="col-12">
-        <label class="form-label fw-bold">Giải thích chi tiết (sau khi học sinh nộp bài)</label>
-        <textarea id="teExplain" class="form-control" rows="2" placeholder="Giải thích vì sao chọn đáp án này...">${esc(explainVal)}</textarea>
+        <label class="form-label fw-bold">${tr('Giải thích chi tiết (sau khi học sinh nộp bài)', 'Explanation (shown after submission)')}</label>
+        <textarea id="teExplain" class="form-control" rows="2" placeholder="${tr('Giải thích vì sao chọn đáp án này...', 'Explain why this is correct...')}">${esc(explainVal)}</textarea>
       </div>
 
       <div class="col-12">
         <div class="form-check form-switch">
           <input id="tePublished" class="form-check-input" type="checkbox" ${x.published === false ? '' : 'checked'}>
-          <label class="form-check-label fw-bold">Đã xuất bản (học sinh thấy và làm được ngay)</label>
+          <label class="form-check-label fw-bold">${tr('Đã xuất bản (học sinh thấy và làm được ngay)', 'Published (visible to students immediately)')}</label>
         </div>
       </div>
     </div>
 
     <div class="d-flex gap-2 justify-content-end mt-4">
-      <button type="button" id="btnCancelExercise" class="btn btn-outline-secondary">Hủy</button>
-      <button type="button" id="btnSaveExercise" class="btn btn-primary px-4">💾 ${isEdit ? 'Lưu thay đổi' : 'Đăng bài tập'}</button>
+      <button type="button" id="btnCancelExercise" class="btn btn-outline-secondary">${tr('Hủy', 'Cancel')}</button>
+      <button type="button" id="btnSaveExercise" class="btn btn-primary px-4">💾 ${isEdit ? tr('Lưu thay đổi', 'Save Changes') : tr('Đăng bài tập', 'Publish Exercise')}</button>
     </div>
   </div>`;
 }
@@ -968,7 +971,7 @@ function openExerciseModal(editData = null) {
         answer,
         explain,
         passage: kind === 'reading' ? passage : '',
-        setTitle: title || (kind === 'reading' ? `Reading - ${unit}` : `Bài tập - ${unit}`),
+        setTitle: title || (kind === 'reading' ? `Reading - ${unit}` : tr(`Bài tập - ${unit}`, `Practice - ${unit}`)),
         setId,
         published: !!published,
         author: auth?.currentUser?.email || '',

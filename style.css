@@ -3187,6 +3187,425 @@ html[data-theme="dark"] #adminUsers .badge.bg-secondary-subtle {
   border: 1px solid #334155;
 }
 
+/* ===== UNIFIED TEACHER DASHBOARD SHELL & WORD EXPORT PRESETS ===== */
+html[data-theme="dark"] .teacher-listening-exercise .bg-white {
+  background: var(--card-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+body.is-staff #admin .panel:hover {
+  transform: none;
+}
+
+body.is-staff .nav,
+body.is-staff .navbar.nav,
+body.is-staff aside.nav,
+body.is-staff .mobile-topbar,
+body.is-staff .mobile-bottom,
+body.is-staff #moreSheet,
+body.is-staff #moreBackdrop {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.is-staff {
+  padding-bottom: 0 !important;
+}
+body.is-staff main.container-fluid,
+html body.is-staff main.container-fluid {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 18px 28px 48px !important;
+}
+@media (max-width: 991.98px) {
+  body.is-staff main.container-fluid,
+  html body.is-staff main.container-fluid {
+    padding: 12px 14px 36px !important;
+  }
+}
+
+.teacher-shell-header {
+  max-width: 1440px;
+  margin: 0 auto 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.teacher-shell-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.teacher-shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 4px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease;
+}
+.teacher-shell-brand:hover {
+  background: var(--surface-2);
+}
+.teacher-brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--primary-soft);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex: none;
+}
+.teacher-brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.teacher-brand-copy strong {
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.teacher-brand-copy small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.teacher-role-pill {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.teacher-shell-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.teacher-export-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#exportStreak,
+#exportConfigBtn {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+#exportStreak .teacher-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+#exportStreak .export-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  animation: teacherSpin 0.75s linear infinite;
+}
+@keyframes teacherSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.teacher-shell-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 2px;
+}
+.teacher-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 5px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  max-width: 240px;
+}
+.teacher-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+.teacher-user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.teacher-user-meta strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.teacher-user-meta span {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.teacher-logout-btn {
+  min-height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-weight: 700;
+}
+.teacher-shell-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: var(--surface-2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.teacher-nav-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.teacher-nav-cluster-label {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.teacher-nav-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  flex: 0 0 auto;
+}
+html[data-theme] .teacher-shell-nav-row .teacher-nav-pill,
+html:not([data-theme]) .teacher-shell-nav-row .teacher-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  color: #334155 !important;
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, border-color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-spring);
+}
+html[data-theme] .teacher-shell-nav-row .teacher-nav-pill:hover,
+html:not([data-theme]) .teacher-shell-nav-row .teacher-nav-pill:hover {
+  background: var(--primary-soft) !important;
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+  transform: translateY(-1px);
+}
+html[data-theme] .teacher-shell-nav-row .teacher-nav-pill.active,
+html:not([data-theme]) .teacher-shell-nav-row .teacher-nav-pill.active {
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.24);
+}
+html[data-theme="dark"] .teacher-shell-header {
+  background: var(--surface);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .teacher-shell-nav-row {
+  background: #0f172a;
+}
+html[data-theme="dark"] .teacher-role-pill {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.35);
+}
+html[data-theme="dark"] #teacherShellHeader #exportConfigBtn {
+  color: #93c5fd;
+  border-color: #3b82f6;
+  background: #172033;
+}
+html[data-theme="dark"] #teacherShellHeader #exportConfigBtn:hover {
+  background: #1e293b;
+  color: #ffffff;
+  border-color: #60a5fa;
+}
+html[data-theme="dark"] .teacher-user-chip {
+  background: #172033;
+  border-color: #334155;
+}
+html[data-theme="dark"] .teacher-logout-btn {
+  background: #172033;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .teacher-shell-nav-row .teacher-nav-pill {
+  background: #172033 !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+html[data-theme="dark"] .teacher-shell-nav-row .teacher-nav-pill:hover {
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #60a5fa !important;
+}
+html[data-theme="dark"] .teacher-shell-nav-row .teacher-nav-pill.active {
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.admin-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.04);
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+.admin-preset-chip:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: #1d4ed8;
+  transform: translateY(-1px);
+}
+html[data-theme="dark"] .admin-preset-chip {
+  background: #172033;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .admin-preset-chip:hover {
+  background: #1e293b;
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+.export-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.export-preset-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 13px 15px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+.export-preset-card strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.export-preset-card span {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.export-preset-card:hover {
+  border-color: #93c5fd;
+  background: var(--surface);
+}
+.export-preset-card.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 0 0 2px rgba(49, 94, 251, 0.14);
+}
+.export-preset-card.is-active strong {
+  color: #1d4ed8;
+}
+html[data-theme="dark"] .export-preset-card {
+  background: #0f172a;
+  border-color: #334155;
+}
+html[data-theme="dark"] .export-preset-card:hover {
+  border-color: #60a5fa;
+  background: #172033;
+}
+html[data-theme="dark"] .export-preset-card.is-active {
+  border-color: #60a5fa;
+  background: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+}
+html[data-theme="dark"] .export-preset-card.is-active strong {
+  color: #93c5fd;
+}
+@media (max-width: 767.98px) {
+  .teacher-shell-top {
+    padding: 10px 14px;
+  }
+  .teacher-shell-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .teacher-user-chip {
+    display: none;
+  }
+  .teacher-shell-nav-row {
+    padding: 8px 14px;
+  }
+  .export-preset-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 
 
